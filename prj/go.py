@@ -99,11 +99,56 @@ def recognition(file):
         lines1 = cv2.HoughLinesP(canny, 1.2, np.pi / 240, 160, minLineLength=100, maxLineGap=60)
         if lines1 is not None:
             lines2 = lines1[:, 0, :]
-            for x1, y1, x2, y2 in lines2[:]:
+            i = lines2.shape[0];
+            w = canny.shape[1]-1;
+            cleanArray = []
+            slopes = [None,None]*i
+            while (i>0):
+                i -= 1
+                x1, y1, x2, y2 = lines2[i]
+
                 if abs(x1-x2)<=abs(y1-y2) :
                     #过滤竖线
+                    cleanArray.append(i)
+                    del slopes[i]
                     continue
-                cv2.line(src, (x1, y1), (x2, y2), (0, 0, 255), 1)
+
+                slope = (y2-y1)/(x2-x1)
+                b = (x1*y2-x2*y1)/(x1-x2)
+                slopes[i]=(slope,b)
+                # cv2.line(src, (x1, y1), (x2, y2), (0, 0, 255), 1)
+
+                #扩展线到整个膜条
+                x1 = BASE_LEFT
+                y1 = round(slope*x1+b)
+                x2 = w
+                y2 = round(slope*x2+b)
+                lines2[i] = (x1,y1, x2, y2)
+                # break
+            if len(cleanArray)>0: #删除竖线
+                lines2 = np.delete(lines2, cleanArray,0)
+                # lines2 = np.column_stack((lines1[:], slope))
+            #排序
+            lines2 = lines2[np.lexsort(lines2.T[1,None])]
+            i = lines2.shape[0]-1
+            _, y1, _, y2 = lines2[i]
+            cleanArray = []
+            cv2.line(src, (x1, y1), (x2, y2), (255, 0, 0), 1)
+            while (i>0):
+                i -= 1
+                oldy1 = y1
+                oldy2 = y2
+                _,y1,_,y2 = lines2[i]
+                if (oldy1-y1<10 and oldy2-y2<10):
+                    # 2端都检查, 避免相近2膜条异侧边
+                    #todo 优化删除哪条线
+                    cleanArray.append(i)
+                    continue
+                cv2.line(src, (x1, y1), (x2, y2), (255, 0, 0), 1)
+            if len(cleanArray)>0: #删除重复线
+                lines2 = np.delete(lines2, cleanArray,0)
+            print(lines2.shape[0])
+
     else:
         lines = cv2.HoughLines(canny, 2, np.pi / 150, 160)
         for line in lines:
@@ -126,8 +171,8 @@ def recognition(file):
     cv2.imshow('2-bw.cut', bw)
 
 def main():
-    i=0x31
-    while i<0x32:
+    i=0x30
+    while i<0x36:
         i+=1
         recognition('sample'+chr(i)+'.jpg')
         cv2.waitKey(0)
