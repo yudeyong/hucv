@@ -8,8 +8,8 @@ GAUSS = 0
 
 HOUGHLINESP = True
 
-# rgb to gray value: None or R,G,B to gray value: 0x1 r, 0x100 g, 0x10000 b
-RGB_GRAY = 0
+# rgb to gray value: None or R,G,B to gray value: 0x1 r, 0x100 b, 0x10000 g
+RGB_GRAY = 0x100
 
 BOARD_X= 60
 BOARD_Y= 185
@@ -19,9 +19,16 @@ BOARD_WIDTH= 520
 #膜条左侧基准padding
 BASE_LEFT = 60
 BASE_MARGIN = 47
+
+BOARD_RIGHT_WIDTH= 50
+
 #膜条宽
 STRIP_WIDTH = 18
-STRIP_HALFWIDTH = STRIP_WIDTH>>1
+STRIP_HALF_WIDTH = STRIP_WIDTH>>1
+
+SAMPLING_BORDER=1+STRIP_WIDTH>>3
+
+SAMPLING_WIDTH = 6
 #############
 
 def toGray(img):
@@ -39,8 +46,11 @@ def toGray(img):
         elif RGB_GRAY==0x100:
             gray = b
         else :
-            gray = g
-        # cv2.imshow('1-r channel-gray.png', gray)
+            gray = r
+        # cv2.imshow('1-r channel-gray.png', r)
+        # cv2.imshow('1-g channel-gray.png', g)
+        # cv2.imshow('1-b channel-gray.png', b)
+        # cv2.waitKey()
     # gray = r
     return gray
 
@@ -53,6 +63,7 @@ def toCanny(bw):
         cannyGaus = cv2.Canny(img1, 100, 200, 3)
         return cannyGaus
 
+#深色only 查找边界
 def findBorder(line1, line2):
     counter = 0
     for index, pixel in enumerate(line1):
@@ -64,23 +75,110 @@ def findBorder(line1, line2):
             counter=0
     return index
 
+#深色only 查找左边界
 def findLeftBorder(img):
     line1 = img[BOARD_HEIGHT>>3]
     line2 = img[BOARD_HEIGHT-(BOARD_HEIGHT>>3)]
     return findBorder(line1,line2)
 
+#深色only
 def findTopBOrder(img):
     line1 = img[:,BOARD_WIDTH>>3]
     line2 = img[:,BOARD_WIDTH-(BOARD_WIDTH>>3)]
     return findBorder(line1, line2)
 
+#合并相近线算法
+def mergeLine(linesSet, lines, slopes):
+    x1,y1,x2,y2=0,0,0,0
+    max = 0
+    min = lines.shape[0]
+    for i in linesSet:
+        if i > max : max = i
+        if i < min : min = i
+        x1+= lines[i][0]
+        y1+= lines[i][1]
+        x2+= lines[i][2]
+        y2+= lines[i][3]
+    l = len(linesSet)
+    lines[max][0]=round(x1/l)
+    lines[max][1]=round(y1/l)
+    lines[max][2]=round(x2/l)
+    lines[max][3]=round(y2/l)
+    if slopes is not None:
+        slopes[min] = getSlopeBias(lines[i])
+
+#获取斜率,截距
+def getSlopeBias(twoPoints):
+    return( (twoPoints[3] - twoPoints[1]) / (twoPoints[2] - twoPoints[0])
+        , (twoPoints[0] * twoPoints[3] - twoPoints[2] * twoPoints[1]) / (twoPoints[0] - twoPoints[2]) )
+
+def getXFromLine(line):
+    return (line[0],line[2])
+
+def getYFromLine(line):
+    return (line[1],line[3])
+
+#slopes = None时, 按尾部合并检查
+def clipLines(lines, slopes, func):
+    throshold = STRIP_HALF_WIDTH if slopes is None else STRIP_HALF_WIDTH
+    # 按y1排序
+    lines = lines[np.lexsort(lines.T[1, None])]
+    i = lines.shape[0] - 1
+    y1, y2 = func(lines[i])
+    # _, y1, _, y2 = lines[i]
+    cleanArray = []
+    # cv2.line(src, (x1, y1), (x2, y2), (0, 0, 255), 1)
+    sameLines = set()
+    while (i > 0):
+        y = lines[i][1]
+        i -= 1
+        oldy1 = y1
+        oldy2 = y2
+        y1, y2 = func(lines[i])
+        if (abs(oldy1 - y1) < throshold and abs(oldy2 - y2) < throshold) and (slopes is not None or abs(lines[i][1]-y) < STRIP_HALF_WIDTH):
+            sameLines.add(i)
+            sameLines.add(i + 1)
+            cleanArray.append(i)
+            if slopes is not None:
+                del slopes[i]
+            continue
+        elif (len(sameLines) > 0):
+            mergeLine(sameLines, lines, slopes)
+            sameLines = set()
+    if (len(sameLines) > 0):
+        mergeLine(sameLines, lines, slopes)
+    if len(cleanArray) > 0:  # 删除重复线
+        lines = np.delete(lines, cleanArray, 0)
+    return lines
+
+#整体过滤线, 竖线, 相近线合并
+def clipStripLines(lines, src, slopes):
+    lines = clipLines(lines, slopes, getYFromLine)
+    # debug only {{
+    w = src.shape[1] - 1;
+    for line in lines:
+        _, y1, _, y2 = line
+        cv2.line(src, (BASE_LEFT, y1), (w, y2), (0, 0, 255), 1)
+
+    print(lines.shape[0])
+    i = lines.shape[0]
+    while (i > 1):
+        i -= 1
+        y1 = lines[i][1] - lines[i - 1][1]
+        y2 = lines[i][3] - lines[i - 1][3]
+        print(y1, y2)
+        i -= 1
+    # }}
+    return lines
+
+#生成轮廓线
 def getLines(img, src) :
     if HOUGHLINESP:
-        lines1 = cv2.HoughLinesP(img, 1.2, np.pi / 240, 160, minLineLength=100, maxLineGap=60)
+        lines1 = cv2.HoughLinesP(img, 1.2, np.pi / 240, 70, minLineLength=100, maxLineGap=20)
         if lines1 is not None:
             lines2 = lines1[:, 0, :]
             i = lines2.shape[0];
-            w = img.shape[1]-1;
+            w = src.shape[1]-1;
             cleanArray = []
             slopes = [None,None]*i
             while (i>0):
@@ -93,53 +191,21 @@ def getLines(img, src) :
                     del slopes[i]
                     continue
 
-                slope = (y2-y1)/(x2-x1)
-                b = (x1*y2-x2*y1)/(x1-x2)
+                slope,b=getSlopeBias((x1,y1,x2,y2))
+                # slope = (y2-y1)/(x2-x1)
+                # b = (x1*y2-x2*y1)/(x1-x2)
                 slopes[i]=(slope,b)
                 # cv2.line(src, (x1, y1), (x2, y2), (0, 0, 255), 1)
 
                 #扩展线到整个膜条
-                x1 = BASE_LEFT
-                y1 = round(slope*x1+b)
-                x2 = w
-                y2 = round(slope*x2+b)
-                lines2[i] = (x1,y1, x2, y2)
+                y1 = round(slope*BASE_LEFT+b)
+                y2 = round(slope*w+b)
+                lines2[i] = (BASE_LEFT,y1, w, y2)
                 # break
             if len(cleanArray)>0: #删除竖线
                 lines2 = np.delete(lines2, cleanArray,0)
                 # lines2 = np.column_stack((lines1[:], slope))
-            #排序
-            lines2 = lines2[np.lexsort(lines2.T[1,None])]
-            i = lines2.shape[0]-1
-            _, y1, _, y2 = lines2[i]
-            cleanArray = []
-            cv2.line(src, (x1, y1), (x2, y2), (0, 0, 255), 1)
-            while (i>0):
-                i -= 1
-                oldy1 = y1
-                oldy2 = y2
-                _,y1,_,y2 = lines2[i]
-                if (oldy1-y1<STRIP_HALFWIDTH and oldy2-y2<STRIP_HALFWIDTH):
-                    # 2端都检查, 避免相近2膜条异侧边
-                    #todo 优化删除哪条线深色背景only
-                    #todo 检查线之间是黑色还是白色, 深色背景only
-                    #改成均值
-                    cleanArray.append(i)
-                    del slopes[i]
-                    # continue
-                cv2.line(src, (x1, y1), (x2, y2), (0, 0, 255), 1)
-            if len(cleanArray)>0: #删除重复线
-                lines2 = np.delete(lines2, cleanArray,0)
-            # debug only {{
-            print(lines2.shape[0])
-            i=lines2.shape[0]
-            while(i>1):
-                i -= 1
-                y1=lines2[i][1]-lines2[i-1][1]
-                y2=lines2[i][3]-lines2[i-1][3]
-                print(y1,y2)
-                i -= 1
-            #}}
+            return clipStripLines(lines2, src ,slopes )
         else :
             return None
     else:
@@ -156,7 +222,30 @@ def getLines(img, src) :
                 y2 = int(y0 - 100 * (a))
 
                 cv2.line(src, (x1, y1), (x2, y2), (0, 0, 255), 2)
-    return lines2
+    return lines
+
+def getTailLines(img, src) :
+    lines1 = cv2.HoughLinesP(img, 1, np.pi / 240, 11, minLineLength=11, maxLineGap=1)
+    if lines1 is not None:
+        lines2 = lines1[:, 0, :]
+        i = lines2.shape[0];
+        cleanArray = []
+        while (i > 0):
+            i -= 1
+            x1, y1, x2, y2 = lines2[i]
+
+            if abs(x1 - x2) >= abs(y1 - y2):
+                # 过滤横线
+                cleanArray.append(i)
+                continue
+        if len(cleanArray)>0: #删除竖线
+            lines2 = np.delete(lines2, cleanArray,0)
+        lines2 = clipLines(lines2, None, getXFromLine)
+        for line in lines2:
+            cv2.line(src, (line[0], line[1]), (line[2], line[3]), (255, 0, 0), 3)
+    else:
+        return None
+    return
 
 def recognition(file):
     src = cv2.imread(file)
@@ -177,6 +266,8 @@ def recognition(file):
         src = src[y1:,x1:-x2]
         gray = gray[y1:,x1:-x2]
     else:
+        right = src[:, -BOARD_RIGHT_WIDTH:]
+        tail = bw[:, -BOARD_RIGHT_WIDTH:]
         cv2.imshow('2-bw', bw)
 
     # bw=gray
@@ -191,11 +282,17 @@ def recognition(file):
     # cv2.imshow('canny', canny)
     lines = getLines(canny, src)
 
+    canny = toCanny(tail)
+    # cv2.imshow('canny', canny)
+    lines = getTailLines(canny, right)
+    cv2.imshow('tail', right)
     # cv2.line(src, (BASE_LEFT, 0), (BASE_LEFT, BOARD_HEIGHT), (255, 0, 0), 2)
     # cv2.line(bw, (BASE_LEFT, 0), (BASE_LEFT, BOARD_HEIGHT), (255, 0, 0), 2)
     cv2.imshow('result', src)
     if BACK_WHITH == 0:
         cv2.imshow('2-bw.cut', bw)
+    # else:
+        # cv2.imshow('1-right', tail)
 
 def main():
     i=0x30
