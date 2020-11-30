@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 BACK_WHITH = 1
-THRESHOLD = 245 if (BACK_WHITH==1) else 150
+THRESHOLD = 205 if (BACK_WHITH==1) else 150
 #gauss canny, 0 canny only, 3, 5
 GAUSS = 0
 
@@ -29,6 +29,8 @@ STRIP_HALF_WIDTH = STRIP_WIDTH>>1
 SAMPLING_BORDER=1+STRIP_WIDTH>>3
 
 SAMPLING_WIDTH = 6
+
+SCALABLE_Y=2
 #############
 
 def toGray(img):
@@ -120,7 +122,7 @@ def getYFromLine(line):
 
 #slopes = None时, 按尾部合并检查
 def clipLines(lines, slopes, func):
-    throshold = STRIP_HALF_WIDTH if slopes is None else STRIP_HALF_WIDTH
+    throshold = STRIP_HALF_WIDTH*SCALABLE_Y if slopes is None else STRIP_HALF_WIDTH
     # 按y1排序
     lines = lines[np.lexsort(lines.T[1, None])]
     i = lines.shape[0] - 1
@@ -225,7 +227,7 @@ def getLines(img, src) :
     return lines
 
 def getTailLines(img, src) :
-    lines1 = cv2.HoughLinesP(img, 1, np.pi / 240, 11, minLineLength=11, maxLineGap=1)
+    lines1 = cv2.HoughLinesP(img, 1, np.pi / 240, 22, minLineLength=20, maxLineGap=1)
     if lines1 is not None:
         lines2 = lines1[:, 0, :]
         i = lines2.shape[0];
@@ -238,14 +240,47 @@ def getTailLines(img, src) :
                 # 过滤横线
                 cleanArray.append(i)
                 continue
+            else:
+                lines2[i][1] = round(y1/SCALABLE_Y)
+                lines2[i][3] = round(y2/SCALABLE_Y)
         if len(cleanArray)>0: #删除竖线
             lines2 = np.delete(lines2, cleanArray,0)
-        lines2 = clipLines(lines2, None, getXFromLine)
-        for line in lines2:
-            cv2.line(src, (line[0], line[1]), (line[2], line[3]), (255, 0, 0), 3)
+        return clipLines(lines2, None, getXFromLine)
     else:
         return None
-    return
+
+def resize(img, xTimes, yTimes):
+    (h,w) = img.shape
+    nW = xTimes * w
+    nH = yTimes * h
+
+    # 1维寻址快
+    nImg = np.empty([nH,nW],dtype='uint8')
+    buf = img.reshape((-1))
+    nBuf = nImg.reshape((-1))
+    nCur = nW*nH
+    cur = w*h
+    tmpBuf = buf if (xTimes == 1) else nBuf
+
+    while(cur>0):
+        i = w
+        if (xTimes > 1):
+            #undebug
+            lineCur = nCur
+            while (i>0):
+                cur -= 1
+                i-=1
+                nBuf[nCur-xTimes: nCur] = buf[cur]
+                nCur-=xTimes
+        else:
+            lineCur = cur
+        j = yTimes
+        while j>0:
+            j -= 1
+            nBuf[nCur-nW:nCur] = tmpBuf[lineCur-nW:lineCur]
+            nCur -=nW
+        cur -= w
+    return nImg
 
 def recognition(file):
     src = cv2.imread(file)
@@ -266,28 +301,21 @@ def recognition(file):
         src = src[y1:,x1:-x2]
         gray = gray[y1:,x1:-x2]
     else:
-        right = src[:, -BOARD_RIGHT_WIDTH:]
-        tail = bw[:, -BOARD_RIGHT_WIDTH:]
-        cv2.imshow('2-bw', bw)
-
-    # bw=gray
-
-    # range = cv2.inRange(src, (0, 0, 0), (100, 100, 100))
-    # cv2.imshow('3-range.png', range)
-
-    # invert = cv2.bitwise_not(range)
-    # cv2.imshow('4-invert.png', invert)
+        rightImg = resize(bw[:, -BOARD_RIGHT_WIDTH:], 1, SCALABLE_Y)
+        tailImg = rightImg
+        cv2.imshow('2-bw', tailImg)
 
     canny = toCanny(bw)
     # cv2.imshow('canny', canny)
     lines = getLines(canny, src)
 
-    canny = toCanny(tail)
+    canny = toCanny(tailImg)
     # cv2.imshow('canny', canny)
-    lines = getTailLines(canny, right)
-    cv2.imshow('tail', right)
-    # cv2.line(src, (BASE_LEFT, 0), (BASE_LEFT, BOARD_HEIGHT), (255, 0, 0), 2)
-    # cv2.line(bw, (BASE_LEFT, 0), (BASE_LEFT, BOARD_HEIGHT), (255, 0, 0), 2)
+    lines = getTailLines(canny, rightImg)
+    x = src.shape[1]-BOARD_RIGHT_WIDTH
+    for line in lines:
+        cv2.line(src, (line[0]+x, line[1] ), (line[2]+x, line[3] ), (255, 0, 0), 2)
+    # cv2.imshow('tail', rightImg)
     cv2.imshow('result', src)
     if BACK_WHITH == 0:
         cv2.imshow('2-bw.cut', bw)
