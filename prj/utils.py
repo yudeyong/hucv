@@ -37,7 +37,7 @@ def toCanny(bw, gaussian):
         cannyGaus = cv2.Canny(img1, 100, 200, 3)
         return cannyGaus
 
-#合并相近线算法
+#合并相近平行线
 def mergeLine(linesSet, lines, slopes):
     x1,y1,x2,y2=0,0,0,0
     max = 0

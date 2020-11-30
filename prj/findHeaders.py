@@ -6,18 +6,14 @@ import utils
 THRESHOLD = 130
 
 # rgb to gray value: None or R,G,B to gray value: 0x1 r, 0x100 g, 0x10000 b
-RGB_GRAY = 0
+RGB_GRAY = 0x10000
 
-BOARD_X= 240
-BOARD_Y= 195
-BOARD_HEIGHT= 640
-BOARD_WIDTH= 520
 
 BOARD_DETECT_WIDTH= 100
 
 def checkRectRange(points):
     if points.shape[0] < 3: return None
-    minX, minY = BOARD_WIDTH, BOARD_HEIGHT
+    minX, minY = const.BOARD_WIDTH, const.BOARD_HEIGHT
     maxX, maxY = 0, 0
     for p in points:
         if p[0][0] > maxX: maxX = p[0][0]
@@ -26,7 +22,7 @@ def checkRectRange(points):
         if p[0][1] < minY: minY = p[0][1]
     deltaX = maxX - minX
     deltaY = maxY - minY
-    print(deltaX, deltaY, len(points))
+    # print(deltaX, deltaY, len(points))
     if deltaX < const.STRIP_WIDTH - (const.STRIP_WIDTH >> 3): return None
     if deltaX > const.STRIP_WIDTH << 3: return None
     if deltaY < const.STRIP_HALF_HEIGHT: return None
@@ -54,5 +50,6 @@ def findHeader(src):
             approx = cnt  # cv2.approxPolyDP(cnt, 0.02*cv2.arcLength(cnt,True),True)
             if stripHeader:
                 stripHeads.append(stripHeader)
-                cv2.drawContours(srcDetect, [approx.reshape(-1, 1, 2)], 0, (250, 0, 0), 2)
-    cv2.imshow('1-gray', src)
+                # cv2.drawContours(srcDetect, [approx.reshape(-1, 1, 2)], 0, (250, 0, 0), 2)
+    # cv2.imshow('1-gray', src)
+    return stripHeads
