@@ -1,5 +1,7 @@
 import cv2
 import numpy as np
+import utils
+import const
 
 BACK_WHITH = 1
 THRESHOLD = 205 if (BACK_WHITH==1) else 150
@@ -9,9 +11,9 @@ GAUSS = 0
 HOUGHLINESP = True
 
 # rgb to gray value: None or R,G,B to gray value: 0x1 r, 0x100 b, 0x10000 g
-RGB_GRAY = 0x100
+RGB_GRAY = 0x10000
 
-BOARD_X= 60
+BOARD_X= 220
 BOARD_Y= 185
 BOARD_HEIGHT= 640
 BOARD_WIDTH= 520
@@ -22,48 +24,8 @@ BASE_MARGIN = 47
 
 BOARD_RIGHT_WIDTH= 50
 
-#膜条宽
-STRIP_WIDTH = 18
-STRIP_HALF_WIDTH = STRIP_WIDTH>>1
-
-SAMPLING_BORDER=1+STRIP_WIDTH>>3
-
-SAMPLING_WIDTH = 6
-
 SCALABLE_Y=2
 #############
-
-def toGray(img):
-    if not RGB_GRAY:
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    else:
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2BGRA)
-        g,b,r,_ = cv2.split(gray)
-        if False:
-            cv2.imshow('1-r', r)
-            cv2.imshow('2-g', g)
-            cv2.imshow('3-b', b)
-        if RGB_GRAY==0x01:
-            gray = r
-        elif RGB_GRAY==0x100:
-            gray = b
-        else :
-            gray = r
-        # cv2.imshow('1-r channel-gray.png', r)
-        # cv2.imshow('1-g channel-gray.png', g)
-        # cv2.imshow('1-b channel-gray.png', b)
-        # cv2.waitKey()
-    # gray = r
-    return gray
-
-def toCanny(bw):
-    if GAUSS==0 :
-        canny = cv2.Canny(bw, 100, 200, 3)
-        return canny
-    else :
-        img1 = cv2.GaussianBlur(bw,(GAUSS,GAUSS),0)
-        cannyGaus = cv2.Canny(img1, 100, 200, 3)
-        return cannyGaus
 
 #深色only 查找边界
 def findBorder(line1, line2):
@@ -89,31 +51,6 @@ def findTopBOrder(img):
     line2 = img[:,BOARD_WIDTH-(BOARD_WIDTH>>3)]
     return findBorder(line1, line2)
 
-#合并相近线算法
-def mergeLine(linesSet, lines, slopes):
-    x1,y1,x2,y2=0,0,0,0
-    max = 0
-    min = lines.shape[0]
-    for i in linesSet:
-        if i > max : max = i
-        if i < min : min = i
-        x1+= lines[i][0]
-        y1+= lines[i][1]
-        x2+= lines[i][2]
-        y2+= lines[i][3]
-    l = len(linesSet)
-    lines[max][0]=round(x1/l)
-    lines[max][1]=round(y1/l)
-    lines[max][2]=round(x2/l)
-    lines[max][3]=round(y2/l)
-    if slopes is not None:
-        slopes[min] = getSlopeBias(lines[i])
-
-#获取斜率,截距
-def getSlopeBias(twoPoints):
-    return( (twoPoints[3] - twoPoints[1]) / (twoPoints[2] - twoPoints[0])
-        , (twoPoints[0] * twoPoints[3] - twoPoints[2] * twoPoints[1]) / (twoPoints[0] - twoPoints[2]) )
-
 def getXFromLine(line):
     return (line[0],line[2])
 
@@ -122,7 +59,7 @@ def getYFromLine(line):
 
 #slopes = None时, 按尾部合并检查
 def clipLines(lines, slopes, func):
-    throshold = STRIP_HALF_WIDTH*SCALABLE_Y if slopes is None else STRIP_HALF_WIDTH
+    throshold = const.STRIP_HALF_WIDTH*SCALABLE_Y if slopes is None else const.STRIP_HALF_WIDTH
     # 按y1排序
     lines = lines[np.lexsort(lines.T[1, None])]
     i = lines.shape[0] - 1
@@ -137,7 +74,7 @@ def clipLines(lines, slopes, func):
         oldy1 = y1
         oldy2 = y2
         y1, y2 = func(lines[i])
-        if (abs(oldy1 - y1) < throshold and abs(oldy2 - y2) < throshold) and (slopes is not None or abs(lines[i][1]-y) < STRIP_HALF_WIDTH):
+        if (abs(oldy1 - y1) < throshold and abs(oldy2 - y2) < throshold) and (slopes is not None or abs(lines[i][1]-y) < const.STRIP_HALF_WIDTH):
             sameLines.add(i)
             sameLines.add(i + 1)
             cleanArray.append(i)
@@ -145,10 +82,11 @@ def clipLines(lines, slopes, func):
                 del slopes[i]
             continue
         elif (len(sameLines) > 0):
-            mergeLine(sameLines, lines, slopes)
+            utils.mergeLine(sameLines, lines, slopes)
             sameLines = set()
     if (len(sameLines) > 0):
-        mergeLine(sameLines, lines, slopes)
+        utils.mergeLine(sameLines, lines, slopes)
+    # return lines
     if len(cleanArray) > 0:  # 删除重复线
         lines = np.delete(lines, cleanArray, 0)
     return lines
@@ -193,7 +131,7 @@ def getLines(img, src) :
                     del slopes[i]
                     continue
 
-                slope,b=getSlopeBias((x1,y1,x2,y2))
+                slope,b=utils.getSlopeBias((x1,y1,x2,y2))
                 # slope = (y2-y1)/(x2-x1)
                 # b = (x1*y2-x2*y1)/(x1-x2)
                 slopes[i]=(slope,b)
@@ -227,7 +165,7 @@ def getLines(img, src) :
     return lines
 
 def getTailLines(img, src) :
-    lines1 = cv2.HoughLinesP(img, 1, np.pi / 240, 22, minLineLength=20, maxLineGap=1)
+    lines1 = cv2.HoughLinesP(img, 0.8, np.pi / 200, 33, minLineLength=20, maxLineGap=3)
     if lines1 is not None:
         lines2 = lines1[:, 0, :]
         i = lines2.shape[0];
@@ -241,13 +179,21 @@ def getTailLines(img, src) :
                 cleanArray.append(i)
                 continue
             else:
-                lines2[i][1] = round(y1/SCALABLE_Y)
-                lines2[i][3] = round(y2/SCALABLE_Y)
+                y1 = round(y1/SCALABLE_Y)
+                y2 = round(y2/SCALABLE_Y)
+                if (y1<=y2):
+                    lines2[i][1] = y1
+                    lines2[i][3] = y2
+                else:
+                    lines2[i][1] = y2
+                    lines2[i][3] = y1
+
         if len(cleanArray)>0: #删除竖线
             lines2 = np.delete(lines2, cleanArray,0)
-        return clipLines(lines2, None, getXFromLine)
-    else:
-        return None
+        # return lines2
+        if lines2.shape[0]>0:
+            return clipLines(lines2, None, getXFromLine)
+    return None
 
 def resize(img, xTimes, yTimes):
     (h,w) = img.shape
@@ -281,13 +227,19 @@ def resize(img, xTimes, yTimes):
             nCur -=nW
         cur -= w
     return nImg
+def getTails(tailImg):
+    canny = utils.toCanny(tailImg, GAUSS)
+    # cv2.imshow('canny', canny)
+    lines = getTailLines(canny, tailImg)
+    # cv2.imshow('tail', rightImg)
+    return lines
 
 def recognition(file):
     src = cv2.imread(file)
     ###cut borad from image
     src = src[BOARD_Y:BOARD_Y + BOARD_HEIGHT, BOARD_X:BOARD_X + BOARD_WIDTH]
 
-    gray =  toGray(src)
+    gray =  utils.toGray(src, RGB_GRAY)
     cv2.imshow('1-gray', gray)
     _, bw = cv2.threshold(gray, THRESHOLD, 255.0, cv2.THRESH_BINARY)
 
@@ -301,30 +253,27 @@ def recognition(file):
         src = src[y1:,x1:-x2]
         gray = gray[y1:,x1:-x2]
     else:
-        rightImg = resize(bw[:, -BOARD_RIGHT_WIDTH:], 1, SCALABLE_Y)
-        tailImg = rightImg
+        tailImg = resize(bw[:, -BOARD_RIGHT_WIDTH:], 1, SCALABLE_Y)
         cv2.imshow('2-bw', tailImg)
 
-    canny = toCanny(bw)
-    # cv2.imshow('canny', canny)
+    canny = utils.toCanny(bw, GAUSS)
     lines = getLines(canny, src)
 
-    canny = toCanny(tailImg)
-    # cv2.imshow('canny', canny)
-    lines = getTailLines(canny, rightImg)
-    x = src.shape[1]-BOARD_RIGHT_WIDTH
-    for line in lines:
-        cv2.line(src, (line[0]+x, line[1] ), (line[2]+x, line[3] ), (255, 0, 0), 2)
-    # cv2.imshow('tail', rightImg)
+    lines = getTails(tailImg)
+    if lines is not None:
+        x = src.shape[1]-BOARD_RIGHT_WIDTH
+        print("tail:",len(lines))
+        for line in lines:
+            line[0] += x
+            line[2] += x
+            cv2.line(src, (line[0], line[1] ), (line[2], line[3] ), (255, 0, 0), 2)
     cv2.imshow('result', src)
     if BACK_WHITH == 0:
         cv2.imshow('2-bw.cut', bw)
-    # else:
-        # cv2.imshow('1-right', tail)
 
 def main():
     i=0x30
-    while i<0x36:
+    while i<0x31:
         i+=1
         recognition( ('samplew' if BACK_WHITH>0 else 'sample') +chr(i)+'.jpg')
         cv2.waitKey(0)
