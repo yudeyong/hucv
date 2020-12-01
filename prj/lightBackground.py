@@ -6,6 +6,7 @@ import findTails as tail
 import const
 import recognise
 import StripRegion
+import StripTemplate
 #gauss canny, 0 canny only, 3, 5
 GAUSS = 0
 
@@ -25,20 +26,28 @@ def recognition(file):
     src = src[const.BOARD_Y:const.BOARD_Y + const.BOARD_HEIGHT, const.BOARD_X:const.BOARD_X + const.BOARD_WIDTH]
     ###cut borad from image
     stripHeads = header.findHeader(src)
-    tailsLines, gray, bw = tail.findTails(src)
+    tailsLines, gray = tail.findTails(src)
     i = len(stripHeads)
     if i == tailsLines.shape[0]:
+        arr = [['头', 18], ['blank', 9], ['Functonal Control', 2], ['blank', 6], ['Cut-Off Control', 2], ['blank', 6],
+               ['Jo-1', 2], ['blank', 6], ['Mi-2', 2], ['blank', 6], ['PM-Scl', 2], ['blank', 6], ['U1-snRNP', 2],
+               ['blank', 6], ['Ku', 2],
+               ['blank', 6], ['Ku', 2],['blank', 6], ['Ku', 2],['blank', 6], ['Ku', 2],['blank', 6], ['Ku', 2],['blank', 6], ['Ku', 2],['blank', 6], ['Ku', 2],['blank', 6], ['Ku', 2],
+               ['blank', 83-56]]
+        template = StripTemplate.StripTemplate('ganji', arr)
+
         # i 个区域,4个顶点,(x,y)
         regions = [None]*i
         while i>0:
             i -= 1
             rect = stripHeads[i]
             line = tailsLines[i]
-            regions[i] = StripRegion.StripRegion(((rect[2], rect[3]),(line[2], line[3]),(rect[2], rect[1]),(line[0], line[1])))
+            regions[i] = StripRegion.StripRegion(((rect[2], rect[3]),(line[2], line[3]),(rect[2], rect[1]),(line[0], line[1])),template)
 
             cv2.line(src, (rect[0], rect[3]), (line[2], line[3]), (255, 0, 0), 2)
             cv2.line(src, (rect[0], rect[1]), (line[0], line[1]), (255, 0, 0), 2)
             # cv2.line(src, (rect[0], rect[3]), (rect[2], rect[1]), (255, 0, 0), 2)
+
         recognise.recognise(gray, regions)
     else:
         #todo

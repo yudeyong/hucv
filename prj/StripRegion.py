@@ -4,11 +4,12 @@ import utils
 import SampleLine as sl
 
 class StripRegion:
-    def __init__(self, points):
+    def __init__(self, points, template):
         self.points = points
-        self.slopes = [2]*2
-        self.slopes[0] = utils.getSlopeBiasByPoints(points[0], points[1])
-        self.slopes[1] = utils.getSlopeBiasByPoints(points[2], points[3])
+        # self.slopes = [2]*2
+        # self.slopes[0] = utils.getSlopeBiasByPoints(points[0], points[1])
+        # self.slopes[1] = utils.getSlopeBiasByPoints(points[2], points[3])
+        self.template = template
         self.samples = []
         #为方便计算, bgColor = 0xff-色值
         self.bgColor = 0
@@ -58,14 +59,27 @@ class StripRegion:
         maxColorIndex = colors.index(max(colors, key=lambda x: x[0]))
 
 
+        # 通过背景色识别 监测区域
         self.bgColor = round(colors[maxColorIndex][1] / colors[maxColorIndex][0])
-        bb = gray[ self.top:self.bottom ,self.left:self.right]
-        _, bb = cv2.threshold(bb, int(self.bgColor*1), 255.0, cv2.THRESH_BINARY)
-        cv2.imshow("bb", bb)
-        cv2.waitKey()
+        # bb = gray[ self.top:self.bottom ,self.left:self.right]
+        # _, bb = cv2.threshold(bb, int(self.bgColor*1), 255.0, cv2.THRESH_BINARY)
+        # cv2.imshow("bb", bb)
+        # cv2.waitKey()
 
+        percent = self.template.setPercentage(1, 0)
+        # cv2.line(gray, (self.left, self.top), (self.right, self.bottom), (0,0,255), 1)
+        # cv2.line(gray, (self.left, self.bottom), (self.right, self.top), (0,0,255), 1)
+        length = self.right - self.left -4
+        self.left += 15
+        for p in percent:
+            x = self.left+p[0]*length
+            y = int(x*self.slope + self.bias)
+            gray[y:y+6, int(x):self.left+int(p[1]*length) ] = 0
+            gray[y+2:y + 3, int(x):self.left + int(p[1] * length)] = 0xff
+        cv2.imshow("bb", gray)
+        # cv2.waitKey()
 
-
+        return
         self.bgColor = 0xff - round(colors[maxColorIndex][1] / colors[maxColorIndex][0])
         self.__traversal(gray, self.__sampling, lastSample)
 
