@@ -37,7 +37,7 @@ def findHeader(src):
     # cv2.imshow('1-gray', gray)
     _, bw = cv2.threshold(gray, THRESHOLD, 255.0, cv2.THRESH_BINARY)
 
-    cv2.imshow('2-bw', bw)
+    # cv2.imshow('2-bw', bw)
     contours, hierarchy = cv2.findContours(bw, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
     i = len(contours)
