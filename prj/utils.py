@@ -58,7 +58,7 @@ def mergeLine(linesSet, lines, slopes):
         slopes[min] = getSlopeBias(lines[i])
 
 #获取斜率,截距
-def getSlopeBias(p1, p2):
+def getSlopeBiasByPoints(p1, p2):
     return( (p2[1] - p1[1]) / (p2[0] - p1[0])
         , (p1[0] * p2[1] - p2[0] * p1[1]) / (p1[0] - p2[0]) )
 

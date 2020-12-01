@@ -29,12 +29,12 @@ def recognition(file):
     i = len(stripHeads)
     if i == tailsLines.shape[0]:
         # i 个区域,4个顶点,(x,y)
-        regions = [i]
+        regions = [None]*i
         while i>0:
             i -= 1
             rect = stripHeads[i]
             line = tailsLines[i]
-            regions[i] = StripRegion(((rect[2], rect[3]),(line[2], line[3]),(rect[2], rect[1]),(line[0], line[1])))
+            regions[i] = StripRegion.StripRegion(((rect[2], rect[3]),(line[2], line[3]),(rect[2], rect[1]),(line[0], line[1])))
 
             cv2.line(src, (rect[0], rect[3]), (line[2], line[3]), (255, 0, 0), 2)
             cv2.line(src, (rect[0], rect[1]), (line[0], line[1]), (255, 0, 0), 2)
@@ -44,7 +44,7 @@ def recognition(file):
         #todo
         print(file,"header:",i,"tails:",tailsLines.shape[0])
 
-    cv2.imshow('result', src)
+    cv2.imshow('result', gray)
     cv2.waitKey()
     return
 
