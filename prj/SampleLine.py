@@ -19,7 +19,7 @@ class SampleLine:
         self.x1 += 1
         assert self.x1==x
 
-    def getSampleValue(self, bgColor):
+    def getSampleValueBySeletedRegion(self, bgColor):
         filter = self.lines < WHITE_THRESHOLD
         testSamples = self.lines[filter]
         count = testSamples.shape[0]
