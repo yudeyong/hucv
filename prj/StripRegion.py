@@ -67,23 +67,26 @@ class StripRegion:
                 self.samples[0].add(data, i)
             lastSample[0] = i
 
-    def readStrip(self, gray):
+    def __getBkColor(self, gray):
         colors = [[0,0]] * 16
-
         self.__traversal(gray, self.left, self.__getBackground, colors)
+
         maxColorIndex = colors.index(max(colors, key=lambda x: x[0]))
-
-
-        # 通过背景色识别 监测区域
         self.bgColor = round(colors[maxColorIndex][1] / colors[maxColorIndex][0])
+
+    def readStrip(self, gray):
+        self.__getBkColor(gray)
+
+        self.__getValuesByPostion(gray)
+
+        return
+    '''
+        # 通过背景色识别 监测区域
         # bb = gray[ self.top:self.bottom ,self.left:self.right]
         # _, bb = cv2.threshold(bb, int(self.bgColor*1), 255.0, cv2.THRESH_BINARY)
         # cv2.imshow("bb", bb)
         # cv2.waitKey()
 
-        self.__getValuesByPostion(gray)
-
-        return
         lastSample = [-3]
         self.bgColor = 0xff - round(colors[maxColorIndex][1] / colors[maxColorIndex][0])
         self.__traversal(gray, self.left, self.__sampling, lastSample)
@@ -91,30 +94,9 @@ class StripRegion:
         self.__getValues(gray)
 
         print("****** background color:",self.bgColor)
+    '''
 
-    def __getValuesByPostion(self, img):
-        percent = self.template.setPercentage(1, 0)
-        # cv2.line(gray, (self.left, self.top), (self.right, self.bottom), (0,0,255), 1)
-        # cv2.line(gray, (self.left, self.bottom), (self.right, self.top), (0,0,255), 1)
-        self.firstLine = self.left +15
-        length = self.right - self.left
-        for p in percent:
-            x = self.firstLine + p[0]*length
-            y = int(x*self.slope + self.bias)
-            self.__debugSetSign(img,int(x),self.firstLine+int(p[1]*length), y )
-        cv2.imshow("bb", img)
-        # cv2.waitKey()
-
-    def __getValuesByRegion(self, img):
-        for line in self.samples:
-            value = line.getSampleValueBySeletedRegion( self.bgColor)
-            # if value<0:continue
-            print("value", value)
-
-            y = int(line.x0 * self.slope + self.bias)
-            self.__debugSetSign(img,y,line.x0,line.x1)
-
-    def __debugSetSign(self, gray, x1, x2, y):
+    def __setSymbleDebug(self, gray, x1, x2, y):
         gray[y:y + 6, x1:x2] = 0
         gray[y + 2:y + 3, x1:x2] = 0xff
 
@@ -129,3 +111,26 @@ class StripRegion:
         self.window.initData(data)
         self.__traversal(bw, i1, self.__findFirstLine, None)
         # while i<self.right
+
+    ############  deprecated  ###########
+    def __getValuesByPostion(self, img):
+        percent = self.template.setPercentage(1, 0)
+        # cv2.line(gray, (self.left, self.top), (self.right, self.bottom), (0,0,255), 1)
+        # cv2.line(gray, (self.left, self.bottom), (self.right, self.top), (0,0,255), 1)
+        self.firstLine = self.left +15
+        length = self.right - self.left
+        for p in percent:
+            x = self.firstLine + p[0]*length
+            y = int(x*self.slope + self.bias)
+            self.__setSymbleDebug(img,int(x),self.firstLine+int(p[1]*length), y )
+        cv2.imshow("bb", img)
+        # cv2.waitKey()
+
+    def __getValuesByRegion(self, img):
+        for line in self.samples:
+            value = line.getSampleValueBySeletedRegion( self.bgColor)
+            # if value<0:continue
+            print("value", value)
+
+            y = int(line.x0 * self.slope + self.bias)
+            self.__setSymbleDebug(img,y,line.x0,line.x1)
