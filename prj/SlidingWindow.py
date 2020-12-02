@@ -1,12 +1,14 @@
 import numpy as np
 
 class SlidingWindgow:
-    def __init__(self, width, data):
+    def __init__(self, width):
         self.width = width
+        self.summary = np.zeros([width])
+
+    def initData(self, data):
         self.data = data
         i = data.shape[0]
-        assert(i,width)
-        self.summary = np.empty([i])
+        assert(i,self.width)
         while i>0:
             i -= 1
             self.summary[i] = np.sum(data[i])
@@ -21,4 +23,5 @@ class SlidingWindgow:
 
         sum = np.sum(dataLine)
         self.summary[self.width-1] = sum
-        self.total += sum
+        self.total = total + sum
+        return self.total

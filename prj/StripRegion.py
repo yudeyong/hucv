@@ -2,8 +2,15 @@ import cv2
 import numpy as np
 import utils
 import SampleLine as sl
+import const
+import SlidingWindow as sw
+
+
 
 class StripRegion:
+    FIRST_LINE_WIDTH = 3
+    FIRST_LINE_THRESHOLD = ((FIRST_LINE_WIDTH+1)>>2)*sl.SAMPLING_LINES*0xff
+
     def __init__(self, points, template):
         self.points = points
         # self.slopes = [2]*2
@@ -14,26 +21,37 @@ class StripRegion:
         #为方便计算, bgColor = 0xff-色值
         self.bgColor = 0
         self.left = max(points[0][0], points[2][0])
-        self.right = min(points[1][0], points[3][0])-4
+        self.right = min(points[1][0], points[3][0])-const.SAMPLING_WIDTH
         self.top = min(points[0][1],points[1][1],points[2][1],points[3][1])
         self.bottom = max(points[0][1],points[1][1],points[2][1],points[3][1])
         self.slope,self.bias = utils.getSlopeBiasByPoints(
             (self.left, (points[0][1] + points[2][1]) >> 1), (self.right, (points[1][1] + points[3][1]) >> 1))
+
+    def __getDataByX(self, img, x):
+        y = int(x * self.slope + self.bias)
+        return img[y:y + sl.SAMPLING_LINES, x]
+
+    def __traversal(self, img, left, func, funcPara ):
+        i = left
+        i1 = self.right
+        while (i<i1):
+            i += 1
+            data = self.__getDataByX(img, i)
+            if func(i, data, funcPara):
+                return True
+        return False
+
+    def __findFirstLine(self, i, data, record):
+        total = self.window.append(data)
+        if (total < StripRegion.FIRST_LINE_THRESHOLD):
+            self.firstLine = i - (StripRegion.FIRST_LINE_WIDTH>>1)
+            return True
 
     def __getBackground(self, i, data, record):
         for d in data:
             r = record[d>>16]
             r[0] += 1
             r[1] += d
-
-    def __traversal(self, img, func, funcPara ):
-        i = self.left
-        i1 = self.right
-        while (i<i1):
-            i += 1
-            y = int(i * self.slope + self.bias)
-            data = img[y:y+sl.SAMPLING_LINES,i]
-            func(i, data, funcPara)
 
     def __sampling(self, i, data, lastSample):
         # t1 = t+b-(b*t)/0xff
@@ -52,8 +70,7 @@ class StripRegion:
     def readStrip(self, gray):
         colors = [[0,0]] * 16
 
-        lastSample = [-3]
-        self.__traversal(gray, self.__getBackground, colors)
+        self.__traversal(gray, self.left, self.__getBackground, colors)
         maxColorIndex = colors.index(max(colors, key=lambda x: x[0]))
 
 
@@ -67,8 +84,9 @@ class StripRegion:
         self.__getValuesByPostion(gray)
 
         return
+        lastSample = [-3]
         self.bgColor = 0xff - round(colors[maxColorIndex][1] / colors[maxColorIndex][0])
-        self.__traversal(gray, self.__sampling, lastSample)
+        self.__traversal(gray, self.left, self.__sampling, lastSample)
 
         self.__getValues(gray)
 
@@ -78,12 +96,12 @@ class StripRegion:
         percent = self.template.setPercentage(1, 0)
         # cv2.line(gray, (self.left, self.top), (self.right, self.bottom), (0,0,255), 1)
         # cv2.line(gray, (self.left, self.bottom), (self.right, self.top), (0,0,255), 1)
+        self.firstLine = self.left +15
         length = self.right - self.left
-        self.left += 15
         for p in percent:
-            x = self.left+p[0]*length
+            x = self.firstLine + p[0]*length
             y = int(x*self.slope + self.bias)
-            self.__debugSetSign(img,int(x),self.left+int(p[1]*length), y )
+            self.__debugSetSign(img,int(x),self.firstLine+int(p[1]*length), y )
         cv2.imshow("bb", img)
         # cv2.waitKey()
 
@@ -99,3 +117,15 @@ class StripRegion:
     def __debugSetSign(self, gray, x1, x2, y):
         gray[y:y + 6, x1:x2] = 0
         gray[y + 2:y + 3, x1:x2] = 0xff
+
+    def findFuncLine(self, bw):
+        self.window = sw.SlidingWindgow(StripRegion.FIRST_LINE_WIDTH)
+        i = 0
+        i1 = self.left + const.SAMPLING_WIDTH
+        data = np.empty([StripRegion.FIRST_LINE_WIDTH,sl.SAMPLING_LINES])
+        while i<StripRegion.FIRST_LINE_WIDTH:
+            data[i, :] = self.__getDataByX(bw, i1)
+            i += 1
+        self.window.initData(data)
+        self.__traversal(bw, i1, self.__findFirstLine, None)
+        # while i<self.right

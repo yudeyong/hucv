@@ -214,7 +214,7 @@ def findTails(src):
             cv2.line(src, (line[0], line[1] ), (line[2], line[3] ), (255, 0, 0), 2)
     if __name__ == '__main__':
         cv2.imshow('result', src)
-    return lines, gray
+    return lines, gray, bw
 
 def recognition(file):
     src = cv2.imread(file)

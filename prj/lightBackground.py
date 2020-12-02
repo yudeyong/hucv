@@ -26,7 +26,7 @@ def recognition(file):
     src = src[const.BOARD_Y:const.BOARD_Y + const.BOARD_HEIGHT, const.BOARD_X:const.BOARD_X + const.BOARD_WIDTH]
     ###cut borad from image
     stripHeads = header.findHeader(src)
-    tailsLines, gray = tail.findTails(src)
+    tailsLines, gray, bw = tail.findTails(src)
     i = len(stripHeads)
     if i == tailsLines.shape[0]:
         arr = [['头', 18], ['blank', 9], ['Functonal Control', 2], ['blank', 6], ['Cut-Off Control', 2], ['blank', 6],
@@ -43,7 +43,7 @@ def recognition(file):
             rect = stripHeads[i]
             line = tailsLines[i]
             regions[i] = StripRegion.StripRegion(((rect[2], rect[3]),(line[2], line[3]),(rect[2], rect[1]),(line[0], line[1])),template)
-
+            # regions[i].findFuncLine(bw)
             cv2.line(src, (rect[0], rect[3]), (line[2], line[3]), (255, 0, 0), 2)
             cv2.line(src, (rect[0], rect[1]), (line[0], line[1]), (255, 0, 0), 2)
             # cv2.line(src, (rect[0], rect[3]), (rect[2], rect[1]), (255, 0, 0), 2)
@@ -52,9 +52,9 @@ def recognition(file):
     else:
         #todo
         print(file,"header:",i,"tails:",tailsLines.shape[0])
-
-    cv2.imshow('src', src)
-    cv2.imshow('result', gray)
+    # cv2.imshow('bw',bw)
+    # cv2.imshow('src', src)
+    # cv2.imshow('result', gray)
     cv2.waitKey()
     return
 
