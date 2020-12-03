@@ -26,6 +26,7 @@ class StripRegion:
         self.bottom = max(points[0][1],points[1][1],points[2][1],points[3][1])
         self.slope,self.bias = utils.getSlopeBiasByPoints(
             (self.left, (points[0][1] + points[2][1]) >> 1), (self.right, (points[1][1] + points[3][1]) >> 1))
+        self.valueAndPosi = []
 
     def __getDataByX(self, img, x):
         y = int(x * self.slope + self.bias)
@@ -74,7 +75,7 @@ class StripRegion:
         self.__traversal(gray, self.left, self.__getBackground, colors)
 
         maxColorIndex = colors.index(max(colors, key=lambda x: x[0]))
-        self.bgColor = round(colors[maxColorIndex][1] / colors[maxColorIndex][0])
+        self.bgColor = 0xff - round(colors[maxColorIndex][1] / colors[maxColorIndex][0])
 
     def readStrip(self, gray):
         self.__getBkColor(gray)
@@ -115,22 +116,46 @@ class StripRegion:
         # while i<self.right
 
     ############  deprecated  ###########
+    # counter = 0
+    def __removeBgColor(self, value):
+        value + self.bgColor
+        return value if value<0xff else 0xff
     def __getValuesByPostion(self, img):
         percent = self.template.setPercentage(1, 0)
         # cv2.line(gray, (self.left, self.top), (self.right, self.bottom), (0,0,255), 1)
         # cv2.line(gray, (self.left, self.bottom), (self.right, self.top), (0,0,255), 1)
         # self.firstLine = self.left +15
 
+        # StripRegion.counter+=1
+        # if (StripRegion.counter!=3) :return
+
         win = sw.SlidingWindgow(const.SAMPLING_WIDTH)
         length = self.right - self.left
+
+        i = 0
         for p in percent:
+            # i += 1
+            # if (i!=2) :continue
             x = self.firstLine + p[0]*length -const.SAMPLING_WIDTH
             y = int(x*self.slope + self.bias)
             x = round(x)
-            value,offsetx = sl.SampleLine.getValue(img[y-const.SAMPLING_MINUS_Y_OFFSET:y+const.SAMPLING_Y_OFFSET,
-                                x:x+(const.SAMPLING_WIDTH<<2) ], win, self.bgColor)
+            colorValue,offsetx = sl.SampleLine.getValue(img[y-const.SAMPLING_MINUS_Y_OFFSET:y+const.SAMPLING_Y_OFFSET,
+                                x:x+(const.SAMPLING_WIDTH<<2) ], win)
             offsetx += x
-            self.__setSymbleDebug(img,int(offsetx),self.firstLine+int(p[1]*length), y )
+            self.__setSymbleDebug(img,int(offsetx),int(offsetx+const.SAMPLING_WIDTH), y )
+            colorValue = self.__removeBgColor(colorValue)
+            self.valueAndPosi.append([colorValue, 0.0,offsetx])
+
+        if (len(self.valueAndPosi)<len(percent)):
+            return -1
+        print('************ new strip *************')
+        cutOff = 0xff-self.valueAndPosi[1][0]
+        if cutOff==0:
+            return -2
+        for v in self.valueAndPosi:
+            v[1] = (0xff-v[0]) / cutOff
+            print("{:.1f}".format(v[1]), ',', end='')
+        print()
         cv2.imshow("bb", img)
         # cv2.waitKey()
 

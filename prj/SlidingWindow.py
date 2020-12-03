@@ -6,7 +6,7 @@ class SlidingWindgow:
         self.summary = np.zeros([width])
 
     def initData(self, data):
-        self.data = data
+        self.data = data.copy()
         i = data.shape[0]
         assert(i,self.width)
         while i>0:

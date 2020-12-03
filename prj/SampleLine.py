@@ -10,23 +10,37 @@ WHITE_THRESHOLD = SAMPLING_LINES * WHITE_THRESHOLD_BASE
 
 class SampleLine:
     @staticmethod
-    def getValue(data, slideWindow, bgColor):
+    def getValue(data, slideWindow):
+        data = np.swapaxes(data,0,1)
         i = const.SAMPLING_WIDTH
-        slideWindow.initData(data[:, :i])
+        slideWindow.initData(data[:i])
         min = slideWindow.total
-        x = 0
-        i1 = data.shape[1]
+        x = i
+        i1 = data.shape[0]
         while i<i1:
+            slideWindow.append(data[i])
             i += 1
-            slideWindow.append(data[:,i])
             if min>slideWindow.total:
                 min = slideWindow.total
                 x = i
-        value = SampleLine.__calculateValue(slideWindow.data, bgColor)
-        return value, x
+        value = SampleLine.__calculateValue(data[x-const.SAMPLING_WIDTH:x,:])
+        return value, x-const.SAMPLING_WIDTH
 
     @staticmethod
-    def __calculateValue( data, bgColor):
+    def __calculateValue( data):
+        count = data.size
+        data = data.reshape((-1))
+        data = np.sort(data)
+        i0 = (count>>3)
+        i1 = count>>2
+        value = np.average(data[i0:i1])
+        # value += 0xff - bgColor
+
+        # print("val:",value)
+        return value
+
+    @staticmethod
+    def __calculateYValue( data, bgColor):
         count = data.shape[0]
         data = np.sort(data)
         i0 = (count>>3)

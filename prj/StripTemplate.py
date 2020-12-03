@@ -26,8 +26,8 @@ class StripTemplate:
         while (i>fromIndex):
             i -= 1
             self.persentage[i] = ( (self.references[i][0]-offset)/length, (self.references[i][1]-offset)/length)
-        while i>0:
-            i -= 1
-            self.persentage[i] = (0.0,0.0)
+        # while i>0:
+        #     i -= 1
+        #     self.persentage[i] = (0.0,0.0)
 
-        return self.persentage
+        return self.persentage[i:-1]
