@@ -46,6 +46,8 @@ class StripRegion:
         if (total < StripRegion.FIRST_LINE_THRESHOLD):
             self.firstLine = i - (StripRegion.FIRST_LINE_WIDTH>>1)
             return True
+        else:
+            return False
 
     def __getBackground(self, i, data, record):
         for d in data:
@@ -117,12 +119,18 @@ class StripRegion:
         percent = self.template.setPercentage(1, 0)
         # cv2.line(gray, (self.left, self.top), (self.right, self.bottom), (0,0,255), 1)
         # cv2.line(gray, (self.left, self.bottom), (self.right, self.top), (0,0,255), 1)
-        self.firstLine = self.left +15
+        # self.firstLine = self.left +15
+
+        win = sw.SlidingWindgow(const.SAMPLING_WIDTH)
         length = self.right - self.left
         for p in percent:
-            x = self.firstLine + p[0]*length
+            x = self.firstLine + p[0]*length -const.SAMPLING_WIDTH
             y = int(x*self.slope + self.bias)
-            self.__setSymbleDebug(img,int(x),self.firstLine+int(p[1]*length), y )
+            x = round(x)
+            value,offsetx = sl.SampleLine.getValue(img[y-const.SAMPLING_MINUS_Y_OFFSET:y+const.SAMPLING_Y_OFFSET,
+                                x:x+(const.SAMPLING_WIDTH<<2) ], win, self.bgColor)
+            offsetx += x
+            self.__setSymbleDebug(img,int(offsetx),self.firstLine+int(p[1]*length), y )
         cv2.imshow("bb", img)
         # cv2.waitKey()
 
