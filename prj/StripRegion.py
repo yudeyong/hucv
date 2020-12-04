@@ -4,11 +4,13 @@ import utils
 import SampleLine as sl
 import const
 import SlidingWindow as sw
+import math
 
-
+DEBUG_SR = not False
+DEBUG_LINE = False
 
 class StripRegion:
-    BG_COLOR = True
+    BG_COLOR = False
     FIRST_LINE_WIDTH = 3
     FIRST_LINE_THRESHOLD = ((FIRST_LINE_WIDTH+1)>>2)*sl.SAMPLING_LINES*0xff
 
@@ -136,8 +138,11 @@ class StripRegion:
 
         i = 0
         for p in percent:
-            # i += 1
-            # if (i!=2) :continue
+            if DEBUG_LINE:
+                i += 1
+                if (i>2 and i!=8) :continue
+                elif i>2:
+                    i=i
             x = self.firstLine + p[0]*length -const.SAMPLING_WIDTH
             y = int(x*self.slope + self.bias)
             x = round(x)
@@ -146,20 +151,45 @@ class StripRegion:
             offsetx += x
             self.__setSymbleDebug(img,int(offsetx),int(offsetx+const.SAMPLING_WIDTH), y )
             colorValue = self.__removeBgColor(colorValue)
-            self.valueAndPosi.append([colorValue, 0.0,offsetx])
+            self.valueAndPosi.append([colorValue, 0.0, 0,offsetx])
 
-        if (len(self.valueAndPosi)<len(percent)):
-            return -1
+        if not DEBUG_LINE:
+            if (len(self.valueAndPosi)<len(percent)):
+                return -1
         print('************ new strip *************')
+        self.__setProcessValue()
+        cv2.imshow("bb", img)
+        # cv2.waitKey()
+
+    def __setProcessValue(self):
         cutOff = 0xff-self.valueAndPosi[1][0]
         if cutOff==0:
             return -2
         for v in self.valueAndPosi:
-            v[1] = (0xff-v[0]) / cutOff
-            print("{:.1f}".format(v[1]), ',', end='')
-        print()
-        cv2.imshow("bb", img)
-        # cv2.waitKey()
+            v[1] = StripRegion.__funcValue((0xff-v[0]) / cutOff)
+            v[2] = StripRegion.__setQualitative(v[1])
+            if DEBUG_SR :
+                print("{:.1f}".format(v[1]), ',', end='')
+        if DEBUG_SR :
+            print()
+            for v in self.valueAndPosi:
+                print(v[2], ',', end='')
+            print()
+
+    @staticmethod
+    def __setQualitative(v):
+        # v = math.sqrt(v)
+        if v<0.2 : return -2
+        if v<0.8 : return -1
+        if v<1.15 : return 0
+        if v<2.5 : return 1
+        if v<4 : return 2
+        return 3
+
+    @staticmethod
+    def __funcValue(v):
+        return v
+        return math.sqrt(v) if not DEBUG_LINE  else v
 
     def __getValuesByRegion(self, img):
         for line in self.samples:
