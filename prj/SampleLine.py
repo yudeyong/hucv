@@ -39,21 +39,20 @@ class SampleLine:
         # print("val:",value)
         return value
 
-    @staticmethod
-    def __calculateYValue( data, bgColor):
-        count = data.shape[0]
-        data = np.sort(data)
-        i0 = (count>>3)
-        i1 = count>>2
-
-        if (i1<2+i0):
-            i0 = 1
-            i1 = 4
-        value = np.average(data[i0:i1])
-        value += 0xff - bgColor
-
-        print(value)
-        return value
+    # @staticmethod
+    # def __calculateYValue( data):
+    #     count = data.shape[0]
+    #     data = np.sort(data)
+    #     i0 = (count>>3)
+    #     i1 = count>>2
+    #     if (i1<2+i0):
+    #         i0 = 1
+    #         i1 = 4
+    #     # value = np.average(data[i0:i1])
+    #     value = data[(i0 + i1)>>1]
+    #
+    #     print(value)
+    #     return value
 
     def __init__(self, data, x):
         self.lines = np.asarray(data)

@@ -3,6 +3,9 @@ import const
 import recognise
 import StripRegion
 import StripTemplate as st
+import config
+
+DEBUG_OUTLINE = False
 #gauss canny, 0 canny only, 3, 5
 GAUSS = 0
 
@@ -12,14 +15,6 @@ HOUGHLINESP = False
 BASE_LEFT = 60
 BASE_MARGIN = 47
 #############
-def loadTemplate(category):
-    arr = [['头', 18], ['blank', 9], ['Functonal Control', 2], ['blank', 6], ['Cut-Off Control', 2], ['blank', 6],
-           ['Jo-1', 2], ['blank', 6], ['Mi-2', 2], ['blank', 6], ['PM-Scl', 2], ['blank', 6], ['U1-snRNP', 2],
-           ['blank', 6], ['Ku', 2],
-           ['blank', 6], ['Ku', 2], ['blank', 6], ['Ku', 2], ['blank', 6], ['Ku', 2], ['blank', 6], ['Ku', 2],
-           ['blank', 6], ['Ku', 2], ['blank', 6], ['Ku', 2], ['blank', 6], ['Ku', 2],
-           ['blank', 83 - 56]]
-    return  st.StripTemplate('ganji', arr)
 
 def recognition(file, category):
     src = cv2.imread(file)
@@ -27,7 +22,9 @@ def recognition(file, category):
     if not recognise.checkShape( src.shape):
         print("invalid size.")
         return
-    template = loadTemplate(category)
+    template = config.loadTemplate(category)
+    if not template :
+        return "未找到配置文件"
     src = src[const.BOARD_Y:const.BOARD_Y + const.BOARD_HEIGHT, const.BOARD_X:const.BOARD_X + const.BOARD_WIDTH]
     ###cut borad from image
     stripHeads = template.findHeader(src)
@@ -44,8 +41,9 @@ def recognition(file, category):
             line = tailsLines[i]
             regions[i] = StripRegion.StripRegion(((rect[2], rect[3]),(line[2], line[3]),(rect[2], rect[1]),(line[0], line[1])),template)
             regions[i].findFuncLine(bw)
-            cv2.line(src, (rect[0], rect[3]), (line[2], line[3]), (255, 0, 0), 2)
-            cv2.line(src, (rect[0], rect[1]), (line[0], line[1]), (255, 0, 0), 2)
+            if DEBUG_OUTLINE:
+                cv2.line(src, (rect[0], rect[3]), (line[2], line[3]), (255, 0, 0), 2)
+                cv2.line(src, (rect[0], rect[1]), (line[0], line[1]), (255, 0, 0), 2)
             # cv2.line(src, (rect[0], rect[3]), (rect[2], rect[1]), (255, 0, 0), 2)
 
         recognise.recognise(gray, regions)
@@ -53,7 +51,7 @@ def recognition(file, category):
         #todo
         print(file,"header:",i,"tails:",tailsLines.shape[0])
     # cv2.imshow('bw',bw)
-    # cv2.imshow('src', src)
+    cv2.imshow('src', src)
     # cv2.imshow('result', gray)
     cv2.waitKey()
     return
@@ -63,7 +61,7 @@ def main():
     i=0x30
     while i<0x32:
         i+=1
-        recognition( ('samplew' ) +chr(i)+'.jpg', None)
+        recognition( ('samplew' ) +chr(i)+'.jpg', "ITC92000")
         cv2.waitKey(0)
 
 

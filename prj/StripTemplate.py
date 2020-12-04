@@ -8,13 +8,13 @@ RGB_GRAY = 0x10000
 
 class StripTemplate:
 
-    def __init__(self, name, array):
-        self.name = name
+    def __init__(self, jsonDic):
+        self.name = jsonDic['name']
         self.references = []
         self.titles = []
-        self.RGB_GRAY = 0x10000
-        self.THRESHOLD = 180
-
+        self.RGB_GRAY = jsonDic['RGB_GRAY']
+        self.THRESHOLD = jsonDic['THRESHOLD']
+        array = jsonDic['lines']
         posi = 0
         for line in array:
             if line[0]!='blank':

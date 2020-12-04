@@ -1,0 +1,21 @@
+{
+  "name" : "肌炎Myositis",
+  "lines": [["头",4],
+["blank",5],
+["Functonal Control",1],
+["blank",3],
+["Cut-Off Control",1],
+["blank",3],
+["Jo-1",1],
+["blank",3],
+["Mi-2",1],
+["blank",3],
+["PM-Scl",1],
+["blank",3],
+["U1-snRNP",1],
+["blank",3],
+["Ku",1],
+["blank",40]],
+  "RGB_GRAY": 65536,
+  "THRESHOLD": 180
+}

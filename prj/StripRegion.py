@@ -169,7 +169,7 @@ class StripRegion:
             v[1] = StripRegion.__funcValue((0xff-v[0]) / cutOff)
             v[2] = StripRegion.__setQualitative(v[1])
             if DEBUG_SR :
-                print("{:.1f}".format(v[1]), ',', end='')
+                print("{:.2f}".format(v[1]), ',', end='')
         if DEBUG_SR :
             print()
             for v in self.valueAndPosi:
@@ -179,12 +179,20 @@ class StripRegion:
     @staticmethod
     def __setQualitative(v):
         # v = math.sqrt(v)
-        if v<0.2 : return -2
-        if v<0.8 : return -1
-        if v<1.15 : return 0
-        if v<2.5 : return 1
-        if v<4 : return 2
-        return 3
+        if False:
+            if v<0.2 : return -2
+            if v<0.8 : return -1
+            if v<1.15 : return 0
+            if v<2.5 : return 1
+            if v<4 : return 2
+            return 3
+        else:
+            if v<0.2 : return ''
+            if v<0.8 : return '-'
+            if v<1.15 : return 'o'
+            if v<2.5 : return '+'
+            if v<4 : return '++'
+            return '+++'
 
     @staticmethod
     def __funcValue(v):
