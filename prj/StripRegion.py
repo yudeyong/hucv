@@ -8,6 +8,7 @@ import SlidingWindow as sw
 
 
 class StripRegion:
+    BG_COLOR = True
     FIRST_LINE_WIDTH = 3
     FIRST_LINE_THRESHOLD = ((FIRST_LINE_WIDTH+1)>>2)*sl.SAMPLING_LINES*0xff
 
@@ -71,6 +72,7 @@ class StripRegion:
             lastSample[0] = i
 
     def __getBkColor(self, gray):
+        if not StripRegion.BG_COLOR: return
         colors = [[0,0]] * 16
         self.__traversal(gray, self.left, self.__getBackground, colors)
 
@@ -118,7 +120,7 @@ class StripRegion:
     ############  deprecated  ###########
     # counter = 0
     def __removeBgColor(self, value):
-        value + self.bgColor
+        value += self.bgColor
         return value if value<0xff else 0xff
     def __getValuesByPostion(self, img):
         percent = self.template.setPercentage(1, 0)
