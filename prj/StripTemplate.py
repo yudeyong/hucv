@@ -1,3 +1,10 @@
+import findHeaders as header
+import findTails as tail
+
+THRESHOLD = 130
+
+# rgb to gray value: None or R,G,B to gray value: 0x1 r, 0x100 g, 0x10000 b
+RGB_GRAY = 0x10000
 
 class StripTemplate:
 
@@ -5,6 +12,9 @@ class StripTemplate:
         self.name = name
         self.references = []
         self.titles = []
+        self.RGB_GRAY = 0x10000
+        self.THRESHOLD = 180
+
         posi = 0
         for line in array:
             if line[0]!='blank':
@@ -31,3 +41,10 @@ class StripTemplate:
         #     self.persentage[i] = (0.0,0.0)
 
         return self.persentage[i:-1]
+
+    def findHeader(self, src):
+        return header.findHeader(src, self.RGB_GRAY, self.THRESHOLD)
+
+    def findTails(self, src):
+        THRESHOLD = 205
+        return tail.findTails(src, THRESHOLD)

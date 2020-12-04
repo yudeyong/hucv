@@ -14,16 +14,13 @@ def toGray(img, rgb_gray):
             cv2.imshow('1-r', r)
             cv2.imshow('2-g', g)
             cv2.imshow('3-b', b)
+            cv2.waitKey()
         if rgb_gray==0x01:
             gray = r
         elif rgb_gray==0x100:
             gray = b
         else :
             gray = g
-        # cv2.imshow('1-r channel-gray.png', r)
-        # cv2.imshow('1-g channel-gray.png', g)
-        # cv2.imshow('1-b channel-gray.png', b)
-        # cv2.waitKey()
     # gray = r
     return gray
 

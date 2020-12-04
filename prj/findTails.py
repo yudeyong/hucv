@@ -3,12 +3,9 @@ import numpy as np
 import utils
 import const
 
-THRESHOLD = 205
+DEBUG_TAIL = False
 #gauss canny, 0 canny only, 3, 5
 GAUSS = 0
-
-# rgb to gray value: None or R,G,B to gray value: 0x1 r, 0x100 b, 0x10000 g
-RGB_GRAY = None
 
 #膜条左侧基准padding
 BASE_LEFT = 60
@@ -31,16 +28,17 @@ def clipLines(lines, slopes, func):
     # cv2.line(src, (x1, y1), (x2, target2), (0, 0, 255), 1)
     sameLines = set()
     while (i > 0):
-        y = lines[i][1]
+        y0 = lines[i][1]
+        y1 = lines[i][3]
         i -= 1
         old1 = target1
         old2 = target2
         target1, target2 = func(lines[i])
-        if (abs(old1 - target1) < throshold and abs(old2 - target2) < throshold) and (slopes is not None or abs(lines[i][1]-y) < const.STRIP_HALF_WIDTH) or abs(lines[i][3]-y) < const.STRIP_HALF_WIDTH:
+        if (abs(old1 - target1) < throshold and abs(old2 - target2) < throshold) and (slopes is not None or abs(lines[i][1]-y0) < const.STRIP_HALF_WIDTH) or abs(lines[i][3]-y1) < const.STRIP_HALF_WIDTH:
             cleanArray.append(i)
             if slopes is not None:
                 del slopes[i]
-            elif abs(lines[i][1]-y) >= const.STRIP_HALF_WIDTH and abs(lines[i][3]-y) < const.STRIP_HALF_WIDTH:
+            elif abs(lines[i][1]-y0) >= const.STRIP_HALF_WIDTH and abs(lines[i][3]-y1) < const.STRIP_HALF_WIDTH:
                 # 连接线
                 lines[i+1][1]=lines[i][1]
                 lines[i+1][0]= round((lines[i][0]+lines[i+1][0])/2)
@@ -190,16 +188,19 @@ def getTails(tailImg):
     # cv2.imshow('tail', rightImg)
     return lines
 
-def findTails(src):
-    gray =  utils.toGray(src, RGB_GRAY)
-    if __name__ == '__main__':
+def findTails(src, THRESHOLD):
+    gray =  utils.toGray(src, None)
+    if DEBUG_TAIL:
         cv2.imshow('1-gray', gray)
     _, bw = cv2.threshold(gray, THRESHOLD, 255.0, cv2.THRESH_BINARY)
 
 
     tailImg = resize(bw[:, -BOARD_RIGHT_WIDTH:], 1, SCALABLE_Y)
-    if __name__ == '__main__':
+    if DEBUG_TAIL:
+        COLORS = [(0xff,0,0),(0,0xff,0),(0,0,0xff), (0xff,0,0xff),(0,0xff,0xff),(0xff,0xff,0)]
+        colorValue = 3
         cv2.imshow('2-bw', tailImg)
+        i=0
 
     # canny = utils.toCanny(bw, GAUSS)
     # lines = getLines(canny, src)
@@ -207,16 +208,21 @@ def findTails(src):
     lines = getTails(tailImg)
     if lines is not None:
         x = src.shape[1]-BOARD_RIGHT_WIDTH
-        print("tail:",len(lines))
+        # print("tail:",len(lines))
         for line in lines:
             line[0] += x
             line[2] += x
-            cv2.line(src, (line[0], line[1] ), (line[2], line[3] ), (255, 0, 0), 2)
-    if __name__ == '__main__':
-        cv2.imshow('result', src)
+            if DEBUG_TAIL:
+                i+=1
+                if i>=10 and i<=11:
+                    colorValue += 1
+                    if colorValue>=5: colorValue = 0
+                    cv2.line(src, (line[0], line[1]-10 ), (line[2], line[3]+10 ), COLORS[colorValue], 3)
+    if DEBUG_TAIL:
+        cv2.imshow('tail-result', src)
     return lines, gray, bw
 
-def recognition(file):
+def __debugRecognition(file):
     src = cv2.imread(file)
     ###cut borad from image
     src = src[const.BOARD_Y:const.BOARD_Y + const.BOARD_HEIGHT, const.BOARD_X:const.BOARD_X + const.BOARD_WIDTH]
@@ -227,7 +233,7 @@ def main():
     i=0x30
     while i<0x31:
         i+=1
-        recognition( ('samplew') +chr(i)+'.jpg')
+        __debugRecognition( ('samplew') +chr(i)+'.jpg')
         cv2.waitKey(0)
 
 

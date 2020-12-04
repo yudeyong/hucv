@@ -3,12 +3,7 @@ import numpy as np
 import const
 import utils
 
-THRESHOLD = 130
-
-# rgb to gray value: None or R,G,B to gray value: 0x1 r, 0x100 g, 0x10000 b
-RGB_GRAY = 0x10000
-
-
+DEBUG_HEADER = False
 BOARD_DETECT_WIDTH= 100
 
 def checkRectRange(points):
@@ -30,14 +25,15 @@ def checkRectRange(points):
     # print("yes")
     return (minX, minY, maxX, maxY)
 
-def findHeader(src):
+def findHeader(src, RGB_GRAY, THRESHOLD):
     srcDetect = src[:, :BOARD_DETECT_WIDTH]
 
     gray = utils.toGray(srcDetect, RGB_GRAY)
     # cv2.imshow('1-gray', gray)
     _, bw = cv2.threshold(gray, THRESHOLD, 255.0, cv2.THRESH_BINARY)
 
-    # cv2.imshow('2-bw', bw)
+    if DEBUG_HEADER:
+        cv2.imshow('header-bw', bw)
     contours, hierarchy = cv2.findContours(bw, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
     i = len(contours)
@@ -50,6 +46,8 @@ def findHeader(src):
             approx = cnt  # cv2.approxPolyDP(cnt, 0.02*cv2.arcLength(cnt,True),True)
             if stripHeader:
                 stripHeads.append(stripHeader)
-                # cv2.drawContours(srcDetect, [approx.reshape(-1, 1, 2)], 0, (250, 0, 0), 2)
-    # cv2.imshow('1-gray', src)
+                if DEBUG_HEADER:
+                    cv2.drawContours(srcDetect, [approx.reshape(-1, 1, 2)], 0, (250, 0, 0), 2)
+    if DEBUG_HEADER:
+        cv2.imshow('header-src', src)
     return stripHeads
