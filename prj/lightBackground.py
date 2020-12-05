@@ -57,7 +57,7 @@ def main():
     i=0x30
     while i<0x32:
         i+=1
-        recognition( ('samplew' ) +chr(i)+'.jpg', "ITC92000")
+        recognition( ('./samples/samplew' ) +chr(i)+'.jpg', "ITC92000")
         cv2.waitKey(0)
 
 

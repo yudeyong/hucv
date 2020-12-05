@@ -7,7 +7,7 @@ import SlidingWindow as sw
 import math
 
 DEBUG_SR = not False
-DEBUG_LINE = not False
+DEBUG_LINE =  False
 
 DEBUG_STRIP = False
 
@@ -156,7 +156,7 @@ class StripRegion:
         for p in percent:
             if DEBUG_LINE:
                 i += 1
-                if (i>2 and i!=13 and i!=14) :continue
+                if (i>2 and i!=13 and i!=14) : pass#continue
                 elif i>2:
                     i=i
             x = self.firstLine + p[0]*length -const.SAMPLING_WIDTH
@@ -165,6 +165,7 @@ class StripRegion:
             colorValue,offsetx = sl.SampleLine.getValue(img[y-const.SAMPLING_MINUS_Y_OFFSET:y+const.SAMPLING_Y_OFFSET,
                                 x:x+(const.SAMPLING_WIDTH<<2) ], win)
             offsetx += x
+            self.__setSymbleDebug(img,int(x), x+(const.SAMPLING_WIDTH<<2), y-12 )
             self.__setSymbleDebug(img,int(offsetx),int(offsetx+const.SAMPLING_WIDTH), y )
             colorValue = self.__removeBgColor(colorValue)
             self.valueAndPosi.append([colorValue, 0.0, 0,offsetx])

@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-
+import const
 
 ## rgb to gray value: None or R,G,B to gray value: 0x1 r, 0x100 b, 0x10000 g
 #   RGB_GRAY = 0x10000
@@ -35,24 +35,32 @@ def toCanny(bw, gaussian):
         return cannyGaus
 
 #合并相近平行线
-def mergeLine(linesSet, lines, slopes):
+def mergeLine(linesSet, lines):
     x1,y1,x2,y2=0,0,0,0
-    max = 0
-    min = lines.shape[0]
+    avg = 0
+    maxV = 0
+    # minV = lines.shape[0]
+    l = len(linesSet)
+
+    #引入平均值, 过滤标准差较大点
+    if l>2:
+        minSet = min(linesSet)
+        maxSet = max(linesSet)
+        avg = lines[minSet:maxSet+1,0].mean()
     for i in linesSet:
-        if i > max : max = i
-        if i < min : min = i
+        if i > maxV : maxV = i
+        # if i < minV : minV = i
+        if l>2 and abs(lines[i][0]-avg)>(const.SAMPLING_WIDTH<<2):
+            l -= 1
+            continue
         x1+= lines[i][0]
         x2+= lines[i][2]
         y1 += lines[i][1]
         y2 += lines[i][3]
-    l = len(linesSet)
-    lines[max][0]=round(x1/l)
-    lines[max][1]=round(y1/l)
-    lines[max][2]=round(x2/l)
-    lines[max][3]=round(y2/l)
-    if slopes is not None:
-        slopes[min] = getSlopeBias(lines[i])
+    lines[maxV][0]=round(x1/l) if x1!=0 else avg
+    lines[maxV][1]=round(y1/l)
+    lines[maxV][2]=round(x2/l) if x1!=0 else avg
+    lines[maxV][3]=round(y2/l)
 
 #获取斜率,截距
 def getSlopeBiasByPoints(p1, p2):

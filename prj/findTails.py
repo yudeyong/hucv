@@ -3,7 +3,7 @@ import numpy as np
 import utils
 import const
 
-DEBUG_TAIL = False
+DEBUG_TAIL =  False
 #gauss canny, 0 canny only, 3, 5
 GAUSS = 0
 
@@ -17,8 +17,8 @@ SCALABLE_Y=3
 #############
 
 #slopes = None时, 按尾部合并检查
-def clipLines(lines, slopes, func):
-    throshold = const.STRIP_HALF_WIDTH*SCALABLE_Y if slopes is None else const.STRIP_HALF_WIDTH
+def clipLines(lines, func):
+    throshold = const.STRIP_HALF_WIDTH*SCALABLE_Y
     # 按y1排序
     lines = lines[np.lexsort(lines.T[1, None])]
     i = lines.shape[0] - 1
@@ -34,11 +34,9 @@ def clipLines(lines, slopes, func):
         old1 = target1
         old2 = target2
         target1, target2 = func(lines[i])
-        if (abs(old1 - target1) < throshold and abs(old2 - target2) < throshold) and (slopes is not None or abs(lines[i][1]-y0) < const.STRIP_HALF_WIDTH) or abs(lines[i][3]-y1) < const.STRIP_HALF_WIDTH:
+        if (abs(old1 - target1) < throshold and abs(old2 - target2) < throshold) and ( abs(lines[i][1]-y0) < const.STRIP_HALF_WIDTH) or abs(lines[i][3]-y1) < const.STRIP_HALF_WIDTH:
             cleanArray.append(i)
-            if slopes is not None:
-                del slopes[i]
-            elif abs(lines[i][1]-y0) >= const.STRIP_HALF_WIDTH and abs(lines[i][3]-y1) < const.STRIP_HALF_WIDTH:
+            if abs(lines[i][1]-y0) >= const.STRIP_HALF_WIDTH and abs(lines[i][3]-y1) < const.STRIP_HALF_WIDTH:
                 # 连接线
                 lines[i+1][1]=lines[i][1]
                 lines[i+1][0]= round((lines[i][0]+lines[i+1][0])/2)
@@ -49,18 +47,18 @@ def clipLines(lines, slopes, func):
             sameLines.add(i + 1)
             continue
         elif (len(sameLines) > 0):
-            utils.mergeLine(sameLines, lines, slopes)
+            utils.mergeLine(sameLines, lines)
             sameLines = set()
     if (len(sameLines) > 0):
-        utils.mergeLine(sameLines, lines, slopes)
+        utils.mergeLine(sameLines, lines)
     # return lines
     if len(cleanArray) > 0:  # 删除重复线
         lines = np.delete(lines, cleanArray, 0)
     return lines
 
 #整体过滤线, 竖线, 相近线合并
-def clipStripLines(lines, src, slopes):
-    lines = clipLines(lines, slopes, utils.getYFromLine)
+def clipStripLines(lines, src):
+    lines = clipLines(lines, utils.getYFromLine)
     # debug only {{
     w = src.shape[1] - 1;
     for line in lines:
@@ -141,11 +139,11 @@ def getTailLines(img, src) :
                     lines2[i][1] = y2
                     lines2[i][3] = y1
 
-        if len(cleanArray)>0: #删除竖线
+        if len(cleanArray)>0: #删除横线
             lines2 = np.delete(lines2, cleanArray,0)
         # return lines2
         if lines2.shape[0]>0:
-            return clipLines(lines2, None, utils.getXFromLine)
+            return clipLines(lines2, utils.getXFromLine)
     return None
 
 def resize(img, xTimes, yTimes):
@@ -198,7 +196,7 @@ def findTails(src, THRESHOLD):
     tailImg = resize(bw[:, -BOARD_RIGHT_WIDTH:], 1, SCALABLE_Y)
     if DEBUG_TAIL:
         COLORS = [(0xff,0,0),(0,0xff,0),(0,0,0xff), (0xff,0,0xff),(0,0xff,0xff),(0xff,0xff,0)]
-        colorValue = 3
+        colorValue = 1
         cv2.imshow('2-bw', tailImg)
         i=0
 
@@ -214,10 +212,11 @@ def findTails(src, THRESHOLD):
             line[2] += x
             if DEBUG_TAIL:
                 i+=1
-                if i>=10 and i<=11:
+                if i>=-10 and i<=11:
                     colorValue += 1
                     if colorValue>=5: colorValue = 0
-                    cv2.line(src, (line[0], line[1]-10 ), (line[2], line[3]+10 ), COLORS[colorValue], 3)
+
+                    cv2.line(src, (line[0], line[1]-10 ), (line[2], line[3]+10 ), COLORS[colorValue], 2)
     if DEBUG_TAIL:
         cv2.imshow('tail-result', src)
     return lines, gray, bw

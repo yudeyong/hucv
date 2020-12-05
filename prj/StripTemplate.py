@@ -26,8 +26,8 @@ class StripTemplate:
                 self.titles.append(line[0])
             posi += line[1]
         self.references.append((posi, posi))
+        self.persentage = [[0.0,0.0]] * len(self.references)
         self.titles.append("tail")
-        self.persentage = [0.0] * len(self.references)
 
     def __checkShape(self, shape):
         return shape[0] < self.VALID_XY[3] and shape[0] > self.VALID_XY[2] \
@@ -54,7 +54,7 @@ class StripTemplate:
         # while i>0:
         #     i -= 1
         #     self.persentage[i] = (0.0,0.0)
-
+        # return self.persentage
         return self.persentage[i:-1]
 
     def findHeader(self, src):
