@@ -25,5 +25,7 @@
 ["Jo-1",1],
 ["blank",13]],
   "RGB_GRAY": 1,
-  "THRESHOLD": 180
+  "THRESHOLD": 180,
+  "VALID_XY" : [1732, 1772, 1222, 1258],
+  "BOARD_AREA" : [100,195,465,640]
 }

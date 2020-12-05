@@ -1,7 +1,7 @@
 import cv2
 import const
 import recognise
-import StripRegion
+import StripRegion as sr
 import StripTemplate as st
 import config
 
@@ -17,41 +17,37 @@ BASE_MARGIN = 47
 #############
 
 def recognition(file, category):
-    src = cv2.imread(file)
     # cv2.imshow('src', src)
-    if not recognise.checkShape( src.shape):
-        print("invalid size.")
-        return
     template = config.loadTemplate(category)
     if not template :
         return "未找到配置文件"
-    src = src[const.BOARD_Y:const.BOARD_Y + const.BOARD_HEIGHT, const.BOARD_X:const.BOARD_X + const.BOARD_WIDTH]
+    src, err = template.getImg(file)
+    if err :
+        return err
     ###cut borad from image
     stripHeads = template.findHeader(src)
     tailsLines, gray, bw = template.findTails(src)
     i = len(stripHeads)
     if i == tailsLines.shape[0]:
-
-
         # i 个区域,4个顶点,(x,y)
         regions = [None]*i
         while i>0:
             i -= 1
             rect = stripHeads[i]
             line = tailsLines[i]
-            regions[i] = StripRegion.StripRegion(((rect[2], rect[3]),(line[2], line[3]),(rect[2], rect[1]),(line[0], line[1])),template)
+            regions[i] = sr.StripRegion(((rect[2], rect[3]),(line[2], line[3]),(rect[2], rect[1]),(line[0], line[1])),template)
             regions[i].findFuncLine(bw)
             if DEBUG_OUTLINE:
                 cv2.line(src, (rect[0], rect[3]), (line[2], line[3]), (255, 0, 0), 2)
                 cv2.line(src, (rect[0], rect[1]), (line[0], line[1]), (255, 0, 0), 2)
             # cv2.line(src, (rect[0], rect[3]), (rect[2], rect[1]), (255, 0, 0), 2)
 
-        recognise.recognise(gray, regions)
+        sr.StripRegion.recognise(gray, regions)
     else:
         #todo
         print(file,"header:",i,"tails:",tailsLines.shape[0])
     # cv2.imshow('bw',bw)
-    cv2.imshow('src', src)
+    # cv2.imshow('src', src)
     # cv2.imshow('result', gray)
     cv2.waitKey()
     return

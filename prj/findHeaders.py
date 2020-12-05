@@ -8,7 +8,7 @@ BOARD_DETECT_WIDTH= 100
 
 def checkRectRange(points):
     if points.shape[0] < 3: return None
-    minX, minY = const.BOARD_WIDTH, const.BOARD_HEIGHT
+    minX, minY = 0x7fff, 0x7fff
     maxX, maxY = 0, 0
     for p in points:
         if p[0][0] > maxX: maxX = p[0][0]

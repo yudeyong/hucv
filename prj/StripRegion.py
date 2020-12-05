@@ -7,7 +7,10 @@ import SlidingWindow as sw
 import math
 
 DEBUG_SR = not False
-DEBUG_LINE = False
+DEBUG_LINE = not False
+
+DEBUG_STRIP = False
+
 
 class StripRegion:
     BG_COLOR = False
@@ -30,6 +33,19 @@ class StripRegion:
         self.slope,self.bias = utils.getSlopeBiasByPoints(
             (self.left, (points[0][1] + points[2][1]) >> 1), (self.right, (points[1][1] + points[3][1]) >> 1))
         self.valueAndPosi = []
+
+    @staticmethod
+    def recognise(gray, regions):
+        if DEBUG_STRIP:
+            i = 0
+        for region in regions:
+            if DEBUG_STRIP:
+                i += 1
+                if i != 2: continue
+            if StripRegion.BG_COLOR:
+                region.readStrip(gray)
+            else:
+                region.getValuesByPostion(gray)
 
     def __getDataByX(self, img, x):
         y = int(x * self.slope + self.bias)
@@ -84,7 +100,7 @@ class StripRegion:
     def readStrip(self, gray):
         self.__getBkColor(gray)
 
-        self.__getValuesByPostion(gray)
+        self.getValuesByPostion(gray)
 
         return
     '''
@@ -124,7 +140,7 @@ class StripRegion:
     def __removeBgColor(self, value):
         value += self.bgColor
         return value if value<0xff else 0xff
-    def __getValuesByPostion(self, img):
+    def getValuesByPostion(self, img):
         percent = self.template.setPercentage(1, 0)
         # cv2.line(gray, (self.left, self.top), (self.right, self.bottom), (0,0,255), 1)
         # cv2.line(gray, (self.left, self.bottom), (self.right, self.top), (0,0,255), 1)
@@ -140,7 +156,7 @@ class StripRegion:
         for p in percent:
             if DEBUG_LINE:
                 i += 1
-                if (i>2 and i!=8) :continue
+                if (i>2 and i!=13 and i!=14) :continue
                 elif i>2:
                     i=i
             x = self.firstLine + p[0]*length -const.SAMPLING_WIDTH
