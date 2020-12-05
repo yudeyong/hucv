@@ -18,7 +18,7 @@ SCALABLE_Y=3
 
 #slopes = None时, 按尾部合并检查
 def clipLines(lines, func):
-    throshold = const.STRIP_HALF_WIDTH*SCALABLE_Y
+    # throshold = const.STRIP_HALF_WIDTH#*SCALABLE_Y
     # 按y1排序
     lines = lines[np.lexsort(lines.T[1, None])]
     i = lines.shape[0] - 1
@@ -34,7 +34,8 @@ def clipLines(lines, func):
         old1 = target1
         old2 = target2
         target1, target2 = func(lines[i])
-        if (abs(old1 - target1) < throshold and abs(old2 - target2) < throshold) and ( abs(lines[i][1]-y0) < const.STRIP_HALF_WIDTH) or abs(lines[i][3]-y1) < const.STRIP_HALF_WIDTH:
+        #if (abs(old1 - target1) < throshold and abs(old2 - target2) < throshold) and\
+        if        ( abs(lines[i][1]-y0) < const.STRIP_HALF_HEIGHT or abs(lines[i][3]-y1) < const.STRIP_HALF_HEIGHT):
             cleanArray.append(i)
             if abs(lines[i][1]-y0) >= const.STRIP_HALF_WIDTH and abs(lines[i][3]-y1) < const.STRIP_HALF_WIDTH:
                 # 连接线
@@ -57,63 +58,63 @@ def clipLines(lines, func):
     return lines
 
 #整体过滤线, 竖线, 相近线合并
-def clipStripLines(lines, src):
-    lines = clipLines(lines, utils.getYFromLine)
-    # debug only {{
-    w = src.shape[1] - 1;
-    for line in lines:
-        _, y1, _, y2 = line
-        cv2.line(src, (BASE_LEFT, y1), (w, y2), (0, 0, 255), 1)
+# def clipStripLines(lines, src):
+#     lines = clipLines(lines, utils.getYFromLine)
+#     # debug only {{
+#     w = src.shape[1] - 1;
+#     for line in lines:
+#         _, y1, _, y2 = line
+#         cv2.line(src, (BASE_LEFT, y1), (w, y2), (0, 0, 255), 1)
+#
+#     # print(lines.shape[0])
+#     i = lines.shape[0]
+#     while (i > 1):
+#         i -= 1
+#         y1 = lines[i][1] - lines[i - 1][1]
+#         y2 = lines[i][3] - lines[i - 1][3]
+#         # print(y1, y2)
+#         i -= 1
+#     # }}
+#     return lines
 
-    # print(lines.shape[0])
-    i = lines.shape[0]
-    while (i > 1):
-        i -= 1
-        y1 = lines[i][1] - lines[i - 1][1]
-        y2 = lines[i][3] - lines[i - 1][3]
-        # print(y1, y2)
-        i -= 1
-    # }}
-    return lines
-
-#生成轮廓线
-def getLines(img, src) :
-    lines1 = cv2.HoughLinesP(img, 1.2, np.pi / 240, 70, minLineLength=100, maxLineGap=20)
-    if lines1 is not None:
-        lines2 = lines1[:, 0, :]
-        i = lines2.shape[0];
-        w = src.shape[1]-1;
-        cleanArray = []
-        slopes = [None,None]*i
-        while (i>0):
-            i -= 1
-            x1, y1, x2, y2 = lines2[i]
-
-            if abs(x1-x2)<=abs(y1-y2) :
-                #过滤竖线
-                cleanArray.append(i)
-                del slopes[i]
-                continue
-
-            slope,b=utils.getSlopeBias((x1,y1,x2,y2))
-            # slope = (y2-y1)/(x2-x1)
-            # b = (x1*y2-x2*y1)/(x1-x2)
-            slopes[i]=(slope,b)
-            # cv2.line(src, (x1, y1), (x2, y2), (0, 0, 255), 1)
-
-            #扩展线到整个膜条
-            y1 = round(slope*BASE_LEFT+b)
-            y2 = round(slope*w+b)
-            lines2[i] = (BASE_LEFT,y1, w, y2)
-            # break
-        if len(cleanArray)>0: #删除竖线
-            lines2 = np.delete(lines2, cleanArray,0)
-            # lines2 = np.column_stack((lines1[:], slope))
-        return clipStripLines(lines2, src ,slopes )
-    else :
-        return None
-
-    return lines
+# #生成轮廓线
+# def getLines(img, src) :
+#     lines1 = cv2.HoughLinesP(img, 1.2, np.pi / 240, 70, minLineLength=100, maxLineGap=20)
+#     if lines1 is not None:
+#         lines2 = lines1[:, 0, :]
+#         i = lines2.shape[0];
+#         w = src.shape[1]-1;
+#         cleanArray = []
+#         slopes = [None,None]*i
+#         while (i>0):
+#             i -= 1
+#             x1, y1, x2, y2 = lines2[i]
+#
+#             if abs(x1-x2)<=abs(y1-y2) :
+#                 #过滤竖线
+#                 cleanArray.append(i)
+#                 del slopes[i]
+#                 continue
+#
+#             slope,b=utils.getSlopeBias((x1,y1,x2,y2))
+#             # slope = (y2-y1)/(x2-x1)
+#             # b = (x1*y2-x2*y1)/(x1-x2)
+#             slopes[i]=(slope,b)
+#             # cv2.line(src, (x1, y1), (x2, y2), (0, 0, 255), 1)
+#
+#             #扩展线到整个膜条
+#             y1 = round(slope*BASE_LEFT+b)
+#             y2 = round(slope*w+b)
+#             lines2[i] = (BASE_LEFT,y1, w, y2)
+#             # break
+#         if len(cleanArray)>0: #删除竖线
+#             lines2 = np.delete(lines2, cleanArray,0)
+#             # lines2 = np.column_stack((lines1[:], slope))
+#         return clipStripLines(lines2, src ,slopes )
+#     else :
+#         return None
+#
+#     return lines
 
 def getTailLines(img, src) :
     lines1 = cv2.HoughLinesP(img, 0.8, np.pi / 200, 40, minLineLength=10, maxLineGap=7)

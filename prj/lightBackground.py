@@ -1,6 +1,5 @@
 import cv2
 import const
-import recognise
 import StripRegion as sr
 import StripTemplate as st
 import config

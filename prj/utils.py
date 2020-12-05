@@ -50,7 +50,7 @@ def mergeLine(linesSet, lines):
     for i in linesSet:
         if i > maxV : maxV = i
         # if i < minV : minV = i
-        if l>2 and abs(lines[i][0]-avg)>(const.SAMPLING_WIDTH<<2):
+        if l>2 and abs(lines[i][0]-avg)>(const.SAMPLING_WIDTH<<1):
             l -= 1
             continue
         x1+= lines[i][0]
