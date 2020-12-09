@@ -3,7 +3,7 @@ import numpy as np
 import utils
 import const
 
-DEBUG_TAIL =  False
+DEBUG_TAIL =   False
 #gauss canny, 0 canny only, 3, 5
 GAUSS = 0
 
@@ -193,6 +193,7 @@ def findTails(src, THRESHOLD):
         cv2.imshow('1-gray', gray)
     _, bw = cv2.threshold(gray, THRESHOLD, 255.0, cv2.THRESH_BINARY)
 
+    #cv2.imshow('tail', bw)
 
     tailImg = resize(bw[:, -BOARD_RIGHT_WIDTH:], 1, SCALABLE_Y)
     if DEBUG_TAIL:
