@@ -1,6 +1,7 @@
-import findHeaders as header
-import findTails as tail
+import findHeaders
+import utils
 import cv2
+import StripRegion
 
 THRESHOLD = 130
 
@@ -10,6 +11,8 @@ THRESHOLD = 130
 
 class StripTemplate:
 
+    X_TIMES = 2
+    Y_TIMES = 2
     def __init__(self, jsonDic):
         self.name = jsonDic['name']
         self.references = []
@@ -58,8 +61,23 @@ class StripTemplate:
         return self.persentage[i:-1]
 
     def findHeader(self, src):
-        return header.findHeader(src, self.RGB_GRAY, self.THRESHOLD)
+        src = utils.shrink3(src, StripTemplate.X_TIMES, StripTemplate.Y_TIMES)
+        header, funcLines = findHeaders.findHeader(src, self.RGB_GRAY, self.THRESHOLD)
+        i = len(header)
+        strips =[None]*i
 
-    def findTails(self, src):
-        THRESHOLD = 205
-        return tail.findTails(src, THRESHOLD)
+        for h in funcLines:
+            for p in h:
+                p[0] = p[0] * StripTemplate.X_TIMES
+                p[1] = p[1] * StripTemplate.Y_TIMES
+        for h in header:
+            i -= 1
+
+            for p in h:
+                p[0] = p[0]*StripTemplate.X_TIMES
+                p[1] = p[1]*StripTemplate.Y_TIMES
+
+            strips[i] = StripRegion.StripRegion(h,self)
+            strips[i].matchFuncLine(funcLines)
+
+        return strips

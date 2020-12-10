@@ -78,7 +78,6 @@ def __showDebug(name,img):
 
 
 def findHeader(src, RGB_GRAY, THRESHOLD):
-    src = utils.shrink3(src, 2, 2)
     srcDetect = src[:, :BOARD_DETECT_WIDTH]
 
     gray = utils.toGray(srcDetect, RGB_GRAY)
@@ -151,10 +150,10 @@ def findHeader(src, RGB_GRAY, THRESHOLD):
         if CANNY_GAUSS:
             # for header in stripHeads:
             #     utils.drawMidLineBy2P(src, header, -5)
-            for points in funcLines:
-                utils.drawRectBy4P(src, points)
+            # for points in funcLines:
+            #     utils.drawRectBy4P(src, points)
             # for points in stripPoints:
             #     utils.drawMidLineBy4P(src, points, -5)
             pass
         cv2.imshow('header-src', src)
-    return stripPoints #stripHeads
+    return stripPoints, funcLines #stripHeads

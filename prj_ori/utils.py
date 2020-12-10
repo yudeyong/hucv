@@ -198,11 +198,11 @@ def drawMidLineBy2P(src, p, i):
     p = ((p[0], p[1]), (p[2], p[1]), (p[0], p[3]), (p[2], p[3]))
     drawMidLineBy4P(src, p, i)
 
-def drawMidLineBy4P(src, p, i):
+def mid2PBy4P(p):
     p1 = ((p[0][0] + p[2][0]) >> 1, (p[0][1] + p[2][1]) >> 1 )
-    p2 = ((p[1][0] + p[3][0]) >> 1, (p[1][1] + p[3][1]) >> 1 )
+    return p1,((p[1][0] + p[3][0]) >> 1, (p[1][1] + p[3][1]) >> 1 )
 
-    k,b = getSlopeBiasByPoints(p1,p2)
+def drawFullLine(src, p, k, b, i):
     x2 = src.shape[0]
     y2 = round(k*x2+b)
 
@@ -210,17 +210,23 @@ def drawMidLineBy4P(src, p, i):
         c = (255*(i&1),255*(i&2), 255*(i&4))
     else :
         c = (0xff,0,0xff*(i & 1))
-    cv2.line(src,p1, (x2, y2), c,2-(i<0)*1)
+
+    cv2.line(src,p, (x2, y2), c,2-(i<0)*1)
+
+def drawMidLineBy4P(src, p, i):
+    k, b = getSlopeBiasByPoints(mid2PBy4P(p))
+    p1 = ((p[0][0] + p[2][0]) >> 1, (p[0][1] + p[2][1]) >> 1 )
+    drawFullLine(src,p1, k, b, i)
 
 def mergePoints(p1, p2):
     return ((p1[0]+p2[0])>>1,(p1[1]+p2[1])>>1,
             (p1[2]+p2[2])>>1,(p1[3]+p2[3])>>1)
 
 def mergeRect(p1, p2):
-    return (((p1[0][0]+p2[0][0])>>1,(p1[0][1]+p2[0][1])>>1),
-            ((p1[1][0]+p2[1][0])>>1,(p1[1][1]+p2[1][1])>>1),
-            ((p1[2][0]+p2[2][0])>>1,(p1[2][1]+p2[2][1])>>1),
-            ((p1[3][0]+p2[3][0])>>1,(p1[3][1]+p2[3][1])>>1))
+    return [[(p1[0][0]+p2[0][0])>>1,(p1[0][1]+p2[0][1])>>1],
+            [(p1[1][0]+p2[1][0])>>1,(p1[1][1]+p2[1][1])>>1],
+            [(p1[2][0]+p2[2][0])>>1,(p1[2][1]+p2[2][1])>>1],
+            [(p1[3][0]+p2[3][0])>>1,(p1[3][1]+p2[3][1])>>1]]
 
 def main():
     pass
