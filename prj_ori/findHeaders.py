@@ -6,9 +6,18 @@ import const
 import utils
 
 DEBUG_HEADER = not False
-BOARD_DETECT_WIDTH= 200
+BOARD_DETECT_WIDTH= 130
 
-def checkRectRange(points):
+#None 不使用canny, 0, 5效果比较好
+CANNY_GAUSS = 5
+
+#
+HEADER_LEFT = 26
+HEADER_RIGHT = 48
+MIN_FUNC_LINE = HEADER_RIGHT
+MAX_FUNC_LINE = MIN_FUNC_LINE+(const.SAMPLING_WIDTH<<5)
+
+def __checkRectRange(points):
     if points.shape[0] <= 3: return None,None
     pp = points[:,0,:]
     minX, minY = 0x7fff, 0x7fff
@@ -39,14 +48,28 @@ def checkRectRange(points):
             mostLB = v
     deltaX = maxX - minX
     deltaY = maxY - minY
-    # print(deltaX, deltaY, len(points))
-    if deltaX < const.STRIP_WIDTH - (const.STRIP_WIDTH >> 3): return None,None
-    if deltaX > const.STRIP_WIDTH << 3: return None,None
-    if deltaY < const.STRIP_HALF_HEIGHT: return None,None
-    if deltaY > const.STRIP_HEIGHT << 1: return None,None
 
+    return (deltaX,deltaY), pLB
+
+def __checkHeader(point, x):
+    deltaX, deltaY = point
+    # print(deltaX, deltaY, len(points))
+    if deltaX < const.STRIP_WIDTH - (const.STRIP_WIDTH >> 3): return None
+    if deltaX > const.STRIP_WIDTH << 3: return None
+    if deltaY <= const.STRIP_HALF_HEIGHT: return None
+    if deltaY > const.STRIP_HEIGHT << 1: return None
+
+    if x<HEADER_LEFT : return None
+    if x>HEADER_RIGHT : return None
     # print("yes")
-    return (minX, minY, maxX, maxY), pLB
+    return True
+
+def __checkFuncLine(point, x):
+    if not sl.SampleLine.isLineSize(point): return None
+    if x<MIN_FUNC_LINE : return None
+    if x>MAX_FUNC_LINE : return None
+    # print("yes")
+    return True
 
 def __showDebug(name,img):
     a = utils.shrink(img, 2, 2)
@@ -63,7 +86,8 @@ def findHeader(src, RGB_GRAY, THRESHOLD):
     _, bw = cv2.threshold(gray, THRESHOLD, 255.0, cv2.THRESH_BINARY)
     # __showDebug("bw",bw)
 
-    bw = utils.toCanny(bw,5)
+    if CANNY_GAUSS:
+        bw = utils.toCanny(bw,CANNY_GAUSS)
     # __showDebug("canny",bw)
     # exit(0)
 
@@ -76,39 +100,61 @@ def findHeader(src, RGB_GRAY, THRESHOLD):
     contours, hierarchy = cv2.findContours(bw, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
     i = len(contours)
-    stripHeads = []
+    # stripHeads = []
     stripPoints = []
-    oldp = points = None
+    funcLines = []
+    oldp = None
     pCount = 0
+    fcCount = 0
     while i > 0:
         i -= 1
         cnt = contours[i]
         if hierarchy[0][i][2] != -111 \
                 and cnt[0][0][1]<450 :
                 # and cnt[0][0][1]>410 :
-            stripHeader,points = checkRectRange(cnt)
+            #header \
+            delta, points = __checkRectRange(cnt)
             # approx = cnt  # cv2.approxPolyDP(cnt, 0.02*cv2.arcLength(cnt,True),True)
-            if stripHeader:
-                stripHeads.append(stripHeader)
-                stripPoints.append(points)
-                if DEBUG_HEADER:
-                    utils.drawRectBy4P(src, points)
-                    # utils.drawRectBy2P(src, stripHeader)
-                    # cv2.drawContours(srcDetect, [cnt.reshape(-1, 1, 2)], 0, (250, 0, 25), 2)
-                    utils.drawMidLineBy4P(src, points, i)
+            if points :
+                if __checkHeader(delta, points[0][0]):
+                    if DEBUG_HEADER:
+                        utils.drawRectBy4P(src, points)
+                        # utils.drawRectBy2P(src, header)
+                        # cv2.drawContours(srcDetect, [cnt.reshape(-1, 1, 2)], 0, (250, 0, 25), 2)
+                        # utils.drawMidLineBy4P(src, points, i)
+                        # utils.drawMidLineBy2P(src, header, i)
+                    if CANNY_GAUSS:
+                        if oldp and sl.SampleLine.isSameRect(points, oldp):
+                            #仅当canny时, 需要处理内外圈都识别出来了
+                            # del stripPoints[pCount]
+                            # del stripHeads[pCount]
+                            # pCount -= 1
+                            #内外圈均值
+                            stripPoints[pCount-1] = utils.mergeRect(points,oldp)
+                            # stripHeads[pCount-1] = utils.mergePoints(header, oldh)
+                        else:
+                            # stripHeads.append(header)
+                            stripPoints.append(points)
+                            pCount += 1
+                elif __checkFuncLine(delta, points[0][0]):
+                    # if DEBUG_HEADER:
+                    #     utils.drawRectBy4P(src, points)
                     if oldp and sl.SampleLine.isSameRect(points, oldp):
-                        #内外圈都识别出来了
-                        del stripPoints[pCount]
-                        del stripHeads[pCount]
-                        pCount -= 1
-                        #内外圈均值
-                        stripPoints[pCount] = utils.mergeRect(points,oldp)
-                pCount += 1
+                        funcLines[fcCount - 1] = utils.mergeRect(points, oldp)
+                    else:
+                        funcLines.append(points)
+                        fcCount += 1
                 oldp = points
-
+                # oldh = header
         # cv2.drawContours(srcDetect, [cnt.reshape(-1, 1, 2)], 0, (250, 0, 255), 1)
     if DEBUG_HEADER:
-        for points in stripPoints:
-            utils.drawMidLineBy4P(src, points, -5)
+        if CANNY_GAUSS:
+            # for header in stripHeads:
+            #     utils.drawMidLineBy2P(src, header, -5)
+            for points in funcLines:
+                utils.drawRectBy4P(src, points)
+            # for points in stripPoints:
+            #     utils.drawMidLineBy4P(src, points, -5)
+            pass
         cv2.imshow('header-src', src)
-    return stripHeads
+    return stripPoints #stripHeads

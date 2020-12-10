@@ -64,8 +64,8 @@ class SampleLine:
 
     @staticmethod
     def isSamePoint(p1, p2):
-        return abs(p1[0] - p2[0]) < SAMPLING_LINES and \
-               abs(p1[1] - p2[1]) < SAMPLING_LINES
+        return abs(p1[0] - p2[0]) <= const.SAMPLING_WIDTH and \
+               abs(p1[1] - p2[1]) <= const.SAMPLING_WIDTH
 
     @staticmethod
     def isSameRect(ps1, ps2):
@@ -73,6 +73,15 @@ class SampleLine:
                SampleLine.isSamePoint(ps1[1], ps2[1]) and \
                SampleLine.isSamePoint(ps1[2], ps2[2]) and \
                SampleLine.isSamePoint(ps1[3], ps2[3])
+
+    @staticmethod
+    def isLineSize(point):
+        deltaX, deltaY = point
+        if deltaX > const.SAMPLING_WIDTH + (const.SAMPLING_WIDTH >> 2): return None
+        if deltaX <= (const.SAMPLING_WIDTH >>1): return None
+        if deltaY < const.STRIP_HALF_HEIGHT: return None
+        if deltaY > const.STRIP_HEIGHT << 1: return None
+        return True
 
     def add(self, data, x):
         self.lines = np.append(self.lines, data)

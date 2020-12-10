@@ -194,6 +194,10 @@ def drawRectBy4P(src, p):
     cv2.line(src, (p[0][0], p[0][1]), (p[2][0], p[2][1]), (255, 0, 0), 2)
     cv2.line(src, (p[1][0], p[1][1]), (p[3][0], p[3][1]), (255, 0, 0), 2)
 
+def drawMidLineBy2P(src, p, i):
+    p = ((p[0], p[1]), (p[2], p[1]), (p[0], p[3]), (p[2], p[3]))
+    drawMidLineBy4P(src, p, i)
+
 def drawMidLineBy4P(src, p, i):
     p1 = ((p[0][0] + p[2][0]) >> 1, (p[0][1] + p[2][1]) >> 1 )
     p2 = ((p[1][0] + p[3][0]) >> 1, (p[1][1] + p[3][1]) >> 1 )
@@ -207,6 +211,10 @@ def drawMidLineBy4P(src, p, i):
     else :
         c = (0xff,0,0xff*(i & 1))
     cv2.line(src,p1, (x2, y2), c,2-(i<0)*1)
+
+def mergePoints(p1, p2):
+    return ((p1[0]+p2[0])>>1,(p1[1]+p2[1])>>1,
+            (p1[2]+p2[2])>>1,(p1[3]+p2[3])>>1)
 
 def mergeRect(p1, p2):
     return (((p1[0][0]+p2[0][0])>>1,(p1[0][1]+p2[0][1])>>1),
