@@ -83,8 +83,8 @@ class StripTemplate:
     def findHeader(self, src):
         srcDetect = src
         if not ZOOMOUT_FIRST:
-            src = utils.shrink3(src, PRE_X_TIMES, PRE_Y_TIMES)
-        header, funcLines = findHeaders.findHeader(src, self.RGB_GRAY, self.THRESHOLD)
+            srcDetect = utils.shrink3(src, PRE_X_TIMES, PRE_Y_TIMES)
+        header, funcLines = findHeaders.findHeader(srcDetect, self.RGB_GRAY, self.THRESHOLD)
         i = len(header)
         strips =[None]*i
 
@@ -96,8 +96,10 @@ class StripTemplate:
         if DEBUG :
             for h in funcLines:
                 if DEBUG:
-                    utils.drawRectBy4P(srcDetect, h)
-
+                    # utils.drawRectBy4P(src, h)
+                    # p = utils.mid2PBy4P(h)
+                    # cv2.line(src, (p[0][0], p[0][1]), (p[1][0], p[1][1]), (0, 255, 0), 2)
+                    pass
             # for header in stripHeads:
             #     utils.drawMidLineBy2P(src, header, -5)
             # for points in funcLines:
@@ -114,10 +116,12 @@ class StripTemplate:
                     p[0] = p[0]*X_TIMES
                     p[1] = p[1]*Y_TIMES
             if DEBUG :
-                utils.drawRectBy4P(srcDetect, h)
+                p = utils.mid2PBy4P(h)
+                cv2.line(src, (p[0][0], p[0][1]), (p[1][0], p[1][1]), (0, 255, 0), 2)
+                # utils.drawRectBy4P(srcDetect, h)
 
             strips[i] = StripRegion.StripRegion(h,self)
             strips[i].matchFuncLine(funcLines)
-        cv2.imshow('header-src', srcDetect)
+        cv2.imshow('header-src', src)
         print("head,fc:",len(header), len(funcLines))
         return strips
