@@ -74,7 +74,7 @@ class StripRegion:
     def searchCutOff(self, gray):
         self.__getBkColor(gray)
         rect = self.__getTestRegion(2)
-        x = rect[0] + 20
+        x = rect[0]
         x1 = rect[2]
         img = gray[rect[1]:rect[3], x:x1]
         # cv2.imshow("bb", img)
