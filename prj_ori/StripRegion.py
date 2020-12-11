@@ -76,32 +76,16 @@ class StripRegion:
         # self.__getBkColor()
         # cv2.imshow("bg", gray)
         rect = self.__getTestRegion(2)
-        x = rect[0]
-        x1 = rect[2]
-        img = gray[rect[1]:rect[3], x:x1]
-        self.derivative( rect)
+        self.__derivative( rect)
 
-    # def findMarge(self, ):
-    def derivative(self, rect):
-        gray = self.img
-        x = rect[0]
-        x1 = rect[2]
-        img = gray[rect[1]:rect[3], x:x1]
-        # _, bw = cv2.threshold(img, self.bgColor, 255.0, cv2.THRESH_BINARY)
-        # canny = utils.toCanny(bw, 5)
-        # cv2.imshow("bg", canny)
-        # cv2.waitKey()
-        length = i = x1-x-1
-        fY = x1 * self.slope + self.bias
-        #坐标系转换
-        fY -= rect[1]
-        fY0 = fY
+    def __findMargin(self, img, fY0):
+        length = i = img.shape[1] - 1
+
+        fY = fY0
         #一阶导数
         delta = [0] * i
-
         minD = maxD = 0
         minI = maxI = 0
-        minY = maxY = 0
         i -= 2
         while i>1:
             fY -= self.slope
@@ -127,22 +111,47 @@ class StripRegion:
             #跳过0不检测
             i -= 1
 
-        if (maxI<minI):
-            maxTmp, maxTmpI = self.__getDeltaMax(delta, minI, length )
+        if (maxI < minI):
+            maxTmp, maxTmpI = self.__getDeltaMax(delta, minI, length)
             minTmp, minTmpI = self.__getDeltaMin(delta, 0, maxI)
-            if maxD - maxTmp> minD - minTmp:
-                maxY = round(fY0 + (maxTmpI-maxI)*self.slope)
+            if maxD - maxTmp > minD - minTmp:
+                maxY = round(fY0 + (maxTmpI - maxI) * self.slope)
                 maxI = maxTmpI
             else:
-                minY = round(fY0 + (minTmpI-minI)*self.slope)
+                minY = round(fY0 + (minTmpI - minI) * self.slope)
                 minI = minTmpI
-
         print(delta)
         print(minI, maxI)
-        utils.drawRectBy2P(img, (minI,minY-(StripRegion.STRIP_HEIGHT>>2),maxI, maxY+(StripRegion.STRIP_HEIGHT>>2)))
+        cv2.line(img, (minI,minY),(maxI,maxY),(0,0,0),2)
+        # utils.drawRectBy2P(img, (minI,minY-(StripRegion.STRIP_HEIGHT>>2),maxI, maxY+(StripRegion.STRIP_HEIGHT>>2)))
+        return (minI, maxI)
+
+    # def findMarge(self, ):
+    def __derivative(self, rect):
+        gray = self.img
+        x = rect[0]
+        x1 = rect[2]
+        img = gray[rect[1]:rect[3], x:x1]
+        # _, bw = cv2.threshold(img, self.bgColor, 255.0, cv2.THRESH_BINARY)
+        # canny = utils.toCanny(bw, 5)
+        # cv2.imshow("bg", canny)
+        # cv2.waitKey()
+
+        # length = i = x1-x-1
+        fY = x1 * self.slope + self.bias + (StripRegion.STRIP_HEIGHT>>1)
+        #坐标系转换
+        fY -= rect[1]
+
+        x = rect[3]-rect[1] # assert x == StripRegion.STRIP_HEIGHT*2
+        x1 = StripRegion.STRIP_HEIGHT>>3
+        while x>0:
+            fY -= x1
+            p =  self.__findMargin(img, fY)
+            x -= x1
+
         cv2.imshow("bb", img)
         cv2.waitKey()
-        return (minI, maxI)
+        return p
 
     def __getTestRegion(self, index):
         x2 = self.midHeader[0][0]+self.scale * self.template.references[index+1][0] - StripRegion.SAMPLING_WIDTH
@@ -184,10 +193,6 @@ class StripRegion:
                 del funcLines[i]
                 return True
         return self.midFuncLine!=None
-
-    def __getDataByX(self, img, x):
-        y = int(x * self.slope + self.bias)
-        return img[y:y + sl.SAMPLING_LINES, x]
 
     def __sampling(self, i, data, lastSample):
         # t1 = t+b-(b*t)/0xff
@@ -237,18 +242,6 @@ class StripRegion:
     def __setSymbleDebug(self, x1, x2, y):
         self.img[y:y + 6, x1:x2+1] = 0
         self.img[y + 2:y + 3, x1:x2+1] = 0xff
-
-    def findFuncLine(self, bw):
-        self.window = sw.SlidingWindgow(StripRegion.FIRST_LINE_WIDTH)
-        i = 0
-        i1 = self.left + const.SAMPLING_WIDTH
-        data = np.empty([StripRegion.FIRST_LINE_WIDTH,sl.SAMPLING_LINES])
-        while i<StripRegion.FIRST_LINE_WIDTH:
-            data[i, :] = self.__getDataByX(bw, i1)
-            i += 1
-        self.window.initData(data)
-        self.__traversal(bw, i1, self.__findFirstLine, None)
-        # while i<self.right
 
     ############  deprecated  ###########
     # counter = 0
