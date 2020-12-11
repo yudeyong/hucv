@@ -3,16 +3,24 @@ import utils
 import cv2
 import StripRegion
 
-THRESHOLD = 130
+DEBUG = not False
 
 #tail line
 # rgb to gray value: None or R,G,B to gray value: 0x1 r, 0x100 g, 0x10000 b
 # RGB_GRAY = 0x10000
 
+ZOOMOUT_FIRST = not True
+
+PRE_X_TIMES = 2
+PRE_Y_TIMES = 2
+
+X_TIMES = 1 if ZOOMOUT_FIRST else PRE_X_TIMES
+Y_TIMES = 1 if ZOOMOUT_FIRST else PRE_Y_TIMES
+
+
 class StripTemplate:
 
-    X_TIMES = 2
-    Y_TIMES = 2
+
     def __init__(self, jsonDic):
         self.name = jsonDic['name']
         self.references = []
@@ -41,7 +49,19 @@ class StripTemplate:
         if not self.__checkShape(src.shape):
             return None,"invalid size."
         src = src[self.BOARD_AREA[1]:self.BOARD_AREA[1] + self.BOARD_AREA[3], self.BOARD_AREA[0]:self.BOARD_AREA[0] + self.BOARD_AREA[2]]
+        if ZOOMOUT_FIRST:
+            src = utils.shrink3(src, PRE_X_TIMES, PRE_Y_TIMES)
         return src, None
+
+    def getScale(self, l1, l2, length):
+        '''
+        返回比例
+        :param l1: 第一线坐标
+        :param l2: 第二线坐标
+        :param length: 实测距离
+        :return: scale
+        '''
+        return length / (self.references[l2][1] - self.references[l1][0])
 
     # side offset 0:起点 1:终点
     def setPercentage(self, fromIndex, side):
@@ -61,23 +81,43 @@ class StripTemplate:
         return self.persentage[i:-1]
 
     def findHeader(self, src):
-        src = utils.shrink3(src, StripTemplate.X_TIMES, StripTemplate.Y_TIMES)
+        srcDetect = src
+        if not ZOOMOUT_FIRST:
+            src = utils.shrink3(src, PRE_X_TIMES, PRE_Y_TIMES)
         header, funcLines = findHeaders.findHeader(src, self.RGB_GRAY, self.THRESHOLD)
         i = len(header)
         strips =[None]*i
 
-        for h in funcLines:
-            for p in h:
-                p[0] = p[0] * StripTemplate.X_TIMES
-                p[1] = p[1] * StripTemplate.Y_TIMES
+        if not ZOOMOUT_FIRST:
+            for h in funcLines:
+                for p in h:
+                    p[0] = p[0] * X_TIMES
+                    p[1] = p[1] * Y_TIMES
+        if DEBUG :
+            for h in funcLines:
+                if DEBUG:
+                    utils.drawRectBy4P(srcDetect, h)
+
+            # for header in stripHeads:
+            #     utils.drawMidLineBy2P(src, header, -5)
+            # for points in funcLines:
+            #     utils.drawRectBy4P(src, points)
+            # for points in stripPoints:
+            #     utils.drawMidLineBy4P(src, points, -5)
+            pass
+        # cv2.imshow('header-src', src)
+
         for h in header:
             i -= 1
-
-            for p in h:
-                p[0] = p[0]*StripTemplate.X_TIMES
-                p[1] = p[1]*StripTemplate.Y_TIMES
+            if not ZOOMOUT_FIRST:
+                for p in h:
+                    p[0] = p[0]*X_TIMES
+                    p[1] = p[1]*Y_TIMES
+            if DEBUG :
+                utils.drawRectBy4P(srcDetect, h)
 
             strips[i] = StripRegion.StripRegion(h,self)
             strips[i].matchFuncLine(funcLines)
-
+        cv2.imshow('header-src', srcDetect)
+        print("head,fc:",len(header), len(funcLines))
         return strips

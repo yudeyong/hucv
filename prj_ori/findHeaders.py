@@ -46,8 +46,8 @@ def __checkRectRange(points):
         if v < mostLB:
             pLB[2] = p
             mostLB = v
-    deltaX = maxX - minX
-    deltaY = maxY - minY
+    deltaX = (maxX - minX)
+    deltaY = (maxY - minY)
 
     return (deltaX,deltaY), pLB
 
@@ -92,7 +92,8 @@ def findHeader(src, RGB_GRAY, THRESHOLD):
 
     if DEBUG_HEADER:
         # __showDebug("header-bw", bw)
-        cv2.imshow("header-bw", bw)
+        # cv2.imshow("header-bw", bw)
+        pass
     # bw = utils.toCanny(bw, 0)
     # if DEBUG_HEADER:
     #     cv2.imshow("header-canny", bw)
@@ -108,16 +109,18 @@ def findHeader(src, RGB_GRAY, THRESHOLD):
     while i > 0:
         i -= 1
         cnt = contours[i]
-        if hierarchy[0][i][2] != -111 \
-                and cnt[0][0][1]<450 :
+        if cnt[0][0][1]<450 :
                 # and cnt[0][0][1]>410 :
+            # todo : 上面条件debug only
             #header \
+            if i == 77:
+                srcDetect = srcDetect
             delta, points = __checkRectRange(cnt)
             # approx = cnt  # cv2.approxPolyDP(cnt, 0.02*cv2.arcLength(cnt,True),True)
             if points :
                 if __checkHeader(delta, points[0][0]):
-                    if DEBUG_HEADER:
-                        utils.drawRectBy4P(src, points)
+                    # if DEBUG_HEADER:
+                        # utils.drawRectBy4P(src, points)
                         # utils.drawRectBy2P(src, header)
                         # cv2.drawContours(srcDetect, [cnt.reshape(-1, 1, 2)], 0, (250, 0, 25), 2)
                         # utils.drawMidLineBy4P(src, points, i)
@@ -146,6 +149,7 @@ def findHeader(src, RGB_GRAY, THRESHOLD):
                 oldp = points
                 # oldh = header
         # cv2.drawContours(srcDetect, [cnt.reshape(-1, 1, 2)], 0, (250, 0, 255), 1)
+        # cv2.imshow('header-srcDetect', srcDetect)
     if DEBUG_HEADER:
         if CANNY_GAUSS:
             # for header in stripHeads:
@@ -155,5 +159,5 @@ def findHeader(src, RGB_GRAY, THRESHOLD):
             # for points in stripPoints:
             #     utils.drawMidLineBy4P(src, points, -5)
             pass
-        cv2.imshow('header-src', src)
+        # cv2.imshow('header-src', src)
     return stripPoints, funcLines #stripHeads

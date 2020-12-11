@@ -68,10 +68,14 @@ def mergeLine(linesSet, lines):
 
 
 # 获取斜率,截距
-def getSlopeBiasByPoints(p1, p2):
+def getSlopeBiasBy2P(p1, p2):
     return ((p2[1] - p1[1]) / (p2[0] - p1[0])
             , (p1[0] * p2[1] - p2[0] * p1[1]) / (p1[0] - p2[0]))
 
+def getCosReciprocalBy2P(p1, p2):
+    x = p2[0] - p1[0]
+    y = p1[1] - p2[1]
+    return math.sqrt(x*x + y*y) / x
 
 # 获取斜率,截距
 def getSlopeBias(twoPoints):

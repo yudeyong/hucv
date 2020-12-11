@@ -21,8 +21,7 @@ def recognition(file, category):
     strips = template.findHeader(src)
 
     gray = utils.toGray(src, None)
-    for s in strips:
-        s.readStrip(gray)
+    sr.StripRegion.recognise(gray, strips)
 
     # cv2.imshow('bw',bw)
     # cv2.imshow('src', src)
