@@ -109,12 +109,10 @@ def findHeader(src, RGB_GRAY, THRESHOLD):
     while i > 0:
         i -= 1
         cnt = contours[i]
-        if cnt[0][0][1]<450 :
-                # and cnt[0][0][1]>410 :
+        if cnt[0][0][1]<110 \
+                and cnt[0][0][1]>80 :
             # todo : 上面条件debug only
             #header \
-            if i == 77:
-                srcDetect = srcDetect
             delta, points = __checkRectRange(cnt)
             # approx = cnt  # cv2.approxPolyDP(cnt, 0.02*cv2.arcLength(cnt,True),True)
             if points :

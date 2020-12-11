@@ -15,11 +15,13 @@ DEBUG_STRIP = not False
 
 
 class StripRegion:
-    BG_COLOR = False
     FIRST_LINE_WIDTH = 3
     FIRST_LINE_THRESHOLD = ((FIRST_LINE_WIDTH+1)>>2)*sl.SAMPLING_LINES*0xff
 
+    SAMPLING_WIDTH = const.SAMPLING_WIDTH * st.X_TIMES
+    STRIP_HEIGHT = const.STRIP_HEIGHT * st.Y_TIMES
     def __init__(self, header, template):
+        self.header = header
         self.midHeader = utils.mid2PBy4P(header)
 
         self.slope,self.bias = utils.getSlopeBiasBy2P(self.midHeader[0],self.midHeader[1])
@@ -37,19 +39,108 @@ class StripRegion:
         if DEBUG_STRIP:
             i = 0
         for region in regions:
-            region.searchCutOff()
+            if not region.funcLine :
+                continue
+            region.searchCutOff(gray)
             if DEBUG_STRIP:
                 region.drawFullLineDebug(gray)
                 i += 1
                 region.__drawAllDebug(gray)
                 # if i != 2: continue
 
-    def searchCutOff(self, gray):
-        x = self.midHeader[0][0]+self.scale * self.template.references[2][0] - 2
-        l = x + const.SAMPLING_MAX_WIDTH*st.X_TIMES
-        while x<l:
-            x = x+1
+    def __getDeltaMax( self, data, left, right ):
+        i = right
+        maxD = 0
+        maxI = left
+        while i>left:
+            i -= 1
+            if data[i]>maxD:
+                maxD = data[i]
+                maxI = i
+        return (maxD, maxI)
 
+    def __getDeltaMin(self , data, left, right):
+        i = left
+        minD = 0
+        minI = right
+        while i<right :
+            if data[i]<minD:
+                minD = data[i]
+                minI = i
+            i+=1
+        return (minD, minI)
+
+
+    def searchCutOff(self, gray):
+        self.__getBkColor(gray)
+        rect = self.__getTestRegion(2)
+        x = rect[0] + 20
+        x1 = rect[2]
+        img = gray[rect[1]:rect[3], x:x1]
+        # cv2.imshow("bb", img)
+        # cv2.waitKey()
+        length = i = x1-x-1
+        fY = x1 * self.slope + self.bias
+        #坐标系转换
+        fY -= rect[1]
+        fY0 = fY
+        #一阶导数
+        delta = [0] * i
+
+        minD = maxD = 0
+        minI = maxI = 0
+        minY = maxY = 0
+        i -= 2
+        while i>1:
+            fY -= self.slope
+            y = round(fY)
+            delta[i] = (int(img[y][i+1])-img[y][i])
+            if delta[i]>maxD:
+                tmpD = (int(img[y][i-1])-img[y][i])
+                if ( delta[i+1]>=0 ) or ((-delta[i+1])<<1)<=delta[i] or tmpD<0 or ((tmpD)<<1)<=delta[i] :
+                    maxD = delta[i]
+                    maxI = i
+                    maxY = y
+            elif delta[i]<=minD:
+                tmpD = (int(img[y][i-1])-img[y][i])
+                if ( delta[i+1]>=0 ) or (delta[i+1]<<1)>=delta[i] or tmpD<0 or (tmpD<<1)<=delta[i] :
+                    minD = delta[i]
+                    minI = i
+                    minY = y
+                # delt = delta
+                # delt[i] <<= 3
+                # if (delt[i]>255) : delt[i] = 255
+                # delt[i] = 255 - delt[i]
+                # img[y+10][i] = delt[i]
+            #跳过0不检测
+            i -= 1
+
+        if (maxI<minI):
+            maxTmp, maxTmpI = self.__getDeltaMax(delta, minI, length )
+            minTmp, minTmpI = self.__getDeltaMin(delta, 0, maxI)
+            if maxD - maxTmp> minD - minTmp:
+                maxY = round(fY0 + (maxTmpI-maxI)*self.slope)
+                maxI = maxTmpI
+            else:
+                minY = round(fY0 + (minTmpI-minI)*self.slope)
+                minI = minTmpI
+
+        print(delta)
+        print(minI, maxI)
+        # utils.drawRectBy2P(img, (minI,minY-(StripRegion.STRIP_HEIGHT>>2),maxI, maxY+(StripRegion.STRIP_HEIGHT>>2)))
+        cv2.imshow("bb", img)
+        cv2.waitKey()
+        return (minI, maxI)
+
+    def __getTestRegion(self, index):
+        x2 = self.midHeader[0][0]+self.scale * self.template.references[index+1][0] - StripRegion.SAMPLING_WIDTH
+        x1 = self.lastRegion[1][0]+ StripRegion.SAMPLING_WIDTH
+        y2 = x2 * self.slope + self.bias
+        y1 = self.lastRegion[1][1]
+        y1 = min(y1, y2-StripRegion.STRIP_HEIGHT)
+        if y1<0: y1 = 0
+        y2 = max(self.lastRegion[3][1], y2+StripRegion.STRIP_HEIGHT)
+        return (x1,int(y1),int(x2),int(y2))
 
     def __drawAllDebug(self, gray):
         for p in self.template.references :
@@ -61,6 +152,8 @@ class StripRegion:
         self.funcLine = f
         self.midFuncLine = utils.mid2PBy4P(f)
         self.scale = self.template.getScale( 0, 1, self.midFuncLine[1][0] - self.midHeader[0][0] + 1 )
+        self.lastRegion = f
+        self.lastMid = self.midFuncLine
 
         #assert(scale between 9.42, 8.8)
         # print(self.scale)
@@ -83,24 +176,6 @@ class StripRegion:
         y = int(x * self.slope + self.bias)
         return img[y:y + sl.SAMPLING_LINES, x]
 
-    def __traversal(self, img, left, func, funcPara ):
-        i = left
-        i1 = self.right
-        while (i<i1):
-            i += 1
-            data = self.__getDataByX(img, i)
-            if func(i, data, funcPara):
-                return True
-        return False
-
-    def __findFirstLine(self, i, data, record):
-        total = self.window.append(data)
-        if (total < StripRegion.FIRST_LINE_THRESHOLD):
-            self.firstLine = i - (StripRegion.FIRST_LINE_WIDTH>>1)
-            return True
-        else:
-            return False
-
     def __sampling(self, i, data, lastSample):
         # t1 = t+b-(b*t)/0xff
         b = self.bgColor
@@ -116,12 +191,23 @@ class StripRegion:
             lastSample[0] = i
 
     def __getBkColor(self, gray):
-        if not StripRegion.BG_COLOR: return
         colors = [[0,0]] * 16
-        self.__traversal(gray, self.left, self.__getBackground, colors)
+
+        x = max(self.header[1][0],self.header[3][0])
+        x1 = min(self.funcLine[0][0], self.funcLine[2][0])
+        y = max(self.header[1][1],self.funcLine[0][1])
+        y1 = min(self.header[3][1], self.funcLine[2][1])
+        while y<y1:
+            while x<x1:
+                d = gray[y][x]
+                r = colors[d>>16]
+                r[0] += 1
+                r[1] += d
+                x += 1
+            y+=1
 
         maxColorIndex = colors.index(max(colors, key=lambda x: x[0]))
-        self.bgColor = 0xff - round(colors[maxColorIndex][1] / colors[maxColorIndex][0])
+        self.bgColor = round(colors[maxColorIndex][1] / colors[maxColorIndex][0])
 
     def drawFullLineDebug(self, gray):
         if self.midFuncLine :
@@ -186,7 +272,7 @@ class StripRegion:
                 return -1
         print('************ new strip *************')
         self.__setProcessValue()
-        cv2.imshow("bb", img)
+        # cv2.imshow("bb", img)
         # cv2.waitKey()
 
     def __setProcessValue(self):
