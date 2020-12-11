@@ -109,8 +109,8 @@ def findHeader(src, RGB_GRAY, THRESHOLD):
     while i > 0:
         i -= 1
         cnt = contours[i]
-        if cnt[0][0][1]<110 \
-                and cnt[0][0][1]>80 :
+        if cnt[0][0][1]<1110 \
+                and cnt[0][0][1]>8 :
             # todo : 上面条件debug only
             #header \
             delta, points = __checkRectRange(cnt)

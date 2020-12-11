@@ -43,9 +43,9 @@ class StripRegion:
                 continue
             region.searchCutOff(gray)
             if DEBUG_STRIP:
-                region.drawFullLineDebug(gray)
+                region.drawFullLineDebug()
                 i += 1
-                region.__drawAllDebug(gray)
+                region.__drawAllDebug()
                 # if i != 2: continue
 
     def __getDeltaMax( self, data, left, right ):
@@ -72,12 +72,24 @@ class StripRegion:
 
 
     def searchCutOff(self, gray):
-        self.__getBkColor(gray)
+        self.img = gray
+        # self.__getBkColor()
+        # cv2.imshow("bg", gray)
         rect = self.__getTestRegion(2)
         x = rect[0]
         x1 = rect[2]
         img = gray[rect[1]:rect[3], x:x1]
-        # cv2.imshow("bb", img)
+        self.derivative( rect)
+
+    # def findMarge(self, ):
+    def derivative(self, rect):
+        gray = self.img
+        x = rect[0]
+        x1 = rect[2]
+        img = gray[rect[1]:rect[3], x:x1]
+        # _, bw = cv2.threshold(img, self.bgColor, 255.0, cv2.THRESH_BINARY)
+        # canny = utils.toCanny(bw, 5)
+        # cv2.imshow("bg", canny)
         # cv2.waitKey()
         length = i = x1-x-1
         fY = x1 * self.slope + self.bias
@@ -127,7 +139,7 @@ class StripRegion:
 
         print(delta)
         print(minI, maxI)
-        # utils.drawRectBy2P(img, (minI,minY-(StripRegion.STRIP_HEIGHT>>2),maxI, maxY+(StripRegion.STRIP_HEIGHT>>2)))
+        utils.drawRectBy2P(img, (minI,minY-(StripRegion.STRIP_HEIGHT>>2),maxI, maxY+(StripRegion.STRIP_HEIGHT>>2)))
         cv2.imshow("bb", img)
         cv2.waitKey()
         return (minI, maxI)
@@ -142,11 +154,12 @@ class StripRegion:
         y2 = max(self.lastRegion[3][1], y2+StripRegion.STRIP_HEIGHT)
         return (x1,int(y1),int(x2),int(y2))
 
-    def __drawAllDebug(self, gray):
+    def __drawAllDebug(self):
+        gray = self.img
         for p in self.template.references :
             x = self.midHeader[0][0]+self.scale * p[0]
             y = round(x * self.slope + self.bias)
-            self.__setSymbleDebug(gray,round(x), round(self.midHeader[0][0]+self.scale*p[1]), y)
+            self.__setSymbleDebug(round(x), round(self.midHeader[0][0]+self.scale*p[1]), y)
 
     def __setFuncLine(self, f):
         self.funcLine = f
@@ -190,17 +203,18 @@ class StripRegion:
                 self.samples[0].add(data, i)
             lastSample[0] = i
 
-    def __getBkColor(self, gray):
-        colors = [[0,0]] * 16
+    def __getBkColor(self):
+        gray = self.img
+        colors = [[0,0]  for i in range(16)]
 
         x = max(self.header[1][0],self.header[3][0])
         x1 = min(self.funcLine[0][0], self.funcLine[2][0])
-        y = max(self.header[1][1],self.funcLine[0][1])
-        y1 = min(self.header[3][1], self.funcLine[2][1])
+        y = max(self.header[1][1],self.funcLine[0][1])-1
+        y1 = min(self.header[3][1], self.funcLine[2][1])+1
         while y<y1:
             while x<x1:
                 d = gray[y][x]
-                r = colors[d>>16]
+                r = colors[d>>4]
                 r[0] += 1
                 r[1] += d
                 x += 1
@@ -208,19 +222,21 @@ class StripRegion:
 
         maxColorIndex = colors.index(max(colors, key=lambda x: x[0]))
         self.bgColor = round(colors[maxColorIndex][1] / colors[maxColorIndex][0])
+        print("bgColor:",self.bgColor)
+        # gray[max(self.header[1][1],self.funcLine[0][1]):y1, max(self.header[1][0],self.header[3][0]):x1] = 0
 
-    def drawFullLineDebug(self, gray):
+    def drawFullLineDebug(self):
         if self.midFuncLine :
             k, b = utils.getSlopeBiasBy2P(self.midHeader[0], self.midFuncLine[1])
-            utils.drawFullLine(gray, self.midHeader[0], k, b, 0)
+            utils.drawFullLine(self.img, self.midHeader[0], k, b, 0)
             pass
         # self.getValuesByPostion(gray)
 
         return
 
-    def __setSymbleDebug(self, gray, x1, x2, y):
-        gray[y:y + 6, x1:x2+1] = 0
-        gray[y + 2:y + 3, x1:x2+1] = 0xff
+    def __setSymbleDebug(self, x1, x2, y):
+        self.img[y:y + 6, x1:x2+1] = 0
+        self.img[y + 2:y + 3, x1:x2+1] = 0xff
 
     def findFuncLine(self, bw):
         self.window = sw.SlidingWindgow(StripRegion.FIRST_LINE_WIDTH)
