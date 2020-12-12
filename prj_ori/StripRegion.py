@@ -79,6 +79,12 @@ class StripRegion:
         self.__derivative( rect)
 
     def __findMargin(self, img, fY0):
+        '''
+        扫描灰度图, 查找采样线
+        :param img:
+        :param fY0: y轴
+        :return: x,width
+        '''
         length = i = img.shape[1] - 1
 
         fY = fY0
@@ -120,11 +126,11 @@ class StripRegion:
             else:
                 minY = round(fY0 + (minTmpI - minI) * self.slope)
                 minI = minTmpI
-        print(delta)
-        print(minI, maxI)
-        cv2.line(img, (minI,minY),(maxI,maxY),(0,0,0),2)
+        # print(delta)
+        # print(minI, maxI)
+        # cv2.line(img, (minI,minY),(maxI,maxY),(0,0,0),2)
         # utils.drawRectBy2P(img, (minI,minY-(StripRegion.STRIP_HEIGHT>>2),maxI, maxY+(StripRegion.STRIP_HEIGHT>>2)))
-        return (minI, maxI)
+        return minI, maxI-minI
 
     # def findMarge(self, ):
     def __derivative(self, rect):
@@ -137,21 +143,65 @@ class StripRegion:
         # cv2.imshow("bg", canny)
         # cv2.waitKey()
 
-        # length = i = x1-x-1
-        fY = x1 * self.slope + self.bias + (StripRegion.STRIP_HEIGHT>>1)
-        #坐标系转换
-        fY -= rect[1]
 
         x = rect[3]-rect[1] # assert x == StripRegion.STRIP_HEIGHT*2
         x1 = StripRegion.STRIP_HEIGHT>>3
+        # length = i = x1-x-1
+        fY = x1 * self.slope + self.bias + (StripRegion.STRIP_HEIGHT>>1) + x1
+        #坐标系转换
+        fY -= rect[1]
+
+        listP = [[0,0,0]]
+        i = 0
+        rangeP = []
+        leftP = np.zeros((16),dtype=int)
+        l = StripRegion.SAMPLING_WIDTH - (const.SAMPLING_WIDTH >> 1)
+        r = StripRegion.SAMPLING_WIDTH + (const.SAMPLING_WIDTH>>1)
+        j = 0
         while x>0:
+            left,width =  self.__findMargin(img, fY)
+
+            i += 1
+            listP.append([i, left, width, fY])
+            if width<r and width>l:
+                leftP[j] = left
+                j += 1
+                rangeP.append(i)
             fY -= x1
-            p =  self.__findMargin(img, fY)
             x -= x1
+
+        leftP = leftP[:j]
+        index = StripRegion.two_sigma(leftP)
+        leftP = np.delete(leftP, index)
+        i = len(index)
+        while i>0:
+            i -= 1
+            del rangeP[index[i]]
+        index = StripRegion.two_sigma(leftP)
+        i = len(index)
+        while i>0:
+            i -= 1
+            del rangeP[index[i]]
+        if l>=4:
+            for x in rangeP:
+                i = listP[x]
+                cv2.line(img, (i[1],int(i[3])),(i[1]+i[2],int(i[3])),(0,0,0),2)
+                print("lines,",i[0],i[1],i[2])
+            # print("ran,",rangeP)
 
         cv2.imshow("bb", img)
         cv2.waitKey()
-        return p
+        return
+
+    # 定义3σ法则识别异常值函数
+    @staticmethod
+    def two_sigma(Ser1):
+        '''
+        Ser1：表示传入DataFrame的某一列。
+        '''
+        rule = (Ser1.mean() -  2 * Ser1.std() > Ser1) | (Ser1.mean() + 2 * Ser1.std() < Ser1)
+        index = np.arange(Ser1.shape[0])[rule]
+        return index
 
     def __getTestRegion(self, index):
         x2 = self.midHeader[0][0]+self.scale * self.template.references[index+1][0] - StripRegion.SAMPLING_WIDTH
