@@ -45,7 +45,7 @@ class StripRegion:
             if DEBUG_STRIP:
                 region.drawFullLineDebug()
                 i += 1
-                region.__drawAllDebug()
+                # region.__drawAllDebug()
                 # if i != 2: continue
 
     def __getDeltaMax( self, data, left, right ):
@@ -128,7 +128,7 @@ class StripRegion:
                 minI = minTmpI
         # print(delta)
         # print(minI, maxI)
-        # cv2.line(img, (minI,minY),(maxI,maxY),(0,0,0),2)
+        cv2.line(img, (minI,minY),(maxI,maxY),0xff,2)
         # utils.drawRectBy2P(img, (minI,minY-(StripRegion.STRIP_HEIGHT>>2),maxI, maxY+(StripRegion.STRIP_HEIGHT>>2)))
         return minI, maxI-minI
 
@@ -145,11 +145,9 @@ class StripRegion:
 
 
         x = rect[3]-rect[1] # assert x == StripRegion.STRIP_HEIGHT*2
-        x1 = StripRegion.STRIP_HEIGHT>>3
         # length = i = x1-x-1
-        fY = x1 * self.slope + self.bias + (StripRegion.STRIP_HEIGHT>>1) + x1
-        #坐标系转换
-        fY -= rect[1]
+        fY = x-1#x1 * self.slope + self.bias + (StripRegion.STRIP_HEIGHT>>1)
+        x1 = StripRegion.STRIP_HEIGHT>>3
 
         listP = [[0,0,0]]
         i = 0
@@ -163,39 +161,66 @@ class StripRegion:
 
             i += 1
             listP.append([i, left, width, fY])
-            if width<r and width>l:
+            if width<=r and width>=l:
                 leftP[j] = left
                 j += 1
                 rangeP.append(i)
             fY -= x1
             x -= x1
 
-        leftP = leftP[:j]
-        index = StripRegion.two_sigma(leftP)
-        leftP = np.delete(leftP, index)
-        i = len(index)
-        while i>0:
-            i -= 1
-            del rangeP[index[i]]
-        index = StripRegion.two_sigma(leftP)
-        i = len(index)
-        while i>0:
-            i -= 1
-            del rangeP[index[i]]
+        leftP = StripRegion.__filteringAnomaly(leftP[:j], rangeP)
+        StripRegion.__filteringAnomaly(leftP, rangeP)
+        StripRegion.__findMaxWin(rangeP, 9)
         if l>=4:
             for x in rangeP:
                 i = listP[x]
                 cv2.line(img, (i[1],int(i[3])),(i[1]+i[2],int(i[3])),(0,0,0),2)
-                print("lines,",i[0],i[1],i[2])
-            # print("ran,",rangeP)
+                # print("lines,",i[0],i[1],i[2])
+            print("ran,",rangeP)
 
         cv2.imshow("bb", img)
         cv2.waitKey()
         return
 
+    @staticmethod
+    def __findMaxWin(data, size):
+        i = j = len(data)-1
+        if data[j] - data[0]<size: return j
+        maxLen = 1
+        maxPos = i
+
+        while i>0:
+            while data[j]-data[i]<size:
+                if i>0:
+                    i -= 1
+                else:
+                    i = -1
+                    break
+            if i>=0:
+                dist = j-i
+                # 跨度(Y轴)相同时, 越紧密越优先
+                if dist>maxLen or (dist==maxLen and minDelta>data[j])-data[i+1]:
+                    maxLen = dist
+                    maxPos = i + 1
+                    minDelta = data[j]-data[maxPos]
+                j -= 1
+
+        del data[maxPos+maxLen:]
+        del data[:maxPos]
+        return maxLen
+    @staticmethod
+    def __filteringAnomaly( data, list):
+        index = StripRegion.__two_sigma(data)
+        data = np.delete(data, index)
+        i = len(index)
+        while i>0:
+            i -= 1
+            del list[index[i]]
+        return data
+
     # 定义3σ法则识别异常值函数
     @staticmethod
-    def two_sigma(Ser1):
+    def __two_sigma(Ser1):
         '''
         Ser1：表示传入DataFrame的某一列。
         '''
@@ -214,7 +239,6 @@ class StripRegion:
         return (x1,int(y1),int(x2),int(y2))
 
     def __drawAllDebug(self):
-        gray = self.img
         for p in self.template.references :
             x = self.midHeader[0][0]+self.scale * p[0]
             y = round(x * self.slope + self.bias)
@@ -283,7 +307,7 @@ class StripRegion:
     def drawFullLineDebug(self):
         if self.midFuncLine :
             k, b = utils.getSlopeBiasBy2P(self.midHeader[0], self.midFuncLine[1])
-            utils.drawFullLine(self.img, self.midHeader[0], k, b, 0)
+            # utils.drawFullLine(self.img, self.midHeader[0], k, b, 0)
             pass
         # self.getValuesByPostion(gray)
 
