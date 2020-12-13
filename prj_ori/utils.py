@@ -218,7 +218,8 @@ def drawFullLine(src, p, k, b, i):
     cv2.line(src,p, (x2, y2), c,2-(i<0)*1)
 
 def drawMidLineBy4P(src, p, i):
-    k, b = getSlopeBiasBy2P(mid2PBy4P(p))
+    p1,p2=mid2PBy4P(p)
+    k, b = getSlopeBiasBy2P(p1,p2)
     p1 = ((p[0][0] + p[2][0]) >> 1, (p[0][1] + p[2][1]) >> 1 )
     drawFullLine(src,p1, k, b, i)
 

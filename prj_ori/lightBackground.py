@@ -31,8 +31,10 @@ def recognition(file, category):
 
 
 def main():
-    i=0x31
-    while i<0x32:
+    end = i=0x30
+    count = 1
+    end += count
+    while i<end:
         msg = recognition( ('./samples/samplew' ) +chr(i)+'.jpg', "ITC92000")
         if msg :
             print(msg)

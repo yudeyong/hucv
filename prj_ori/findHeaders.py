@@ -4,6 +4,7 @@ import numpy as np
 import SampleLine as sl
 import const
 import utils
+import StripTemplate as st
 
 DEBUG_HEADER = not False
 BOARD_DETECT_WIDTH= 130
@@ -12,10 +13,19 @@ BOARD_DETECT_WIDTH= 130
 CANNY_GAUSS = 5
 
 #
-HEADER_LEFT = 26
+HEADER_LEFT = 10
 HEADER_RIGHT = 48
 MIN_FUNC_LINE = HEADER_RIGHT
 MAX_FUNC_LINE = MIN_FUNC_LINE+(const.SAMPLING_WIDTH<<5)
+
+class headerFinder:
+    STRIP_WIDTH = 0
+    STRIP_HEIGHT = 0
+
+    @classmethod
+    def setWH(cls, x, y):
+        cls.STRIP_HEIGHT = const.STRIP_HEIGHT * y
+        cls.STRIP_WIDTH = const.STRIP_WIDTH * x
 
 def __checkRectRange(points):
     if points.shape[0] <= 3: return None,None
@@ -54,10 +64,10 @@ def __checkRectRange(points):
 def __checkHeader(point, x):
     deltaX, deltaY = point
     # print(deltaX, deltaY, len(points))
-    if deltaX < const.STRIP_WIDTH - (const.STRIP_WIDTH >> 3): return None
-    if deltaX > const.STRIP_WIDTH << 3: return None
-    if deltaY <= const.STRIP_HALF_HEIGHT: return None
-    if deltaY > const.STRIP_HEIGHT << 1: return None
+    if deltaX < headerFinder.STRIP_WIDTH - (headerFinder.STRIP_WIDTH >> 3): return None
+    if deltaX > headerFinder.STRIP_WIDTH << 3: return None
+    if deltaY <= headerFinder.STRIP_HEIGHT>>1: return None
+    if deltaY > headerFinder.STRIP_HEIGHT << 1: return None
 
     if x<HEADER_LEFT : return None
     if x>HEADER_RIGHT : return None
@@ -109,20 +119,21 @@ def findHeader(src, RGB_GRAY, THRESHOLD):
     while i > 0:
         i -= 1
         cnt = contours[i]
-        if cnt[0][0][1]<310 \
-                and cnt[0][0][1]>8 :
+        if True or cnt[0][0][1]<3180 \
+                or cnt[0][0][1]>0 :
             # todo : 上面条件debug only
             #header \
             delta, points = __checkRectRange(cnt)
             # approx = cnt  # cv2.approxPolyDP(cnt, 0.02*cv2.arcLength(cnt,True),True)
             if points :
                 if __checkHeader(delta, points[0][0]):
-                    # if DEBUG_HEADER:
+                    if DEBUG_HEADER:
                         # utils.drawRectBy4P(src, points)
                         # utils.drawRectBy2P(src, header)
                         # cv2.drawContours(srcDetect, [cnt.reshape(-1, 1, 2)], 0, (250, 0, 25), 2)
                         # utils.drawMidLineBy4P(src, points, i)
                         # utils.drawMidLineBy2P(src, header, i)
+                        pass
                     if CANNY_GAUSS:
                         if oldp and sl.SampleLine.isSameRect(points, oldp):
                             #仅当canny时, 需要处理内外圈都识别出来了
@@ -146,16 +157,17 @@ def findHeader(src, RGB_GRAY, THRESHOLD):
                         fcCount += 1
                 oldp = points
                 # oldh = header
-        # cv2.drawContours(srcDetect, [cnt.reshape(-1, 1, 2)], 0, (250, 0, 255), 1)
-        # cv2.imshow('header-srcDetect', srcDetect)
+        if i>86 and i<89:
+            cv2.drawContours(srcDetect, [cnt.reshape(-1, 1, 2)], 0, (250, 0, 255), 1)
+            cv2.imshow('header-srcDetect', srcDetect)
     if DEBUG_HEADER:
         if CANNY_GAUSS:
             # for header in stripHeads:
             #     utils.drawMidLineBy2P(src, header, -5)
             # for points in funcLines:
             #     utils.drawRectBy4P(src, points)
-            # for points in stripPoints:
-            #     utils.drawMidLineBy4P(src, points, -5)
+            for points in stripPoints:
+                utils.drawMidLineBy4P(src, points, -5)
             pass
         # cv2.imshow('header-src', src)
     return stripPoints, funcLines #stripHeads

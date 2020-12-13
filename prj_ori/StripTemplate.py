@@ -39,6 +39,7 @@ class StripTemplate:
         self.references.append((posi, posi))
         self.persentage = [[0.0,0.0]] * len(self.references)
         self.titles.append("tail")
+        findHeaders.headerFinder.setWH(X_TIMES,Y_TIMES)
 
     def __checkShape(self, shape):
         return shape[0] < self.VALID_XY[3] and shape[0] > self.VALID_XY[2] \
@@ -122,6 +123,7 @@ class StripTemplate:
 
             strips[i] = StripRegion.StripRegion(h,self)
             strips[i].matchFuncLine(funcLines)
-        cv2.imshow('header-src', src)
+        src = utils.shrink3(src, PRE_X_TIMES, PRE_Y_TIMES)
+        cv2.imshow('tmpl-src', src)
         print("head,fc:",len(header), len(funcLines))
         return strips

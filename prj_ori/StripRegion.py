@@ -88,6 +88,7 @@ class StripRegion:
         length = i = img.shape[1] - 1
 
         fY = fY0
+        top = img.shape[0]
         #一阶导数
         delta = [0] * i
         minD = maxD = 0
@@ -96,6 +97,8 @@ class StripRegion:
         while i>1:
             fY -= self.slope
             y = round(fY)
+            if (y>=top) :
+                break
             delta[i] = (int(img[y][i+1])-img[y][i])
             if delta[i]>maxD:
                 tmpD = (int(img[y][i-1])-img[y][i])
@@ -126,6 +129,8 @@ class StripRegion:
             else:
                 minY = round(fY0 + (minTmpI - minI) * self.slope)
                 minI = minTmpI
+        elif maxI+minI==0:
+            return None, None
         # print(delta)
         # print(minI, maxI)
         cv2.line(img, (minI,minY),(maxI,maxY),0xff,2)
@@ -158,15 +163,17 @@ class StripRegion:
         j = 0
         while x>0:
             left,width =  self.__findMargin(img, fY)
-
-            i += 1
+            x -= x1
+            if not left:
+                fY -= x1
+                continue
             listP.append([i, left, width, fY])
             if width<=r and width>=l:
                 leftP[j] = left
                 j += 1
                 rangeP.append(i)
+            i += 1
             fY -= x1
-            x -= x1
 
         leftP = StripRegion.__filteringAnomaly(leftP[:j], rangeP)
         StripRegion.__filteringAnomaly(leftP, rangeP)
@@ -208,6 +215,7 @@ class StripRegion:
         del data[maxPos+maxLen:]
         del data[:maxPos]
         return maxLen
+
     @staticmethod
     def __filteringAnomaly( data, list):
         index = StripRegion.__two_sigma(data)
