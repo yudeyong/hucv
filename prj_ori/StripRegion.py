@@ -154,7 +154,7 @@ class StripRegion:
         fY = x-1#x1 * self.slope + self.bias + (StripRegion.STRIP_HEIGHT>>1)
         x1 = StripRegion.STRIP_HEIGHT>>3
 
-        listP = [[0,0,0]]
+        listP = []
         i = 0
         rangeP = []
         leftP = np.zeros((16),dtype=int)
@@ -185,8 +185,8 @@ class StripRegion:
                 # print("lines,",i[0],i[1],i[2])
             print("ran,",rangeP)
 
-        cv2.imshow("bb", img)
-        cv2.waitKey()
+        # cv2.imshow("bb", img)
+        # cv2.waitKey()
         return
 
     @staticmethod
@@ -203,7 +203,7 @@ class StripRegion:
                 else:
                     i = -1
                     break
-            if i>=0:
+            if data[j]-data[i+1]<size :
                 dist = j-i
                 # 跨度(Y轴)相同时, 越紧密越优先
                 if dist>maxLen or (dist==maxLen and minDelta>data[j])-data[i+1]:
