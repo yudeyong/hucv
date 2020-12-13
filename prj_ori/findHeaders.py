@@ -119,8 +119,8 @@ def findHeader(src, RGB_GRAY, THRESHOLD):
     while i > 0:
         i -= 1
         cnt = contours[i]
-        if True or cnt[0][0][1]<3180 \
-                or cnt[0][0][1]>0 :
+        if cnt[0][0][1]<1590 \
+                and cnt[0][0][1]>00 :
             # todo : 上面条件debug only
             #header \
             delta, points = __checkRectRange(cnt)
@@ -157,9 +157,9 @@ def findHeader(src, RGB_GRAY, THRESHOLD):
                         fcCount += 1
                 oldp = points
                 # oldh = header
-        if i>86 and i<89:
-            cv2.drawContours(srcDetect, [cnt.reshape(-1, 1, 2)], 0, (250, 0, 255), 1)
-            cv2.imshow('header-srcDetect', srcDetect)
+        # if i>86 and i<89:
+        #     cv2.drawContours(srcDetect, [cnt.reshape(-1, 1, 2)], 0, (250, 0, 255), 1)
+        #     cv2.imshow('header-srcDetect', srcDetect)
     if DEBUG_HEADER:
         if CANNY_GAUSS:
             # for header in stripHeads:

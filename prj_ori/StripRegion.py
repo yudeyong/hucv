@@ -72,11 +72,28 @@ class StripRegion:
 
 
     def searchCutOff(self, gray):
+        #init img
         self.img = gray
         # self.__getBkColor()
         # cv2.imshow("bg", gray)
         rect = self.__getTestRegion(2)
-        self.__derivative( rect)
+        # listP[n]:[leftX, rightX, y]
+        listP, rangeP = self.__derivative( rect)
+        if None is listP: return None, "miss out cut off"
+        mid = len(rangeP) >> 1
+        self.cutoff = sl.SampleLine.getValue(gray, listP[1:-1],rangeP[mid])
+        print("cutoff,",self.cutoff)
+        mid = (listP[1][0]+listP[-1][0])>>1
+
+
+
+        x = rect[0]
+        x1 = rect[2]
+        img = gray[rect[1]:rect[3], x:x1]
+        # img[listP[-1][2]:listP[0][2], x:x1] = 0
+        # cv2.imshow("bb", img)
+        # cv2.waitKey()
+        return self.lastRegion
 
     def __findMargin(self, img, fY0):
         '''
@@ -133,9 +150,9 @@ class StripRegion:
             return None, None
         # print(delta)
         # print(minI, maxI)
-        cv2.line(img, (minI,minY),(maxI,maxY),0xff,2)
+        # cv2.line(img, (minI,minY),(maxI,maxY),0xff,2)
         # utils.drawRectBy2P(img, (minI,minY-(StripRegion.STRIP_HEIGHT>>2),maxI, maxY+(StripRegion.STRIP_HEIGHT>>2)))
-        return minI, maxI-minI
+        return minI, maxI
 
     # def findMarge(self, ):
     def __derivative(self, rect):
@@ -162,12 +179,13 @@ class StripRegion:
         r = StripRegion.SAMPLING_WIDTH + (const.SAMPLING_WIDTH>>1)
         j = 0
         while x>0:
-            left,width =  self.__findMargin(img, fY)
+            left,right =  self.__findMargin(img, fY)
+            width = right-left
             x -= x1
             if not left:
                 fY -= x1
                 continue
-            listP.append([i, left, width, fY])
+            listP.append([ left, right, fY])
             if width<=r and width>=l:
                 leftP[j] = left
                 j += 1
@@ -178,16 +196,24 @@ class StripRegion:
         leftP = StripRegion.__filteringAnomaly(leftP[:j], rangeP)
         StripRegion.__filteringAnomaly(leftP, rangeP)
         StripRegion.__findMaxWin(rangeP, 9)
-        if l>=4:
-            for x in rangeP:
-                i = listP[x]
-                cv2.line(img, (i[1],int(i[3])),(i[1]+i[2],int(i[3])),(0,0,0),2)
+        if l>=3:
+            listP = np.asanyarray( listP[rangeP[0]:rangeP[-1]+1] )
+            i = len(rangeP)
+            x1 = rangeP[0]
+            while i>0:
+                i -= 1
+                x = rangeP[i] - x1
+                rangeP[i] = x
+                j = listP[x]
+                # cv2.line(img, (j[0], int(j[2])), (j[1] , int(j[2])), (0, 0, 0), 2)
                 # print("lines,",i[0],i[1],i[2])
-            print("ran,",rangeP)
+            listP[:,0] += rect[0]+1
+            listP[:,1] += rect[0]-1
+            listP[:,2] += rect[1]
+            # print("ran,",rangeP)
+            return listP, rangeP
 
-        # cv2.imshow("bb", img)
-        # cv2.waitKey()
-        return
+        else: return None,None
 
     @staticmethod
     def __findMaxWin(data, size):

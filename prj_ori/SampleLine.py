@@ -10,51 +10,30 @@ WHITE_THRESHOLD = SAMPLING_LINES * WHITE_THRESHOLD_BASE
 
 class SampleLine:
     @staticmethod
-    def getValue(data, slideWindow):
-        data = np.swapaxes(data,0,1)
-        i = const.SAMPLING_WIDTH
-        slideWindow.initData(data[:i])
-        min = slideWindow.total
-        x = i
-        i1 = data.shape[0]
-        while i<i1:
-            slideWindow.append(data[i])
-            i += 1
-            if min>slideWindow.total:
-                min = slideWindow.total
-                x = i
-        value = SampleLine.__calculateValue(data[x-const.SAMPLING_WIDTH:x,:])
-        return value, x-const.SAMPLING_WIDTH
-
+    def getValue(data, listP, mid):
+        if (len(listP)>4) :
+            listP = listP[1:-1]
+            mid -= 2
+        else: mid -= 1
+        x1 = listP[mid][0]
+        x2 = listP[mid][1]
+        d = data[listP[-1][2]:listP[0][2],x1:x2]
+        v = SampleLine.__calculateValue(d)
+        data[listP[-1][2]:listP[0][2],x1:x2] = 0
+        return v
     @staticmethod
     def __calculateValue( data):
         count = data.size
         data = data.reshape((-1))
         data = np.sort(data)
-        i0 = (count>>3)
-        i1 = count>>2
-        i0=(i1+i0)>>1
-        i1 = i0 +1
+        value = count>>4
+        i0 = (count>>3)+value
+        i1 = (count>>2)+value
         value = np.average(data[i0:i1])
         # value += 0xff - bgColor
 
         # print("val:",value)
         return value
-
-    # @staticmethod
-    # def __calculateYValue( data):
-    #     count = data.shape[0]
-    #     data = np.sort(data)
-    #     i0 = (count>>3)
-    #     i1 = count>>2
-    #     if (i1<2+i0):
-    #         i0 = 1
-    #         i1 = 4
-    #     # value = np.average(data[i0:i1])
-    #     value = data[(i0 + i1)>>1]
-    #
-    #     print(value)
-    #     return value
 
     def __init__(self, data, x):
         self.lines = np.asarray(data)
@@ -88,7 +67,7 @@ class SampleLine:
         self.x1 += 1
         assert self.x1==x
 
-    def getSampleValueBySeletedRegion(self, bgColor):
+    def getSampleValueBySeletedRegion(self):
         filter = self.lines < WHITE_THRESHOLD
         testSamples = self.lines[filter]
         count = testSamples.shape[0]
@@ -103,4 +82,4 @@ class SampleLine:
         if count < 5:
             return -8
 
-        self.value = self.__calculateValue(testSamples, bgColor)
+        self.value = self.__calculateValue(testSamples)

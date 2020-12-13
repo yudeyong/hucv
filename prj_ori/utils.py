@@ -154,38 +154,11 @@ def shrink3(img, xTimes, yTimes):
 
 
 def enlarge(img, xTimes, yTimes):
-    (h, w) = img.shape
-    nW = xTimes * w
-    nH = yTimes * h
-
-    # 1维寻址快
-    nImg = np.empty([nH, nW], dtype='uint8')
-    buf = img.reshape((-1))
-    nBuf = nImg.reshape((-1))
-    nCur = nW * nH
-    cur = w * h
-    tmpBuf = buf if (xTimes == 1) else nBuf
-
-    while (cur > 0):
-        i = w
-        if (xTimes > 1):
-            # undebug
-            lineCur = nCur
-            while (i > 0):
-                cur -= 1
-                i -= 1
-                nBuf[nCur - xTimes: nCur] = buf[cur]
-                nCur -= xTimes
-        else:
-            lineCur = cur
-        j = yTimes
-        while j > 0:
-            j -= 1
-            nBuf[nCur - nW:nCur] = tmpBuf[lineCur - nW:lineCur]
-            nCur -= nW
-        cur -= w
-    return nImg
-
+    #todo 未调试
+    if xTimes>1:
+        img = np.repeat(img, xTimes, axis=0)
+    if yTimes>1:
+        img = np.repeat(img, yTimes, axis=1)
 
 def drawRectBy2P(src, p):
     p = ((p[0], p[1]), (p[2], p[1]), (p[0], p[3]), (p[2], p[3]))
