@@ -32,7 +32,7 @@ class StripRegion:
         self.funcLine = None
         self.midFuncLine = None
         self.validPos = 0
-        self.scale = 1.0
+        self.scale = 9.484
 
     @staticmethod
     def recognise(gray, regions):
@@ -81,18 +81,46 @@ class StripRegion:
         listP, rangeP = self.__derivative( rect)
         if None is listP: return None, "miss out cut off"
         mid = len(rangeP) >> 1
-        self.cutoff = sl.SampleLine.getValue(gray, listP[1:-1],rangeP[mid])
-        print("cutoff,",self.cutoff)
-        mid = (listP[1][0]+listP[-1][0])>>1
 
+        self.cutoff = sl.SampleLine.getValue(gray, listP[1:-1],rangeP[mid])
+        if DEBUG_STRIP:print("cutoff,",self.cutoff)
+
+        if DEBUG_STRIP:
+            self.__drawAllDebug()
+            cv2.imshow("bb", gray)
+            cv2.waitKey()
+        if len(listP)==9 and (listP[0][1]-listP[0][0])==(listP[-1][1]-listP[-1][0]):
+            #精确定位
+            cutoffLine = ((listP[0][1],listP[0][2]),(listP[-1][1],listP[-1][2]))
+            mid = (cutoffLine[0][0]+cutoffLine[1][0])>>1,(cutoffLine[0][1]+cutoffLine[1][1])>>1
+            # self.scale = self.template.getScale(0, 2, mid[0] - self.midHeader[0][0] + 1)
+            self.slope,self.bias = utils.getSlopeBiasBy2P(self.midHeader[0], mid)
+            if DEBUG_STRIP: self.__drawAllDebug()
+
+            if DEBUG_STRIP: print("perfect cutline & scale:", self.scale)
+        else:
+            # index = StripRegion.__two_sigma(listP[:,1])
+            # listP = np.delete(listP, index,axis=1)
+            mid = listP[0][2]-listP[-1][2]
+            if mid<=32 and mid>=28:
+                cutoffLine = ((listP[0][1], listP[0][2]), (listP[-1][1], listP[-1][2]))
+                y = self.slope*(cutoffLine[0][0]+cutoffLine[1][0]>>1)+self.bias
+                y = (y*2+(cutoffLine[0][1]+cutoffLine[1][1]))/4
+                mid =  (cutoffLine[0][0]+cutoffLine[1][0])>>1,y
+                self.slope,self.bias = utils.getSlopeBiasBy2P(self.midHeader[0], mid)
+                if DEBUG_STRIP: self.__drawAllDebug()
+
+            if DEBUG_STRIP:
+                print("cutline",len(listP),(listP[0][1]-listP[0][0],(listP[-1][1]-listP[-1][0])))
+                pass
 
 
         x = rect[0]
         x1 = rect[2]
-        img = gray[rect[1]:rect[3], x:x1]
+        # img = gray[rect[1]:rect[3], x:x1]
         # img[listP[-1][2]:listP[0][2], x:x1] = 0
-        # cv2.imshow("bb", img)
-        # cv2.waitKey()
+        cv2.imshow("bb", gray)
+        cv2.waitKey()
         return self.lastRegion
 
     def __findMargin(self, img, fY0):
@@ -205,7 +233,7 @@ class StripRegion:
                 x = rangeP[i] - x1
                 rangeP[i] = x
                 j = listP[x]
-                # cv2.line(img, (j[0], int(j[2])), (j[1] , int(j[2])), (0, 0, 0), 2)
+                cv2.line(img, (j[0], int(j[2])), (j[1] , int(j[2])), (0, 0, 0), 2)
                 # print("lines,",i[0],i[1],i[2])
             listP[:,0] += rect[0]+1
             listP[:,1] += rect[0]-1
@@ -281,7 +309,7 @@ class StripRegion:
     def __setFuncLine(self, f):
         self.funcLine = f
         self.midFuncLine = utils.mid2PBy4P(f)
-        self.scale = self.template.getScale( 0, 1, self.midFuncLine[1][0] - self.midHeader[0][0] + 1 )
+        # self.scale = self.template.getScale( 0, 1, self.midFuncLine[1][0] - self.midHeader[0][0] + 1 )
         self.lastRegion = f
         self.lastMid = self.midFuncLine
 
