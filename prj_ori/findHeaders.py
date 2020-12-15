@@ -119,7 +119,7 @@ def findHeader(src, RGB_GRAY, THRESHOLD):
     while i > 0:
         i -= 1
         cnt = contours[i]
-        if cnt[0][0][1]<590 \
+        if cnt[0][0][1]<930 \
                 and cnt[0][0][1]>00 :
             # todo : 上面条件debug only
             #header \

@@ -185,8 +185,9 @@ def drawFullLine(src, p, k, b, i):
 
     if i < 0:
         c = (255*(i&1),255*(i&2), 255*(i&4))
-    else :
-        c = (0xff,0,0xff*(i & 1))
+    elif i == 0:
+        c = 0
+    else : c = (0xff,0,0xff*(i & 1))
 
     cv2.line(src,p, (x2, y2), c,2-(i<0)*1)
 

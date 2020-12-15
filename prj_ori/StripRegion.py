@@ -31,8 +31,8 @@ class StripRegion:
         self.samples = []
         self.funcLine = None
         self.midFuncLine = None
-        self.validPos = 0
         self.scale = 9.484
+        # self.points = [self.midHeader[0],self.midHeader[1]]
 
     @staticmethod
     def recognise(gray, regions):
@@ -42,11 +42,13 @@ class StripRegion:
             if not region.funcLine :
                 continue
             region.__analysis(gray)
+            if DEBUG_LINE:
+                # region.drawFullLineDebug()
+                pass
             if DEBUG_STRIP:
-                region.drawFullLineDebug()
                 i += 1
-                if DEBUG_DRAW_ALL:
-                    region.__drawAllDebug()
+                # if DEBUG_DRAW_ALL:
+                #     region.__drawAllDebug()
                 # if i != 2: continue
             cv2.imshow("bb", region.img)
             cv2.waitKey()
@@ -77,41 +79,36 @@ class StripRegion:
         #init img
         self.img = img
         err = self.searchCutOff()
+        if DEBUG_LINE: self.drawFullLineDebug()
         if err:
             return err
         for i in range(len(self.template.sampleRef)) :
             self.searchSampleLine(i)
-            break
+
 
     def searchSampleLine(self,i):
         ref = self.template.sampleRef[i]
         rect = self.__getTestRegion(self.scale *ref[0]-StripRegion.SAMPLING_WIDTH,self.scale * ref[1]+StripRegion.SAMPLING_WIDTH)
         listP, rangeP = self.__derivative(rect)
         if None is listP: return None
-        cv2.imshow("bb", self.img)
-        cv2.waitKey()
-        self.values[i] = sl.SampleLine.getValue(self.img, listP,rangeP)
 
 
-    def searchCutOff(self):
+        self.values[i] = 0xff-sl.SampleLine.getValue(self.img, listP,rangeP)
+        print(i,"v:",(self.values[i])/(self.cutoff), self.cutoff,self.values[i])
 
-        rect = self.__getTestRegion(self.funcLine[1][0]-self.midHeader[0][0]+ StripRegion.SAMPLING_WIDTH,self.scale * self.template.references[2+1][0] - StripRegion.SAMPLING_WIDTH)
-        # listP[n]:[leftX, rightX, y]
-        listP, rangeP = self.__derivative( rect)
-        if None is listP: return "miss out cut off"
+        self.__updateSlopeBias(listP, self.values[i])
 
-        self.cutoff = sl.SampleLine.getValue(self.img, listP,rangeP)
-        if DEBUG_STRIP:print("cutoff,",self.cutoff)
-
+    def __updateSlopeBias(self, listP, v):
+        if v*2<self.cutoff :return
         if DEBUG_DRAW_ALL:
             self.__drawAllDebug()
-            # cv2.imshow("bb", self.img)
-            # cv2.waitKey()
+            cv2.imshow("bb", self.img)
+            cv2.waitKey()
             pass
         if len(listP)==9 and (listP[0][1]-listP[0][0])==(listP[-1][1]-listP[-1][0]):
             #精确定位
-            cutoffLine = ((listP[0][1],listP[0][2]),(listP[-1][1],listP[-1][2]))
-            mid = (cutoffLine[0][0]+cutoffLine[1][0])>>1,(cutoffLine[0][1]+cutoffLine[1][1])>>1
+            line = ((listP[0][1],listP[0][2]),(listP[-1][1],listP[-1][2]))
+            mid = (line[0][0]+line[1][0])>>1,(line[0][1]+line[1][1])>>1
             # self.scale = self.template.getScale(0, 2, mid[0] - self.midHeader[0][0] + 1)
             self.slope,self.bias = utils.getSlopeBiasBy2P(self.midHeader[0], mid)
             if DEBUG_DRAW_ALL: self.__drawAllDebug()
@@ -122,17 +119,36 @@ class StripRegion:
             # listP = np.delete(listP, index,axis=1)
             mid = listP[0][2]-listP[-1][2]
             if mid<=32 and mid>=28:
-                cutoffLine = ((listP[0][1], listP[0][2]), (listP[-1][1], listP[-1][2]))
-                y = self.slope*(cutoffLine[0][0]+cutoffLine[1][0]>>1)+self.bias
-                y = (y*2+(cutoffLine[0][1]+cutoffLine[1][1]))/4
-                mid =  (cutoffLine[0][0]+cutoffLine[1][0])>>1,y
+                line = ((listP[0][1], listP[0][2]), (listP[-1][1], listP[-1][2]))
+                x = line[0][0]+line[1][0]>>1
+                y = self.slope*(x)+self.bias
+                y1 = y-((line[0][1]+line[1][1])>>1)
+                if abs(y1)>0.5 :
+                    y1 = 0.5 if y1>0 else -0.5
+                y1 += y
+                mid =  x,y1
                 self.slope,self.bias = utils.getSlopeBiasBy2P(self.midHeader[0], mid)
                 if DEBUG_DRAW_ALL: self.__drawAllDebug()
 
             if DEBUG_STRIP:
                 print("cutline",len(listP),(listP[0][1]-listP[0][0],(listP[-1][1]-listP[-1][0])))
                 pass
+        if DEBUG_LINE: self.drawFullLineDebug()
+        cv2.imshow("bb", self.img)
+        cv2.waitKey()
 
+
+    def searchCutOff(self):
+
+        rect = self.__getTestRegion(self.funcLine[1][0]-self.midHeader[0][0]+ StripRegion.SAMPLING_WIDTH,self.scale * self.template.references[2+1][0] - StripRegion.SAMPLING_WIDTH)
+        # listP[n]:[leftX, rightX, y]
+        listP, rangeP = self.__derivative( rect)
+        if None is listP: return "miss out cut off"
+
+        self.cutoff = 0xff-sl.SampleLine.getValue(self.img, listP,rangeP)
+        if DEBUG_STRIP:print("cutoff,",self.cutoff)
+
+        self.__updateSlopeBias(listP, self.cutoff)
 
         x = rect[0]
         x1 = rect[2]
@@ -220,8 +236,10 @@ class StripRegion:
         x = rect[3]-rect[1] # assert x == StripRegion.STRIP_HEIGHT*2
         # length = i = x1-x-1
         fY = round(x1 * self.slope + self.bias - rect[1])
-        fY1 = fY - (StripRegion.STRIP_HEIGHT>>1)-1
-        fY += (StripRegion.STRIP_HEIGHT>>1)+1
+        # yyy=fY
+        fY1 = fY - StripRegion.STRIP_HEIGHT+(StripRegion.STRIP_HEIGHT>>3)
+        fY += (StripRegion.STRIP_HEIGHT)-(StripRegion.STRIP_HEIGHT>>3)
+        yy = fY
         x1 = StripRegion.STRIP_HEIGHT>>3
 
         listP = []
@@ -247,23 +265,29 @@ class StripRegion:
                 i += 1
             fY -= x1
 
-        if len(rangeP)<3: return None,None
-        leftP = StripRegion.__filteringAnomaly(leftP[:j], rangeP)
-        if len(rangeP)<3: return None,None
-        StripRegion.__filteringAnomaly(leftP, rangeP)
-        if len(rangeP)<3: return None,None
+        if len(rangeP)<5: return None,None
+        leftP = StripRegion.__filteringAnomaly(leftP[:j], rangeP, StripRegion.__modeCheck)
+
+        leftP = StripRegion.__filteringAnomaly(leftP, rangeP, StripRegion.__two_sigma)
+        if len(rangeP)<5: return None,None
+        StripRegion.__filteringAnomaly(leftP, rangeP, StripRegion.__two_sigma)
+        if len(rangeP)<5: return None,None
         StripRegion.__findMaxWin(rangeP, 9)
-        if len(rangeP)>=3:
+        if len(rangeP)>=5:
             listP = np.asanyarray( listP[rangeP[0]:rangeP[-1]+1] )
             i = len(rangeP)
             x1 = rangeP[0]
             while i>0:
                 i -= 1
-                x = rangeP[i] - x1
-                rangeP[i] = x
-                j = listP[x]
-                cv2.line(img, (j[0], int(j[2])), (j[1] , int(j[2])), (0, 0, 0), 2)
+                # x = rangeP[i] - x1
+                rangeP[i] -= x1
+
+                #debug only
+                j = listP[rangeP[i]]
+                # cv2.line(img, (j[0], int(j[2])), (j[1] , int(j[2])), (0, 0, 0), 2)
                 # print("lines,",i[0],i[1],i[2])
+            cv2.line(img, (listP[rangeP[0]][0], yy), (listP[rangeP[0]][0], fY1), 0, 1)
+            # cv2.line(img, (listP[rangeP[0]][0], yyy), (listP[rangeP[0]][1], yyy), 0, 3)
             listP[:,0] += rect[0]+1
             listP[:,1] += rect[0]-1
             listP[:,2] += rect[1]
@@ -308,21 +332,32 @@ class StripRegion:
         del data[:maxPos]
         return maxLen
 
+
     @staticmethod
-    def __filteringAnomaly( data, list):
+    def __filteringAnomaly( data, list, func):
         '''
         过滤噪点, 异常值
         :param data:
         :param list:
         :return:
         '''
-        index = StripRegion.__two_sigma(data)
+        if data.max()-data.min()<=2: return data
+        index = func(data)
         data = np.delete(data, index)
         i = len(index)
         while i>0:
             i -= 1
             del list[index[i]]
         return data
+
+    @staticmethod
+    def __modeCheck(Ser1):
+        c = np.bincount(Ser1)
+        # 返回众数
+        i = np.argmax(c)
+        rule = (i-StripRegion.SAMPLING_WIDTH > Ser1) | (i+StripRegion.SAMPLING_WIDTH < Ser1)
+        index = np.arange(Ser1.shape[0])[rule]
+        return index
 
     # 定义3σ法则(实际使用的更严格的2σ,也许多次3σ更好,需要试)识别异常值函数
     @staticmethod
@@ -358,6 +393,8 @@ class StripRegion:
         self.midFuncLine = utils.mid2PBy4P(f)
         # self.scale = self.template.getScale( 0, 1, self.midFuncLine[1][0] - self.midHeader[0][0] + 1 )
         self.lastMid = self.midFuncLine
+        # self.points.append(self.midFuncLine[0])
+        # self.points.append(self.midFuncLine[1])
 
         #assert(scale between 9.42, 8.8)
         # print(self.scale)
@@ -414,8 +451,8 @@ class StripRegion:
 
     def drawFullLineDebug(self):
         if self.midFuncLine :
-            k, b = utils.getSlopeBiasBy2P(self.midHeader[0], self.midFuncLine[1])
-            # utils.drawFullLine(self.img, self.midHeader[0], k, b, 0)
+            k, b = self.slope, self.bias
+            utils.drawFullLine(self.img, (self.midHeader[0][0],self.midHeader[0][1]-StripRegion.STRIP_HEIGHT+5), k, b-StripRegion.STRIP_HEIGHT+5, 0)
             pass
         # self.getValuesByPostion(gray)
 
@@ -427,20 +464,6 @@ class StripRegion:
 
     ############  deprecated  ###########
     # counter = 0
-    def __setProcessValue(self):
-        cutOff = 0xff-self.valueAndPosi[1][0]
-        if cutOff==0:
-            return -2
-        for v in self.valueAndPosi:
-            v[1] = StripRegion.__funcValue((0xff-v[0]) / cutOff)
-            v[2] = StripRegion.__setQualitative(v[1])
-            if DEBUG_SR :
-                print("{:.2f}".format(v[1]), ',', end='')
-        if DEBUG_SR :
-            print()
-            for v in self.valueAndPosi:
-                print(v[2], ',', end='')
-            print()
 
     @staticmethod
     def __setQualitative(v):
