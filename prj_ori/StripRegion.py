@@ -8,7 +8,7 @@ import StripTemplate as st
 import math
 
 DEBUG_SR = not False
-DEBUG_LINE =  False
+DEBUG_LINE = not False
 
 DEBUG_STRIP =  False and DEBUG_SR
 DEBUG_DRAW_ALL =  False and DEBUG_SR
@@ -32,7 +32,7 @@ class StripRegion:
         self.funcLine = None
         self.midFuncLine = None
         self.scale = 9.484
-        # self.points = [self.midHeader[0],self.midHeader[1]]
+        self.points = [self.midHeader[0],self.midHeader[1]]
 
     @staticmethod
     def recognise(gray, regions):
@@ -110,7 +110,10 @@ class StripRegion:
             line = ((listP[0][1],listP[0][2]),(listP[-1][1],listP[-1][2]))
             mid = (line[0][0]+line[1][0])>>1,(line[0][1]+line[1][1])>>1
             # self.scale = self.template.getScale(0, 2, mid[0] - self.midHeader[0][0] + 1)
-            self.slope,self.bias = utils.getSlopeBiasBy2P(self.midHeader[0], mid)
+            self.points.append(mid)
+            self.points.append(mid)
+            self.__getFitLine()
+            # self.slope,self.bias = utils.getSlopeBiasBy2P(self.midHeader[0], mid)
             if DEBUG_DRAW_ALL: self.__drawAllDebug()
 
             if DEBUG_STRIP: print("perfect cutline & scale:", self.scale)
@@ -388,13 +391,23 @@ class StripRegion:
             y = round(x * self.slope + self.bias)
             self.__setSymbleDebug(round(x), round(self.midHeader[0][0]+self.scale*p[1]), y)
 
+    def __getFitLine(self):
+        p = np.asanyarray(self.points)
+        out = cv2.fitLine(p, cv2.DIST_L2, 0, 0.01, 0.01)
+        k = out[1]/out[0]
+        b = out[3] - k * out[2]
+        # self.midHeader[0][0] = round((self.midHeader[0][1] - b[0] )/k[0])
+        self.slope = k[0]
+        self.bias = b[0]
+
     def __setFuncLine(self, f):
         self.funcLine = f
         self.midFuncLine = utils.mid2PBy4P(f)
         # self.scale = self.template.getScale( 0, 1, self.midFuncLine[1][0] - self.midHeader[0][0] + 1 )
         self.lastMid = self.midFuncLine
-        # self.points.append(self.midFuncLine[0])
-        # self.points.append(self.midFuncLine[1])
+        self.points.append(self.midFuncLine[0])
+        self.points.append(self.midFuncLine[1])
+        self.__getFitLine()
 
         #assert(scale between 9.42, 8.8)
         # print(self.scale)

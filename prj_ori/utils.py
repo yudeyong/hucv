@@ -176,8 +176,8 @@ def drawMidLineBy2P(src, p, i):
     drawMidLineBy4P(src, p, i)
 
 def mid2PBy4P(p):
-    p1 = ((p[0][0] + p[2][0]) >> 1, (p[0][1] + p[2][1]) >> 1 )
-    return p1,((p[1][0] + p[3][0]) >> 1, (p[1][1] + p[3][1]) >> 1 )
+    p1 = [(p[0][0] + p[2][0]) >> 1, (p[0][1] + p[2][1]) >> 1 ]
+    return p1,[(p[1][0] + p[3][0]) >> 1, (p[1][1] + p[3][1]) >> 1 ]
 
 def drawFullLine(src, p, k, b, i):
     x2 = src.shape[0]
