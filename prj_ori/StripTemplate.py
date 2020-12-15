@@ -37,6 +37,7 @@ class StripTemplate:
                 self.titles.append(line[0])
             posi += line[1]
         self.references.append((posi, posi))
+        self.sampleRef = self.references[3:-1]
         self.persentage = [[0.0,0.0]] * len(self.references)
         self.titles.append("tail")
         findHeaders.headerFinder.setWH(X_TIMES,Y_TIMES)
