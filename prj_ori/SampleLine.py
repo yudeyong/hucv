@@ -10,14 +10,18 @@ WHITE_THRESHOLD = SAMPLING_LINES * WHITE_THRESHOLD_BASE
 
 class SampleLine:
     @staticmethod
-    def getValue(data, listP, mid):
-        if (len(listP)>4) :
-            listP = listP[1:-1]
-            mid -= 2
-        else: mid -= 1
-        x1 = listP[mid][0]
-        x2 = listP[mid][1]
-        d = data[listP[-1][2]:listP[0][2],x1:x2]
+    def getValue(data, listP, rangeP):
+        mid = len(rangeP) >> 1
+
+        if (len(rangeP)>4 ) :
+            delta = 2
+        else:
+            delta = 1
+        # listP = listP[delta:-delta]
+
+        x1 = listP[rangeP[mid]][0]
+        x2 = listP[rangeP[mid]][1]
+        d = data[listP[-1][2]+delta:listP[0][2]-delta,x1:x2]
         v = SampleLine.__calculateValue(d)
         data[listP[-1][2]:listP[0][2],x1:x2] = 0
         return v

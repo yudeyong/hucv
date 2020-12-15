@@ -10,7 +10,7 @@ import math
 DEBUG_SR = not False
 DEBUG_LINE =  False
 
-DEBUG_STRIP = not False and DEBUG_SR
+DEBUG_STRIP =  False and DEBUG_SR
 DEBUG_DRAW_ALL =  False and DEBUG_SR
 
 
@@ -90,8 +90,7 @@ class StripRegion:
         if None is listP: return None
         cv2.imshow("bb", self.img)
         cv2.waitKey()
-        mid = len(rangeP) >> 1
-        self.values[i] = sl.SampleLine.getValue(self.img, listP[1:-1],rangeP[mid])
+        self.values[i] = sl.SampleLine.getValue(self.img, listP,rangeP)
 
 
     def searchCutOff(self):
@@ -101,8 +100,7 @@ class StripRegion:
         listP, rangeP = self.__derivative( rect)
         if None is listP: return "miss out cut off"
 
-        mid = len(rangeP) >> 1
-        self.cutoff = sl.SampleLine.getValue(self.img, listP[1:-1],rangeP[mid])
+        self.cutoff = sl.SampleLine.getValue(self.img, listP,rangeP)
         if DEBUG_STRIP:print("cutoff,",self.cutoff)
 
         if DEBUG_DRAW_ALL:
@@ -221,7 +219,9 @@ class StripRegion:
 
         x = rect[3]-rect[1] # assert x == StripRegion.STRIP_HEIGHT*2
         # length = i = x1-x-1
-        fY = x-1#x1 * self.slope + self.bias + (StripRegion.STRIP_HEIGHT>>1)
+        fY = round(x1 * self.slope + self.bias - rect[1])
+        fY1 = fY - (StripRegion.STRIP_HEIGHT>>1)-1
+        fY += (StripRegion.STRIP_HEIGHT>>1)+1
         x1 = StripRegion.STRIP_HEIGHT>>3
 
         listP = []
@@ -231,19 +231,20 @@ class StripRegion:
         l = StripRegion.SAMPLING_WIDTH - (const.SAMPLING_WIDTH >> 1)
         r = StripRegion.SAMPLING_WIDTH + (const.SAMPLING_WIDTH>>1)
         j = 0
-        while x>0:
+        while fY>fY1:
             left,right =  self.__findMargin(img, fY)
-            width = right-left
-            x -= x1
-            if not left:
-                fY -= x1
-                continue
-            listP.append([ left, right, fY])
-            if width<=r and width>=l:
-                leftP[j] = left
-                j += 1
-                rangeP.append(i)
-            i += 1
+            if left:
+                width = right-left
+                x -= x1
+                if not left:
+                    fY -= x1
+                    continue
+                listP.append([ left, right, fY])
+                if width<=r and width>=l:
+                    leftP[j] = left
+                    j += 1
+                    rangeP.append(i)
+                i += 1
             fY -= x1
 
         if len(rangeP)<3: return None,None
@@ -285,6 +286,7 @@ class StripRegion:
         if data[j] - data[0]<size: return j
         maxLen = 1
         maxPos = i
+        minDelta = 0x7fff
 
         while i>0:
             while data[j]-data[i]<size:
@@ -425,45 +427,6 @@ class StripRegion:
 
     ############  deprecated  ###########
     # counter = 0
-
-    def getValuesByPostion(self, img):
-        percent = self.template.setPercentage(1, 0)
-        # cv2.line(gray, (self.left, self.top), (self.right, self.bottom), (0,0,255), 1)
-        # cv2.line(gray, (self.left, self.bottom), (self.right, self.top), (0,0,255), 1)
-        # self.firstLine = self.left +15
-
-        # StripRegion.counter+=1
-        # if (StripRegion.counter!=3) :return
-
-        win = sw.SlidingWindgow(const.SAMPLING_WIDTH)
-        length = self.right - self.left
-
-        i = 0
-        for p in percent:
-            if DEBUG_LINE:
-                i += 1
-                if (i>2 and i!=13 and i!=14) : pass#continue
-                elif i>2:
-                    i=i
-            x = self.firstLine + p[0]*length -const.SAMPLING_WIDTH
-            y = int(x*self.slope + self.bias)
-            x = round(x)
-            colorValue,offsetx = sl.SampleLine.getValue(img[y-const.SAMPLING_MINUS_Y_OFFSET:y+const.SAMPLING_Y_OFFSET,
-                                x:x+(const.SAMPLING_WIDTH<<2) ], win)
-            offsetx += x
-            self.__setSymbleDebug(img,int(x), x+(const.SAMPLING_WIDTH<<2), y-12 )
-            self.__setSymbleDebug(img,int(offsetx),int(offsetx+const.SAMPLING_WIDTH), y )
-            colorValue = self.__removeBgColor(colorValue)
-            self.valueAndPosi.append([colorValue, 0.0, 0,offsetx])
-
-        if not DEBUG_LINE:
-            if (len(self.valueAndPosi)<len(percent)):
-                return -1
-        print('************ new strip *************')
-        self.__setProcessValue()
-        # cv2.imshow("bb", img)
-        # cv2.waitKey()
-
     def __setProcessValue(self):
         cutOff = 0xff-self.valueAndPosi[1][0]
         if cutOff==0:
