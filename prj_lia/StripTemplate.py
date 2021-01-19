@@ -174,11 +174,11 @@ class StripTemplate:
         self._mapOrigin()
         if DEBUG_DRAW_LOCATION:
             utils.drawDot(src, self.origin, 15)
-            origin = self.origin
-            i = 20 * self.STRIP_INTERVAL
-            while (i>=0):
-                utils.drawDot(src, (origin[0],origin[1]+round(i)), 5)
-                i -= 14.7
+            # origin = self.origin
+            # i = 20 * self.STRIP_INTERVAL
+            # while (i>=0):
+            #     utils.drawDot(src, (origin[0],origin[1]+round(i)), 5)
+            #     i -= self.STRIP_INTERVAL
 
         if not False and not lines is None and DEBUG_DRAW_LOCATION:
             color = 0
@@ -202,6 +202,10 @@ class StripTemplate:
         y = round(self.BOARD_AREA[1]+PRE_Y_TIMES*self.origin[1])
         src = self.src[y:y+self.STRIP_AREA[3], x:x+self.STRIP_AREA[2]]
         if DEBUG_DRAW_LOCATION:
+            i = 2+20 * self.STRIP_INTERVAL
+            while (i>=0):
+                utils.drawDot(src, (8,i+round(i)), 15)
+                i -= self.STRIP_INTERVAL
             cv2.imshow('canny', src)
             cv2.waitKey()
             self.gray = utils.toGray(src, 'r')
