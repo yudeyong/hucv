@@ -11,7 +11,7 @@ def toGray(img, rgb_gray):
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     else:
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2BGRA)
-        g, b, r, _ = cv2.split(gray)
+        b, g, r, _ = cv2.split(gray)
         if False:
             cv2.imshow('1-r', r)
             cv2.imshow('2-g', g)

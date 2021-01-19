@@ -20,8 +20,8 @@ def recognition(file, category):
     ###cut borad from image
     # strips = template.findHeader(src)
 
-    gray = utils.toGray(src, 'b')
-    strips = template.findHeader(src)
+    gray = utils.toGray(src, 'r')
+    strips = template.locatArea(gray)
     # sr.StripRegion.recognise(gray, strips)
 
     # cv2.imshow('bw',bw)

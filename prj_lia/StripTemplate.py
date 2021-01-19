@@ -8,7 +8,7 @@ import cv2
 import StripRegion
 
 DEBUG = not False
-
+DEBUG_DRAW_LOCATION = not False and DEBUG
 #tail line
 # rgb to gray value: None or R,G,B to gray value: 0x1 r, 0x100 g, 0x10000 b
 # RGB_GRAY = 0x10000
@@ -33,6 +33,9 @@ class StripTemplate:
         self.THRESHOLD = jsonDic['THRESHOLD']
         self.VALID_XY = jsonDic['VALID_XY']
         self.BOARD_AREA = jsonDic["BOARD_AREA"]
+        self.STRIP_AREA = jsonDic["STRIP_AREA"]
+        self.STRIP_INTERVAL = jsonDic["STRIP_INTERVAL"]
+
         lines = jsonDic['lines']
         posi = 0
         for line in lines:
@@ -51,7 +54,7 @@ class StripTemplate:
                and shape[1] < self.VALID_XY[1] and shape[1] > self.VALID_XY[0]
 
     def getImg(self, file):
-        src = cv2.imread(file)
+        src = self.src = cv2.imread(file)
         if src is None: return None,"file not found " + file
         if not self.__checkShape(src.shape):
             return None,"invalid size."
@@ -60,7 +63,7 @@ class StripTemplate:
             src = utils.shrink3(src, PRE_X_TIMES, PRE_Y_TIMES)
         return src, None
 
-    def getScale(self, l1, l2, length):
+    def _getScale(self, l1, l2, length):
         '''
         返回比例
         :param l1: 第一线坐标
@@ -71,7 +74,7 @@ class StripTemplate:
         return length / (self.references[l2][1] - self.references[l1][0])
 
     # side offset 0:起点 1:终点
-    def setPercentage(self, fromIndex, side):
+    def _setPercentage(self, fromIndex, side):
         offset = self.references[fromIndex][side]
         length = self.references[len(self.references)-1][1] - offset
         # 先乘2, 循环时就可以少除1个2了
@@ -87,7 +90,8 @@ class StripTemplate:
         # return self.persentage
         return self.persentage[i:-1]
 
-    def filterLines(self, lines):
+    #找最顶,最左线
+    def _filterLines(self, lines):
         v2ndBias = h2ndBias = vMinBias = hMinBias = 0x7fff
         vSlope = hSlope = 0.0
         v2ndSlope = hSlopeSetting = 0.05
@@ -127,28 +131,33 @@ class StripTemplate:
             vSlope = (vSlope+v2ndSlope)/2
             vMinBias = (vMinBias+v2ndBias)/2
             # utils.drawFullLine(self.img,(0,round(vMinBias)), vSlope, vMinBias, 8)
-        utils.drawFullLine(self.img,(0,round(hMinBias)), hSlope, hMinBias, -2)
-        utils.drawFullLine(self.img,(0,round(vMinBias)), vSlope, vMinBias, -2)
-        cv2.imshow('canny', self.img)
-        # cv2.waitKey()
+        if DEBUG_DRAW_LOCATION:
+            utils.drawFullLine(self.img,(0,round(hMinBias)), hSlope, hMinBias, -2)
+            utils.drawFullLine(self.img,(0,round(vMinBias)), vSlope, vMinBias, -2)
+            cv2.imshow('canny', self.img)
+            # cv2.waitKey()
         self.hkb=(hSlope,hMinBias)
         self.vkb=(vSlope,vMinBias)
 
+    #映射到膜条区域左顶点
     def _mapOrigin(self):
+        X_OFFSET = self.STRIP_AREA[0]
+        Y_OFFSET = self.STRIP_AREA[1]
         x = self.origin[0]
         y = self.origin[1]
         if self.vkb[0] != float("inf"):
-            tg = abs(self.vkb[0])
-            sin = math.sqrt(tg/(1+tg))
+            tg = (self.vkb[0])
+            sin = math.sqrt(abs(tg/(1+tg)))
             tg = abs(self.hkb[0])
-            cos = math.sqrt(1/(1+tg))
-            deltaX = 118*cos
-            deltaY = 206*sin
+            cos = math.sqrt(1/abs(1+tg))
+            deltaX = X_OFFSET*cos
+            deltaY = Y_OFFSET*sin
         else:
-            deltaX = 118
-            deltaY = 206
+            deltaX = X_OFFSET
+            deltaY = Y_OFFSET
         self.origin = (x+deltaX,y+deltaY)
 
+    #寻找最左顶点
     def _locateOrigin(self):
         src = self.img
         _, bw = cv2.threshold(src, self.THRESHOLD, 255.0, cv2.THRESH_BINARY)
@@ -157,35 +166,49 @@ class StripTemplate:
         # if findHeaders.CANNY_GAUSS:
         bw = utils.toCanny(bw, findHeaders.CANNY_GAUSS)
         lines = cv2.HoughLinesP(bw, 1, np.pi / 180, 160, minLineLength=200, maxLineGap=30)
-        self.filterLines(lines)
+        self._filterLines(lines)
         self.origin = utils.getCross(self.hkb,self.vkb)
         if not self.origin:
             return False
-        utils.drawDot(src, self.origin, 5)
+        if DEBUG_DRAW_LOCATION: utils.drawDot(src, self.origin, 5)
         self._mapOrigin()
-        utils.drawDot(src, self.origin, 25)
-        # origin = (self.origin[0]+117, self.origin[1]+206)
-        i = 20 * 14.7
-        while (i>=0):
-            # utils.drawDot(src, (origin[0],origin[1]+round(i)), 5)
-            i -= 14.7
+        if DEBUG_DRAW_LOCATION:
+            utils.drawDot(src, self.origin, 15)
+            origin = self.origin
+            i = 20 * self.STRIP_INTERVAL
+            while (i>=0):
+                utils.drawDot(src, (origin[0],origin[1]+round(i)), 5)
+                i -= 14.7
 
-        if not False and not lines is None:
+        if not False and not lines is None and DEBUG_DRAW_LOCATION:
             color = 0
             for l in lines:
                 line = l[0]
-                if abs(line[0]-line[2])>abs(line[1]-line[3]): continue
+                if abs(line[0]-line[2])<abs(line[1]-line[3]): continue
                 slope, bias = utils.getSlopeBias(line)
                 # print(bias)
                 color = 255 - color
                 cv2.line(src, (line[[0]], line[1]), (line[2], line[3]), (255, color, 255-color), 1)
-        cv2.imshow('canny', src)
-        cv2.waitKey()
+        if DEBUG_DRAW_LOCATION:
+            cv2.imshow('canny', src)
+            cv2.waitKey()
 
-    def findHeader(self, src):
+    #定位膜条区域
+    def locatArea(self, src):
         self.img = src
         self._locateOrigin()
+
+        x = round(self.BOARD_AREA[0]+PRE_X_TIMES*self.origin[0])
+        y = round(self.BOARD_AREA[1]+PRE_Y_TIMES*self.origin[1])
+        src = self.src[y:y+self.STRIP_AREA[3], x:x+self.STRIP_AREA[2]]
+        if DEBUG_DRAW_LOCATION:
+            cv2.imshow('canny', src)
+            cv2.waitKey()
+            self.gray = utils.toGray(src, 'r')
+
         return
+
+    def findHeader(self, src):
         srcDetect = src
         # if not ZOOMOUT_FIRST:
         #     srcDetect = utils.shrink3(src, PRE_X_TIMES, PRE_Y_TIMES)
