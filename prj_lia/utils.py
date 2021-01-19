@@ -191,9 +191,9 @@ def drawFullLine(src, p, k, b, i):
         x1 = p[0]
         y1 = p[1]
     else:
-        x1 = b
+        x1 = round(b)
         y1 = 0
-        x2 = b
+        x2 = round(b)
         y2 = src.shape[1]
 
     if i < 0:
@@ -219,6 +219,29 @@ def mergeRect(p1, p2):
             [(p1[1][0]+p2[1][0])>>1,(p1[1][1]+p2[1][1])>>1],
             [(p1[2][0]+p2[2][0])>>1,(p1[2][1]+p2[2][1])>>1],
             [(p1[3][0]+p2[3][0])>>1,(p1[3][1]+p2[3][1])>>1]]
+
+def getCross(hkb,vkb):
+    if vkb[0] == float("inf"):
+        if abs(hkb[0])<=0.1:
+            return (round(vkb[1]),round(hkb[1]))
+    elif abs(vkb[0]*hkb[0]+1)<0.2 :
+        x = (hkb[1]-vkb[1])/(vkb[0]-hkb[0])
+        return (round(x), round(vkb[0]*x+vkb[1]))
+    return None
+
+
+def drawDot(src, p, i):
+    '''
+        i>0 cross
+        i<0 rect
+    '''
+    p1 = (round(p[0]+i), round(p[1]+i))
+    p2 = (round(p[0]) - i, round(p[1] - i))
+    if (i>0):
+        cv2.line(src, p1, p2, 0, 1)
+        cv2.line(src, (p1[0],p2[1]), (p2[0],p1[1]), 0, 1)
+    else:
+        drawRectBy2P(p1,p2)
 
 def main():
     pass

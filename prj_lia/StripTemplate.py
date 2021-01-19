@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 
 import findHeaders
@@ -115,23 +117,39 @@ class StripTemplate:
                     else:
                         h2ndBias = bias
                         h2ndSlope = slope
-        utils.drawFullLine(self.img,(0,round(hMinBias)), hSlope, hMinBias, -2)
-        utils.drawFullLine(self.img,(0,round(h2ndBias)), hSlope, h2ndBias, -3)
-        utils.drawFullLine(self.img,(0,round(vMinBias)), vSlope, vMinBias, -2)
-        utils.drawFullLine(self.img,(0,round(v2ndBias)), vSlope, v2ndBias, -3)
+        # utils.drawFullLine(self.img,(0,round(h2ndBias)), hSlope, h2ndBias, -3)
+        # utils.drawFullLine(self.img,(0,round(v2ndBias)), vSlope, v2ndBias, -3)
         if abs(h2ndSlope-hSlope) < 0.02 and abs(h2ndBias-hMinBias)<4:
             hSlope = (hSlope+h2ndSlope)/2
             hMinBias = (hMinBias+h2ndBias)/2
-            utils.drawFullLine(self.img,(0,round(hMinBias)), hSlope, hMinBias, 8)
+            # utils.drawFullLine(self.img,(0,round(hMinBias)), hSlope, hMinBias, 8)
         if (v2ndSlope==vSlope and abs(v2ndBias-vMinBias)<4) or (abs(v2ndSlope-vSlope) < 0.051 and abs(v2ndBias-vMinBias)<4*abs(vSlope)):
             vSlope = (vSlope+v2ndSlope)/2
             vMinBias = (vMinBias+v2ndBias)/2
-            utils.drawFullLine(self.img,(0,round(vMinBias)), vSlope, vMinBias, 8)
+            # utils.drawFullLine(self.img,(0,round(vMinBias)), vSlope, vMinBias, 8)
+        utils.drawFullLine(self.img,(0,round(hMinBias)), hSlope, hMinBias, -2)
+        utils.drawFullLine(self.img,(0,round(vMinBias)), vSlope, vMinBias, -2)
         cv2.imshow('canny', self.img)
-        cv2.waitKey()
-        return (hSlope,hMinBias),(vSlope,vMinBias)
+        # cv2.waitKey()
+        self.hkb=(hSlope,hMinBias)
+        self.vkb=(vSlope,vMinBias)
 
-    def locateOrigin(self):
+    def _mapOrigin(self):
+        x = self.origin[0]
+        y = self.origin[1]
+        if self.vkb[0] != float("inf"):
+            tg = abs(self.vkb[0])
+            sin = math.sqrt(tg/(1+tg))
+            tg = abs(self.hkb[0])
+            cos = math.sqrt(1/(1+tg))
+            deltaX = 118*cos
+            deltaY = 206*sin
+        else:
+            deltaX = 118
+            deltaY = 206
+        self.origin = (x+deltaX,y+deltaY)
+
+    def _locateOrigin(self):
         src = self.img
         _, bw = cv2.threshold(src, self.THRESHOLD, 255.0, cv2.THRESH_BINARY)
         # __showDebug("bw",bw)
@@ -139,8 +157,20 @@ class StripTemplate:
         # if findHeaders.CANNY_GAUSS:
         bw = utils.toCanny(bw, findHeaders.CANNY_GAUSS)
         lines = cv2.HoughLinesP(bw, 1, np.pi / 180, 160, minLineLength=200, maxLineGap=30)
-        hkb,vkb = self.filterLines(lines)
-        if False and not lines is None:
+        self.filterLines(lines)
+        self.origin = utils.getCross(self.hkb,self.vkb)
+        if not self.origin:
+            return False
+        utils.drawDot(src, self.origin, 5)
+        self._mapOrigin()
+        utils.drawDot(src, self.origin, 25)
+        # origin = (self.origin[0]+117, self.origin[1]+206)
+        i = 20 * 14.7
+        while (i>=0):
+            # utils.drawDot(src, (origin[0],origin[1]+round(i)), 5)
+            i -= 14.7
+
+        if not False and not lines is None:
             color = 0
             for l in lines:
                 line = l[0]
@@ -154,7 +184,7 @@ class StripTemplate:
 
     def findHeader(self, src):
         self.img = src
-        self.locateOrigin()
+        self._locateOrigin()
         return
         srcDetect = src
         # if not ZOOMOUT_FIRST:
