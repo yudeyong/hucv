@@ -86,25 +86,53 @@ class StripTemplate:
         return self.persentage[i:-1]
 
     def filterLines(self, lines):
-        vMinBias = hMinBias = 0x7fff
+        v2ndBias = h2ndBias = vMinBias = hMinBias = 0x7fff
         vSlope = hSlope = 0.0
-        hSlopeSetting = 0.05
-        vSlopeSetting = 20
+        v2ndSlope = hSlopeSetting = 0.05
+        h2ndSlope = vSlopeSetting = 20
         for l in lines:
             line = l[0]
             slope, bias = utils.getSlopeBias(line)
             if abs(slope)>vSlopeSetting:
-                if abs(bias)<abs(vMinBias):
-                    vMinBias = bias
-                    vSlope = slope
-                    print(vMinBias)
+                aBias = abs(bias)
+                if aBias<abs(v2ndBias):
+                    if aBias<abs(vMinBias):
+                        v2ndBias = vMinBias
+                        v2ndSlope = vSlope
+                        vMinBias = bias
+                        vSlope = slope
+                    else:
+                        v2ndBias = bias
+                        v2ndSlope = slope
             elif abs(slope)<hSlopeSetting:
-                if abs(bias)<abs(hMinBias):
-                    hMinBias = bias
-                    hSlope = slope
+                aBias = abs(bias)
+                if aBias<abs(h2ndBias):
+                    if aBias<abs(hMinBias):
+                        h2ndBias = hMinBias
+                        h2ndSlope = hSlope
+                        hMinBias = bias
+                        hSlope = slope
+                    else:
+                        h2ndBias = bias
+                        h2ndSlope = slope
+        utils.drawFullLine(self.img,(0,round(hMinBias)), hSlope, hMinBias, -2)
+        utils.drawFullLine(self.img,(0,round(h2ndBias)), hSlope, h2ndBias, -3)
+        utils.drawFullLine(self.img,(0,round(vMinBias)), vSlope, vMinBias, -2)
+        utils.drawFullLine(self.img,(0,round(v2ndBias)), vSlope, v2ndBias, -3)
+        if abs(h2ndSlope-hSlope) < 0.02 and abs(h2ndBias-hMinBias)<4:
+            hSlope = (hSlope+h2ndSlope)/2
+            hMinBias = (hMinBias+h2ndBias)/2
+            utils.drawFullLine(self.img,(0,round(hMinBias)), hSlope, hMinBias, 8)
+        if (v2ndSlope==vSlope and abs(v2ndBias-vMinBias)<4) or (abs(v2ndSlope-vSlope) < 0.051 and abs(v2ndBias-vMinBias)<4*abs(vSlope)):
+            vSlope = (vSlope+v2ndSlope)/2
+            vMinBias = (vMinBias+v2ndBias)/2
+            utils.drawFullLine(self.img,(0,round(vMinBias)), vSlope, vMinBias, 8)
+        cv2.imshow('canny', self.img)
+        cv2.waitKey()
         return (hSlope,hMinBias),(vSlope,vMinBias)
 
-    def locateOrigin(self, src):
+    def locateOrigin(self):
+        src = self.img
         _, bw = cv2.threshold(src, self.THRESHOLD, 255.0, cv2.THRESH_BINARY)
         # __showDebug("bw",bw)
 
@@ -112,8 +140,6 @@ class StripTemplate:
         bw = utils.toCanny(bw, findHeaders.CANNY_GAUSS)
         lines = cv2.HoughLinesP(bw, 1, np.pi / 180, 160, minLineLength=200, maxLineGap=30)
         hkb,vkb = self.filterLines(lines)
-        utils.drawFullLine(src,(0,round(hkb[1])), hkb[0], hkb[1], 1)
-        utils.drawFullLine(src,(0,round(vkb[1])), vkb[0], vkb[1], 1)
         if False and not lines is None:
             color = 0
             for l in lines:
@@ -127,7 +153,8 @@ class StripTemplate:
         cv2.waitKey()
 
     def findHeader(self, src):
-        self.locateOrigin(src)
+        self.img = src
+        self.locateOrigin()
         return
         srcDetect = src
         # if not ZOOMOUT_FIRST:

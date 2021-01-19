@@ -185,8 +185,16 @@ def mid2PBy4P(p):
     return p1,[(p[1][0] + p[3][0]) >> 1, (p[1][1] + p[3][1]) >> 1 ]
 
 def drawFullLine(src, p, k, b, i):
-    x2 = src.shape[0]
-    y2 = round(k*x2+b) if k!=float("inf") else p[1]
+    if k != float("inf") :
+        x2 = src.shape[0]
+        y2 = round(k * x2 + b)
+        x1 = p[0]
+        y1 = p[1]
+    else:
+        x1 = b
+        y1 = 0
+        x2 = b
+        y2 = src.shape[1]
 
     if i < 0:
         c = (255*(i&1),255*(i&2), 255*(i&4))
@@ -194,7 +202,7 @@ def drawFullLine(src, p, k, b, i):
         c = 0
     else : c = (0xff,0,0xff*(i & 1))
 
-    cv2.line(src,p, (x2, y2), c,2-(i<0)*1)
+    cv2.line(src,(x1 ,y1), (x2, y2), c,2-(i<0)*1)
 
 def drawMidLineBy4P(src, p, i):
     p1,p2=mid2PBy4P(p)
