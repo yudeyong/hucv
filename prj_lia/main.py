@@ -17,11 +17,10 @@ def recognition(file, category):
     # cv2.waitKey()
     if err :
         return err
+    template.locatArea(src)
     ###cut borad from image
-    # strips = template.findHeader(src)
+    strips = template.findHeader()
 
-    gray = utils.toGray(src, 'r')
-    strips = template.locatArea(gray)
     # sr.StripRegion.recognise(gray, strips)
 
     # cv2.imshow('bw',bw)

@@ -8,7 +8,7 @@ import cv2
 import StripRegion
 
 DEBUG = not False
-DEBUG_DRAW_LOCATION = not False and DEBUG
+DEBUG_DRAW_LOCATION = False and DEBUG
 #tail line
 # rgb to gray value: None or R,G,B to gray value: 0x1 r, 0x100 g, 0x10000 b
 # RGB_GRAY = 0x10000
@@ -195,7 +195,7 @@ class StripTemplate:
 
     #定位膜条区域
     def locatArea(self, src):
-        self.img = src
+        self.img = utils.toGray(src, self.RGB_GRAY)
         self._locateOrigin()
 
         x = round(self.BOARD_AREA[0]+PRE_X_TIMES*self.origin[0])
@@ -209,11 +209,13 @@ class StripTemplate:
             cv2.imshow('canny', src)
             cv2.waitKey()
             self.gray = utils.toGray(src, 'r')
+        #更新膜条区域
+        self.src = src
+        return src
 
-        return
-
-    def findHeader(self, src):
-        srcDetect = src
+    #check header, locate
+    def findHeader(self):
+        srcDetect = self.src[:,:300]
         # if not ZOOMOUT_FIRST:
         #     srcDetect = utils.shrink3(src, PRE_X_TIMES, PRE_Y_TIMES)
         header, funcLines = findHeaders.findHeader(srcDetect, self.RGB_GRAY, self.THRESHOLD)
@@ -249,12 +251,12 @@ class StripTemplate:
                     p[1] = p[1]*Y_TIMES
             if DEBUG :
                 p = utils.mid2PBy4P(h)
-                cv2.line(src, (p[0][0], p[0][1]), (p[1][0], p[1][1]), (0, 255, 0), 2)
+                cv2.line(srcDetect, (p[0][0], p[0][1]), (p[1][0], p[1][1]), (0, 255, 0), 2)
                 # utils.drawRectBy4P(srcDetect, h)
 
             strips[i] = StripRegion.StripRegion(h,self)
             strips[i].matchFuncLine(funcLines)
-        src = utils.shrink3(src, PRE_X_TIMES, PRE_Y_TIMES)
-        cv2.imshow('tmpl-src', src)
-        print("head,fc:",len(header), len(funcLines))
+        # srcDetect = utils.shrink3(srcDetect, PRE_X_TIMES, PRE_Y_TIMES)
+        # cv2.imshow('tmpl-src', srcDetect)
+        # print("head,fc:",len(header), len(funcLines))
         return strips

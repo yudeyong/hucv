@@ -88,12 +88,12 @@ def __showDebug(name,img):
 
 
 def findHeader(src, RGB_GRAY, THRESHOLD):
-    srcDetect = src[:, :BOARD_DETECT_WIDTH]
+    srcDetect = src
 
     gray = utils.toGray(srcDetect, RGB_GRAY)
     # cv2.imshow('1-gray', gray)
     _, bw = cv2.threshold(gray, THRESHOLD, 255.0, cv2.THRESH_BINARY)
-    # __showDebug("bw",bw)
+    __showDebug("bw",bw)
 
     if CANNY_GAUSS:
         bw = utils.toCanny(bw,CANNY_GAUSS)
