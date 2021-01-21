@@ -163,7 +163,7 @@ class StripRegion:
         # cv2.waitKey()
         return None
 
-    def __findMargin(self, img, fY0):
+    def __findMargin( img, fY0 ,slope):
         '''
         扫描灰度图, 查找采样线
         :param img:
@@ -180,7 +180,7 @@ class StripRegion:
         minI = maxI = 0
         i -= 2
         while i>1:
-            fY -= self.slope
+            fY -= slope
             y = round(fY)
             if (y>=top) :
                 break
@@ -209,10 +209,10 @@ class StripRegion:
             maxTmp, maxTmpI = StripRegion.__getDeltaMax(delta, minI, length)
             minTmp, minTmpI = StripRegion.__getDeltaMin(delta, 0, maxI)
             if maxD - maxTmp > minD - minTmp:
-                maxY = round(fY0 + (maxTmpI - maxI) * self.slope)
+                maxY = round(fY0 + (maxTmpI - maxI) * slope)
                 maxI = maxTmpI
             else:
-                minY = round(fY0 + (minTmpI - minI) * self.slope)
+                minY = round(fY0 + (minTmpI - minI) * slope)
                 minI = minTmpI
         elif maxI+minI==0:
             return None, None
@@ -221,44 +221,43 @@ class StripRegion:
         # cv2.line(img, (minI,minY),(maxI,maxY),0xff,2)
         # utils.drawRectBy2P(img, (minI,minY-(StripRegion.STRIP_HEIGHT>>2),maxI, maxY+(StripRegion.STRIP_HEIGHT>>2)))
         return minI, maxI
-
-    def __derivative(self, rect):
+    @staticmethod
+    def derivative(gray, rect,slope, bias, stripHeight,stripWidth):
         '''
         针对区域'求导', 确定采样线边界
         :param rect: 监测区域
         :return: 有效区域数组, 数组中有效线
         '''
-        gray = self.img
-        x = rect[0]
-        x1 = rect[2]
-        img = gray[rect[1]:rect[3], x:x1]
+        stripHeight = int(stripHeight)
+        x1 = rect[0]
+        x2 = rect[2]
+        #clip 处理区域
+        img = gray[rect[1]:rect[3], x1:x2]
         # _, bw = cv2.threshold(img, self.bgColor, 255.0, cv2.THRESH_BINARY)
         # canny = utils.toCanny(bw, 5)
-        # cv2.imshow("bg", canny)
+        cv2.imshow("bg", img)
         # cv2.waitKey()
 
-
-        x = rect[3]-rect[1] # assert x == StripRegion.STRIP_HEIGHT*2
-        # length = i = x1-x-1
-        fY = round(x1 * self.slope + self.bias - rect[1])
-        # yyy=fY
-        fY1 = fY - StripRegion.STRIP_HEIGHT+(StripRegion.STRIP_HEIGHT>>3)
-        fY += (StripRegion.STRIP_HEIGHT)-(StripRegion.STRIP_HEIGHT>>3)
+        y = rect[3]-rect[1] # assert y == StripRegion.STRIP_HEIGHT*2
+        fY = round(x2 * slope + bias - rect[1])
+        fY1 = fY - stripHeight+(stripHeight>>4)
+        fY += (stripHeight)-(stripHeight>>4)
         yy = fY
-        x1 = StripRegion.STRIP_HEIGHT>>3
+        #扫描间距
+        x1 = stripHeight>>3
 
         listP = []
-        i = 0
         rangeP = []
+        i = 0
         leftP = np.zeros((16),dtype=int)
-        l = StripRegion.SAMPLING_WIDTH - (const.SAMPLING_WIDTH >> 1)
-        r = StripRegion.SAMPLING_WIDTH + (const.SAMPLING_WIDTH>>1)
+        l = stripWidth - (stripWidth >> 2)
+        r = stripWidth + (stripWidth>>2)
         j = 0
         while fY>fY1:
-            left,right =  self.__findMargin(img, fY)
+            left,right =  StripRegion.__findMargin(img, fY, slope)
             if left:
                 width = right-left
-                x -= x1
+                y -= x1
                 if not left:
                     fY -= x1
                     continue
@@ -300,6 +299,51 @@ class StripRegion:
             return listP, rangeP
 
         else: return None,None
+
+    @staticmethod
+    def derivativeForHeader(img, rect,slope, stripHeight):
+        '''
+        针对区域'求导', 确定采样线边界
+        :param rect: 监测区域
+        :return: 有效区域数组, 数组中有效线
+        '''
+        stripHeight = int(stripHeight)
+        x2 = rect[2]
+        #clip 处理区域
+        # img = img[:, rect[0]:x2]
+
+
+        # x2-= rect[0]
+        # # _, bw = cv2.threshold(img, self.bgColor, 255.0, cv2.THRESH_BINARY)
+        # # canny = utils.toCanny(bw, 5)
+        # cv2.imshow("bg", img)
+        # cv2.waitKey()
+
+        height = rect[3]-rect[1]
+        deltaH = (height>>4)
+        fY2 = rect[1]+height
+        if fY2>img.shape[0] : fY2 = img.shape[0]
+        fLine = rect[1]+deltaH
+        DIFF = 128
+        listP = []
+        while fLine<fY2:
+            x = rect[0]
+            fY = fLine
+            lastPxl = img[int(fY), x]
+            # lastX = x
+            area =img[fY,:]
+            line = []
+            while x<x2:
+                if abs(int(img[fY,x])-lastPxl) >DIFF:
+                    line.append([ x, int(img[fY,x])-lastPxl])#x,y,deltaValue
+                    # lastX = x
+                    lastPxl = img[int(fY),x]
+                x+=1
+                # fY+=slope slope足够小, 忽略
+            listP.append((fY,line))
+            fLine += deltaH
+
+        return listP
 
     @staticmethod
     def __findMaxWin(data, size):

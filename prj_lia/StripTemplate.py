@@ -4,10 +4,10 @@ import numpy as np
 
 import utils
 import cv2
-import StripRegion
+import StripRegion as sr
 
 DEBUG = not False
-DEBUG_DRAW_LOCATION = not False and DEBUG
+DEBUG_DRAW_LOCATION =  False and DEBUG
 #tail line
 # rgb to gray value: None or R,G,B to gray value: 0x1 r, 0x100 g, 0x10000 b
 # RGB_GRAY = 0x10000
@@ -36,6 +36,7 @@ class StripTemplate:
         self.BOARD_AREA = jsonDic["BOARD_AREA"]
         self.STRIP_AREA = jsonDic["STRIP_AREA"]
         self.STRIP_INTERVAL = jsonDic["STRIP_INTERVAL"]
+        self.STRIP_WIDTH = jsonDic["STRIP_WIDTH"]
 
         lines = jsonDic['lines']
         posi = 0
@@ -188,26 +189,43 @@ class StripTemplate:
         return src
 
     def _checkHeaders(self):
-        HEADER_WIDTH = 300
+        HEADER_WIDTH = 160
+
         src = self.src
 
         gray = utils.toGray(src, self.RGB_GRAY)
+        if False:
+            gray = utils.shrink(gray, 2, 2)
+            self.STRIP_INTERVAL /= 2
+            self.STRIP_WIDTH >>= 1
+            HEADER_WIDTH >>= 1
         # cv2.imshow('1-gray', gray)
-        _, bw = cv2.threshold(gray, self.THRESHOLD, 255.0, cv2.THRESH_BINARY)
-        if DEBUG_HEADER:
+        # _, bw = cv2.threshold(gray, self.THRESHOLD, 255.0, cv2.THRESH_BINARY)
+        height = self.hkb[0] * HEADER_WIDTH
+        y = 0
+        bottom = gray.shape[0]
+        # dH = height if height>0 else 0
+        while (y<bottom):
+            listP = sr.StripRegion.derivativeForHeader(gray, (5,round(y+3),HEADER_WIDTH, round(self.STRIP_INTERVAL+y-3)), self.hkb[0], self.STRIP_INTERVAL)
+            y += self.STRIP_INTERVAL
+            for line in listP:
+                for p in line[1]:
+                    utils.drawDot(gray, (p[0],line[0]), 3)
+        cv2.imshow("bg", gray)
+        cv2.waitKey()
+        if None is listP: return None,None
+        if DEBUG_HEADER and False:
             end = self.STRIP_INTERVAL*20
-            i = self.STRIP_INTERVAL/2
-            while i<end:
-                y = self.hkb[0]*HEADER_WIDTH
-                # x = self.vkb[0]*HEADER_WIDTH+self.vkb[1]
-                cv2.line(bw, (0, round(i)), (HEADER_WIDTH, round(i+y)), 0, 2)
-                i += self.STRIP_INTERVAL
-            # cv2.imshow("bw", bw)
+            y = self.STRIP_INTERVAL/2
+            while y<end:
+                cv2.line(gray, (0, round(y)), (HEADER_WIDTH, round(y+height)), 0, 2)
+                y += self.STRIP_INTERVAL
+            cv2.imshow("bw", gray)
             # cv2.waitKey()
-            utils.showDebug("bw", bw)
+            # utils.showDebug("bw", bw)
 
         if CANNY_GAUSS:
-            bw = utils.toCanny(bw, CANNY_GAUSS)
+            bw = utils.toCanny(gray, CANNY_GAUSS)
         # __showDebug("canny",bw)
         # exit(0)
 
@@ -224,9 +242,7 @@ class StripTemplate:
         # stripHeads = []
         stripPoints = []
         funcLines = []
-        oldp = None
-        pCount = 0
-        fcCount = 0
+
         if DEBUG_HEADER:
             if CANNY_GAUSS:
                 for points in stripPoints:
@@ -241,6 +257,7 @@ class StripTemplate:
         # if not ZOOMOUT_FIRST:
         #     srcDetect = utils.shrink3(src, PRE_X_TIMES, PRE_Y_TIMES)
         header, funcLines = self._checkHeaders()
+        if header is None: return None
         i = len(header)
         strips =[None]*i
 
@@ -276,7 +293,7 @@ class StripTemplate:
                 cv2.line(srcDetect, (p[0][0], p[0][1]), (p[1][0], p[1][1]), (0, 255, 0), 2)
                 # utils.drawRectBy4P(srcDetect, h)
 
-            strips[i] = StripRegion.StripRegion(h,self)
+            strips[i] = sr.StripRegion(h,self)
             strips[i].matchFuncLine(funcLines)
         # srcDetect = utils.shrink3(srcDetect, PRE_X_TIMES, PRE_Y_TIMES)
         # cv2.imshow('tmpl-src', srcDetect)
