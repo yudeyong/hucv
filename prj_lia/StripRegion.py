@@ -301,51 +301,6 @@ class StripRegion:
         else: return None,None
 
     @staticmethod
-    def derivativeForHeader(img, rect,slope, stripHeight):
-        '''
-        针对区域'求导', 确定采样线边界
-        :param rect: 监测区域
-        :return: 有效区域数组, 数组中有效线
-        '''
-        stripHeight = int(stripHeight)
-        x2 = rect[2]
-        #clip 处理区域
-        # img = img[:, rect[0]:x2]
-
-
-        # x2-= rect[0]
-        # # _, bw = cv2.threshold(img, self.bgColor, 255.0, cv2.THRESH_BINARY)
-        # # canny = utils.toCanny(bw, 5)
-        # cv2.imshow("bg", img)
-        # cv2.waitKey()
-
-        height = rect[3]-rect[1]
-        deltaH = (height>>4)
-        fY2 = rect[1]+height
-        if fY2>img.shape[0] : fY2 = img.shape[0]
-        fLine = rect[1]+deltaH
-        DIFF = 128
-        listP = []
-        while fLine<fY2:
-            x = rect[0]
-            fY = fLine
-            lastPxl = img[int(fY), x]
-            # lastX = x
-            area =img[fY,:]
-            line = []
-            while x<x2:
-                if abs(int(img[fY,x])-lastPxl) >DIFF:
-                    line.append([ x, int(img[fY,x])-lastPxl])#x,y,deltaValue
-                    # lastX = x
-                    lastPxl = img[int(fY),x]
-                x+=1
-                # fY+=slope slope足够小, 忽略
-            listP.append((fY,line))
-            fLine += deltaH
-
-        return listP
-
-    @staticmethod
     def __findMaxWin(data, size):
         '''
         查找<=size的连续最大窗口

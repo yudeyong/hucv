@@ -206,11 +206,14 @@ class StripTemplate:
         bottom = gray.shape[0]
         # dH = height if height>0 else 0
         while (y<bottom):
-            listP = sr.StripRegion.derivativeForHeader(gray, (5,round(y+3),HEADER_WIDTH, round(self.STRIP_INTERVAL+y-3)), self.hkb[0], self.STRIP_INTERVAL)
+        #便利查找header
+            listP = utils.derivative(gray, (5,round(y+3),HEADER_WIDTH, round(self.STRIP_INTERVAL+y-3)), self.hkb[0], self.STRIP_INTERVAL)
             y += self.STRIP_INTERVAL
             for line in listP:
-                for p in line[1]:
-                    utils.drawDot(gray, (p[0],line[0]), 3)
+                print("size:", line[0])
+                for p in line[2]:
+                    utils.drawDot(gray, (p[0],line[1]), 3)
+            print("blank")
         cv2.imshow("bg", gray)
         cv2.waitKey()
         if None is listP: return None,None
