@@ -11,7 +11,6 @@ WHITE_THRESHOLD = SAMPLING_LINES * WHITE_THRESHOLD_BASE
 class SampleLine:
     @staticmethod
     def getValue(data, slideWindow):
-        data = np.swapaxes(data,0,1)
         i = const.SAMPLING_WIDTH
         slideWindow.initData(data[:i])
         min = slideWindow.total

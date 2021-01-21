@@ -34,5 +34,6 @@
   "STRIP_AREA" : [130,206, 620, 1200],
   "STRIP_INTERVAL" : 58.88,
   "STRIP_WIDTH" : 15,
-  "TOTAL" : 20
+  "TOTAL" : 20,
+  "FUNC_LINE" : [160, 5, 278, 45]
 }

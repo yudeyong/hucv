@@ -35,6 +35,33 @@ class StripRegion:
         self.samples = []
         self.funcLine = None
 
+    def checkFunctionLine(self, src, y, FUNC_LINE,STRIP_WIDTH):
+        y = int(y)
+        STRIP_WIDTH = STRIP_WIDTH-1-(STRIP_WIDTH>>2)
+        # utils.drawRectBy2P(src, (FUNC_LINE[0], y+FUNC_LINE[1], FUNC_LINE[2], y+FUNC_LINE[3]))
+        src = src[y+FUNC_LINE[1]:y+FUNC_LINE[3], FUNC_LINE[0]:FUNC_LINE[2]]
+
+        minValue = STRIP_WIDTH*src.shape[0]*255
+        win = sw.SlidingWindow(STRIP_WIDTH)
+
+        win.initData(src)
+        i = STRIP_WIDTH
+        x = i
+        i1 = src.shape[1]
+        while i<i1:
+            win.append(src[:,i])
+            i += 1
+            if minValue>win.total:
+                minValue = win.total
+                x = i
+        x +=  FUNC_LINE[0]-STRIP_WIDTH-1
+        if minValue/(STRIP_WIDTH*src.shape[0])<180.0: self.fcX = x
+        else: return -1
+        print(minValue/(STRIP_WIDTH*src.shape[0]))
+        return x
+
+        # _, bw = cv2.threshold(gray, self.THRESHOLD, 255.0, cv2.THRESH_BINARY)
+
     @staticmethod
     def recognise(gray, regions):
         if DEBUG_STRIP:

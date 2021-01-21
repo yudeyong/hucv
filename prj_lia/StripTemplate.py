@@ -38,6 +38,7 @@ class StripTemplate:
         self.STRIP_INTERVAL = jsonDic["STRIP_INTERVAL"]
         self.STRIP_WIDTH = jsonDic["STRIP_WIDTH"]
         self.TOTAL = jsonDic["TOTAL"]
+        self.FUNC_LINE = jsonDic["FUNC_LINE"]
 
         lines = jsonDic['lines']
         posi = 0
@@ -195,11 +196,15 @@ class StripTemplate:
         src = self.src
 
         gray = utils.toGray(src, self.RGB_GRAY)
-        if False:
+        if False: #缩一半,方便调试
             gray = utils.shrink(gray, 2, 2)
             self.STRIP_INTERVAL /= 2
             self.STRIP_WIDTH >>= 1
             HEADER_WIDTH >>= 1
+            self.FUNC_LINE[0] >>=1
+            self.FUNC_LINE[1] >>= 1
+            self.FUNC_LINE[2] >>= 1
+            self.FUNC_LINE[3] >>= 1
         # cv2.imshow('1-gray', gray)
         # _, bw = cv2.threshold(gray, self.THRESHOLD, 255.0, cv2.THRESH_BINARY)
         height = self.hkb[0] * HEADER_WIDTH
@@ -212,7 +217,6 @@ class StripTemplate:
         while (y<bottom):
         #便利查找header
             listP = utils.derivative(gray, (5,round(y+3),HEADER_WIDTH, round(self.STRIP_INTERVAL+y-3)), self.hkb[0], self.STRIP_INTERVAL)
-            y += self.STRIP_INTERVAL
             # if DEBUG_HEADER:
             #     for line in listP:
             #         for p in line[2]:
@@ -222,15 +226,25 @@ class StripTemplate:
                 flag = True
                 strips[i] = sr.StripRegion(listP, index, winSize, self.hkb[0])
 
-                ty = strips[i].midY
-                tx = strips[i].midX[0]
-                cv2.line(gray, (tx, ty), (gray.shape[0], int((gray.shape[0]-tx)*self.hkb[0])+ty),  128 , 1)
-                strips[i].midY
+                fcX = strips[i].checkFunctionLine(gray, y, self.FUNC_LINE, self.STRIP_WIDTH)
+                if not False:
+                    ty = strips[i].midY
+                    tx = strips[i].midX[0]
+                    cv2.line(gray, (tx, ty), (gray.shape[0], int((gray.shape[0]-tx)*self.hkb[0])+ty),  128 , 1)
+
                 # for line in listP:
                 #     print(",", line[0], end='')
                 # print('.')
                 # print("line:",i, winSize)
+            y += self.STRIP_INTERVAL
             i += 1
+
+        if not False:
+            y=0
+            for strip in strips:
+                if not strip is None:
+                    utils.drawRectBy2P(gray, (strip.fcX, int(y)+5, strip.fcX+self.STRIP_WIDTH, int(y)+45))
+                y += self.STRIP_INTERVAL
         if DEBUG_HEADER:
             cv2.imshow("bg", gray)
             cv2.waitKey()
@@ -243,6 +257,7 @@ class StripTemplate:
         # if not ZOOMOUT_FIRST:
         #     srcDetect = utils.shrink3(src, PRE_X_TIMES, PRE_Y_TIMES)
         strips = self._checkHeaders()
+
         if strips is None: return None
 
 
