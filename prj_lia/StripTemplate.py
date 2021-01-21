@@ -220,8 +220,12 @@ class StripTemplate:
             index,winSize = utils.maxWind(listP, 5, 10, 1)
             if index>=0:
                 flag = True
-                strips[i] = sr.StripRegion(h,self)
+                strips[i] = sr.StripRegion(listP, index, winSize, self.hkb[0])
 
+                ty = strips[i].midY
+                tx = strips[i].midX[0]
+                cv2.line(gray, (tx, ty), (gray.shape[0], int((gray.shape[0]-tx)*self.hkb[0])+ty),  128 , 1)
+                strips[i].midY
                 # for line in listP:
                 #     print(",", line[0], end='')
                 # print('.')

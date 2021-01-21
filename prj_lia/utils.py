@@ -302,7 +302,7 @@ def maxWind(array, size, threshold, faultTolerant):
     :return: 开始下标, size of win
     '''
     #todo faultTolerant>1未调试
-    cursor = []*faultTolerant
+    cursor = [None]*faultTolerant
     fIndex = 0
     i  =len(array)
     j = 0
@@ -321,7 +321,8 @@ def maxWind(array, size, threshold, faultTolerant):
                 length += 1
         elif j>0:
             if length >= size:
-                return i,length
+                #考虑容错,这里不该直接返回,可以继续按容错查找,先忽略
+                return i+1,length
             #已经有值
             if fIndex<faultTolerant:
                 #可容错

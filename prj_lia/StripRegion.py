@@ -20,19 +20,20 @@ class StripRegion:
 
     SAMPLING_WIDTH = const.SAMPLING_WIDTH * st.X_TIMES
     STRIP_HEIGHT = const.STRIP_HEIGHT * st.Y_TIMES
-    def __init__(self, header, template):
-        self.header = header
-        self.midHeader = utils.mid2PBy4P(header)
-
-        self.slope,self.bias = utils.getSlopeBiasBy2P(self.midHeader[0],self.midHeader[1])
-        self.cosReciprocal =  utils.getCosReciprocalBy2P(self.midHeader[0],self.midHeader[1])
-        self.template = template
-        self.values = [0.0] * len(template.sampleRef)
+    def __init__(self, listP, index, size, slope):
+        #找中点
+        index = index + (size >> 1)
+        if size&1==0:
+            #下标大的
+            self.midX = listP[index][2][0] if listP[index][1] >= listP[index + 1][1] else listP[index+1][2][0]
+            #均值
+            self.midY = (listP[index][1] + listP[index + 1][1] )>>1
+        else:
+            self.midX = listP[index][2][0]
+            self.midY = listP[index][1]
+        self.slope = slope
         self.samples = []
         self.funcLine = None
-        self.midFuncLine = None
-        self.scale = 9.484
-        self.points = [self.midHeader[0],self.midHeader[1]]
 
     @staticmethod
     def recognise(gray, regions):
