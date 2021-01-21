@@ -271,7 +271,7 @@ def derivative(img, rect,slope, stripHeight):
     fY2 = rect[1]+height
     if fY2>img.shape[0] : fY2 = img.shape[0]
     fLine = rect[1]+deltaH
-    DIFF = 128
+    DIFF = 80
     listP = []
     while fLine<fY2:
         x = rect[0]
@@ -291,6 +291,63 @@ def derivative(img, rect,slope, stripHeight):
         fLine += deltaH
 
     return listP
+
+def maxWind(array, size, threshold, faultTolerant):
+    '''
+    查找array[0]中是否存在>=threshold宽度为size的窗口,允许出现faultTolerant个不满足值, 边界值不算
+    :param array:
+    :param size:
+    :param threshold:
+    :param faultTolerant:
+    :return: 开始下标, size of win
+    '''
+    #todo faultTolerant>1未调试
+    cursor = []*faultTolerant
+    fIndex = 0
+    i  =len(array)
+    j = 0
+    length = 0
+    while i>0:
+        i-=1
+        if array[i][0]>=threshold :
+            #满足
+            if j==0:
+                #第一个值
+                j = i
+                fIndex = 0
+                length = 1
+            else:
+                #已经有值, 累计长度
+                length += 1
+        elif j>0:
+            if length >= size:
+                return i,length
+            #已经有值
+            if fIndex<faultTolerant:
+                #可容错
+                cursor[fIndex] = i
+                fIndex += 1
+            else:
+                #到达容错上限
+                if cursor[0]==i+faultTolerant:
+                    #连续空,重置
+                    j = 0
+                    length = 0
+                    fIndex = 0
+                else:
+                    delta = 1
+                    while delta<faultTolerant and cursor[delta]==cursor[delta-1]: delta += 1
+                    #跳过连续的0
+                    fIndex -= delta
+                    k = delta-1
+                    j = cursor[k]-1
+                    length = j-cursor[k]
+                    for k in range(0,fIndex):
+                        cursor[k] = cursor[k+delta]
+                j = 0
+    return -1,0
+
+
 
 def main():
     pass

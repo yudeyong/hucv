@@ -37,6 +37,7 @@ class StripTemplate:
         self.STRIP_AREA = jsonDic["STRIP_AREA"]
         self.STRIP_INTERVAL = jsonDic["STRIP_INTERVAL"]
         self.STRIP_WIDTH = jsonDic["STRIP_WIDTH"]
+        self.TOTAL = jsonDic["TOTAL"]
 
         lines = jsonDic['lines']
         posi = 0
@@ -177,7 +178,7 @@ class StripTemplate:
         y = round(self.BOARD_AREA[1]+PRE_Y_TIMES*self.origin[1])
         src = self.src[y:y+self.STRIP_AREA[3], x:x+self.STRIP_AREA[2]]
         if DEBUG_DRAW_LOCATION:
-            i = 2+20 * self.STRIP_INTERVAL
+            i = 2+self.TOTAL * self.STRIP_INTERVAL
             while (i>=0):
                 utils.drawDot(src, (8,round(i)), 15)
                 i -= self.STRIP_INTERVAL
@@ -205,100 +206,40 @@ class StripTemplate:
         y = 0
         bottom = gray.shape[0]
         # dH = height if height>0 else 0
+        i = 0
+        strips = [None] * self.TOTAL
+        flag = False
         while (y<bottom):
         #便利查找header
             listP = utils.derivative(gray, (5,round(y+3),HEADER_WIDTH, round(self.STRIP_INTERVAL+y-3)), self.hkb[0], self.STRIP_INTERVAL)
             y += self.STRIP_INTERVAL
-            for line in listP:
-                print("size:", line[0])
-                for p in line[2]:
-                    utils.drawDot(gray, (p[0],line[1]), 3)
-            print("blank")
-        cv2.imshow("bg", gray)
-        cv2.waitKey()
-        if None is listP: return None,None
-        if DEBUG_HEADER and False:
-            end = self.STRIP_INTERVAL*20
-            y = self.STRIP_INTERVAL/2
-            while y<end:
-                cv2.line(gray, (0, round(y)), (HEADER_WIDTH, round(y+height)), 0, 2)
-                y += self.STRIP_INTERVAL
-            cv2.imshow("bw", gray)
-            # cv2.waitKey()
-            # utils.showDebug("bw", bw)
+            # if DEBUG_HEADER:
+            #     for line in listP:
+            #         for p in line[2]:
+            #             utils.drawDot(gray, (p[0],line[1]), 3)
+            index,winSize = utils.maxWind(listP, 5, 10, 1)
+            if index>=0:
+                flag = True
+                strips[i] = sr.StripRegion(h,self)
 
-        if CANNY_GAUSS:
-            bw = utils.toCanny(gray, CANNY_GAUSS)
-        # __showDebug("canny",bw)
-        # exit(0)
-
+                # for line in listP:
+                #     print(",", line[0], end='')
+                # print('.')
+                # print("line:",i, winSize)
+            i += 1
         if DEBUG_HEADER:
-            # __showDebug("header-bw", bw)
-            # cv2.imshow("header-bw", bw)
-            pass
-        # bw = utils.toCanny(bw, 0)
-        # if DEBUG_HEADER:
-        #     cv2.imshow("header-canny", bw)
-        contours, hierarchy = cv2.findContours(bw, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            cv2.imshow("bg", gray)
+            cv2.waitKey()
+        return strips if flag else None
 
-        i = len(contours)
-        # stripHeads = []
-        stripPoints = []
-        funcLines = []
-
-        if DEBUG_HEADER:
-            if CANNY_GAUSS:
-                for points in stripPoints:
-                    utils.drawMidLineBy4P(src, points, -5)
-                pass
-            # cv2.imshow('header-src', src)
-        return stripPoints, funcLines  # strip
 
     #check header, locate
     def findHeader(self):
         srcDetect = self.src[:,:300]
         # if not ZOOMOUT_FIRST:
         #     srcDetect = utils.shrink3(src, PRE_X_TIMES, PRE_Y_TIMES)
-        header, funcLines = self._checkHeaders()
-        if header is None: return None
-        i = len(header)
-        strips =[None]*i
+        strips = self._checkHeaders()
+        if strips is None: return None
 
-        if not ZOOMOUT_FIRST:
-            for h in funcLines:
-                for p in h:
-                    p[0] = p[0] * X_TIMES
-                    p[1] = p[1] * Y_TIMES
-        if DEBUG :
-            for h in funcLines:
-                if DEBUG:
-                    # utils.drawRectBy4P(src, h)
-                    # p = utils.mid2PBy4P(h)
-                    # cv2.line(src, (p[0][0], p[0][1]), (p[1][0], p[1][1]), (0, 255, 0), 2)
-                    pass
-            # for header in stripHeads:
-            #     utils.drawMidLineBy2P(src, header, -5)
-            # for points in funcLines:
-            #     utils.drawRectBy4P(src, points)
-            # for points in stripPoints:
-            #     utils.drawMidLineBy4P(src, points, -5)
-            pass
-        # cv2.imshow('header-src', src)
 
-        for h in header:
-            i -= 1
-            if not ZOOMOUT_FIRST:
-                for p in h:
-                    p[0] = p[0]*X_TIMES
-                    p[1] = p[1]*Y_TIMES
-            if DEBUG :
-                p = utils.mid2PBy4P(h)
-                cv2.line(srcDetect, (p[0][0], p[0][1]), (p[1][0], p[1][1]), (0, 255, 0), 2)
-                # utils.drawRectBy4P(srcDetect, h)
-
-            strips[i] = sr.StripRegion(h,self)
-            strips[i].matchFuncLine(funcLines)
-        # srcDetect = utils.shrink3(srcDetect, PRE_X_TIMES, PRE_Y_TIMES)
-        # cv2.imshow('tmpl-src', srcDetect)
-        # print("head,fc:",len(header), len(funcLines))
         return strips
