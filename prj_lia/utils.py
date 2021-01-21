@@ -243,6 +243,11 @@ def drawDot(src, p, i):
     else:
         drawRectBy2P(p1,p2)
 
+def showDebug(name,img):
+    a = shrink(img, 2, 2)
+    cv2.imshow(name, a)
+    cv2.waitKey()
+
 def main():
     pass
 

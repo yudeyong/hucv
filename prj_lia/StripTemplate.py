@@ -2,16 +2,18 @@ import math
 
 import numpy as np
 
-import findHeaders
 import utils
 import cv2
 import StripRegion
 
 DEBUG = not False
-DEBUG_DRAW_LOCATION = False and DEBUG
+DEBUG_DRAW_LOCATION = not False and DEBUG
 #tail line
 # rgb to gray value: None or R,G,B to gray value: 0x1 r, 0x100 g, 0x10000 b
 # RGB_GRAY = 0x10000
+DEBUG_HEADER = not False and DEBUG
+#None 不使用canny, 0, 5效果比较好
+CANNY_GAUSS = 5
 
 ZOOMOUT_FIRST = True
 
@@ -23,7 +25,6 @@ Y_TIMES = 1 if ZOOMOUT_FIRST else PRE_Y_TIMES
 
 
 class StripTemplate:
-
 
     def __init__(self, jsonDic):
         self.name = jsonDic['name']
@@ -47,48 +48,20 @@ class StripTemplate:
         self.sampleRef = self.references[3:-1]
         self.persentage = [[0.0,0.0]] * len(self.references)
         self.titles.append("tail")
-        findHeaders.headerFinder.setWH(X_TIMES,Y_TIMES)
 
-    def __checkShape(self, shape):
+    def _checkShape(self, shape):
         return shape[0] < self.VALID_XY[3] and shape[0] > self.VALID_XY[2] \
                and shape[1] < self.VALID_XY[1] and shape[1] > self.VALID_XY[0]
 
     def getImg(self, file):
         src = self.src = cv2.imread(file)
         if src is None: return None,"file not found " + file
-        if not self.__checkShape(src.shape):
+        if not self._checkShape(src.shape):
             return None,"invalid size."
         src = src[self.BOARD_AREA[1]:self.BOARD_AREA[1] + self.BOARD_AREA[3], self.BOARD_AREA[0]:self.BOARD_AREA[0] + self.BOARD_AREA[2]]
         if ZOOMOUT_FIRST:
             src = utils.shrink3(src, PRE_X_TIMES, PRE_Y_TIMES)
         return src, None
-
-    def _getScale(self, l1, l2, length):
-        '''
-        返回比例
-        :param l1: 第一线坐标
-        :param l2: 第二线坐标
-        :param length: 实测距离
-        :return: scale
-        '''
-        return length / (self.references[l2][1] - self.references[l1][0])
-
-    # side offset 0:起点 1:终点
-    def _setPercentage(self, fromIndex, side):
-        offset = self.references[fromIndex][side]
-        length = self.references[len(self.references)-1][1] - offset
-        # 先乘2, 循环时就可以少除1个2了
-        # length <<= 1
-        i = len(self.references)
-        fromIndex += side
-        while (i>fromIndex):
-            i -= 1
-            self.persentage[i] = ( (self.references[i][0]-offset)/length, (self.references[i][1]-offset)/length)
-        # while i>0:
-        #     i -= 1
-        #     self.persentage[i] = (0.0,0.0)
-        # return self.persentage
-        return self.persentage[i:-1]
 
     #找最顶,最左线
     def _filterLines(self, lines):
@@ -134,7 +107,7 @@ class StripTemplate:
         if DEBUG_DRAW_LOCATION:
             utils.drawFullLine(self.img,(0,round(hMinBias)), hSlope, hMinBias, -2)
             utils.drawFullLine(self.img,(0,round(vMinBias)), vSlope, vMinBias, -2)
-            cv2.imshow('canny', self.img)
+            # cv2.imshow('canny', self.img)
             # cv2.waitKey()
         self.hkb=(hSlope,hMinBias)
         self.vkb=(vSlope,vMinBias)
@@ -163,8 +136,8 @@ class StripTemplate:
         _, bw = cv2.threshold(src, self.THRESHOLD, 255.0, cv2.THRESH_BINARY)
         # __showDebug("bw",bw)
 
-        # if findHeaders.CANNY_GAUSS:
-        bw = utils.toCanny(bw, findHeaders.CANNY_GAUSS)
+        if CANNY_GAUSS>0:
+            bw = utils.toCanny(bw, CANNY_GAUSS)
         lines = cv2.HoughLinesP(bw, 1, np.pi / 180, 160, minLineLength=200, maxLineGap=30)
         self._filterLines(lines)
         self.origin = utils.getCross(self.hkb,self.vkb)
@@ -190,8 +163,9 @@ class StripTemplate:
                 color = 255 - color
                 cv2.line(src, (line[[0]], line[1]), (line[2], line[3]), (255, color, 255-color), 1)
         if DEBUG_DRAW_LOCATION:
-            cv2.imshow('canny', src)
-            cv2.waitKey()
+            # cv2.imshow('canny', src)
+            # cv2.waitKey()
+            pass
 
     #定位膜条区域
     def locatArea(self, src):
@@ -204,21 +178,69 @@ class StripTemplate:
         if DEBUG_DRAW_LOCATION:
             i = 2+20 * self.STRIP_INTERVAL
             while (i>=0):
-                utils.drawDot(src, (8,i+round(i)), 15)
+                utils.drawDot(src, (8,round(i)), 15)
                 i -= self.STRIP_INTERVAL
-            cv2.imshow('canny', src)
-            cv2.waitKey()
+            # cv2.imshow('canny', src)
+            # cv2.waitKey()
             self.gray = utils.toGray(src, 'r')
         #更新膜条区域
         self.src = src
         return src
+
+    def _checkHeaders(self):
+        HEADER_WIDTH = 300
+        src = self.src
+
+        gray = utils.toGray(src, self.RGB_GRAY)
+        # cv2.imshow('1-gray', gray)
+        _, bw = cv2.threshold(gray, self.THRESHOLD, 255.0, cv2.THRESH_BINARY)
+        if DEBUG_HEADER:
+            end = self.STRIP_INTERVAL*20
+            i = self.STRIP_INTERVAL/2
+            while i<end:
+                y = self.hkb[0]*HEADER_WIDTH
+                # x = self.vkb[0]*HEADER_WIDTH+self.vkb[1]
+                cv2.line(bw, (0, round(i)), (HEADER_WIDTH, round(i+y)), 0, 2)
+                i += self.STRIP_INTERVAL
+            # cv2.imshow("bw", bw)
+            # cv2.waitKey()
+            utils.showDebug("bw", bw)
+
+        if CANNY_GAUSS:
+            bw = utils.toCanny(bw, CANNY_GAUSS)
+        # __showDebug("canny",bw)
+        # exit(0)
+
+        if DEBUG_HEADER:
+            # __showDebug("header-bw", bw)
+            # cv2.imshow("header-bw", bw)
+            pass
+        # bw = utils.toCanny(bw, 0)
+        # if DEBUG_HEADER:
+        #     cv2.imshow("header-canny", bw)
+        contours, hierarchy = cv2.findContours(bw, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+        i = len(contours)
+        # stripHeads = []
+        stripPoints = []
+        funcLines = []
+        oldp = None
+        pCount = 0
+        fcCount = 0
+        if DEBUG_HEADER:
+            if CANNY_GAUSS:
+                for points in stripPoints:
+                    utils.drawMidLineBy4P(src, points, -5)
+                pass
+            # cv2.imshow('header-src', src)
+        return stripPoints, funcLines  # strip
 
     #check header, locate
     def findHeader(self):
         srcDetect = self.src[:,:300]
         # if not ZOOMOUT_FIRST:
         #     srcDetect = utils.shrink3(src, PRE_X_TIMES, PRE_Y_TIMES)
-        header, funcLines = findHeaders.findHeader(srcDetect, self.RGB_GRAY, self.THRESHOLD)
+        header, funcLines = self._checkHeaders()
         i = len(header)
         strips =[None]*i
 
