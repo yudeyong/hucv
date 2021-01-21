@@ -268,6 +268,7 @@ def derivative(img, rect,slope, stripHeight):
 
     height = rect[3]-rect[1]
     deltaH = (height>>4)
+    if deltaH<=0 :deltaH = 1
     fY2 = rect[1]+height
     if fY2>img.shape[0] : fY2 = img.shape[0]
     fLine = rect[1]+deltaH

@@ -44,7 +44,7 @@ class StripRegion:
         minValue = STRIP_WIDTH*src.shape[0]*255
         win = sw.SlidingWindow(STRIP_WIDTH)
 
-        win.initData(src)
+        win.initData(src, True)
         i = STRIP_WIDTH
         x = i
         i1 = src.shape[1]
@@ -54,10 +54,15 @@ class StripRegion:
             if minValue>win.total:
                 minValue = win.total
                 x = i
-        x +=  FUNC_LINE[0]-STRIP_WIDTH-1
-        if minValue/(STRIP_WIDTH*src.shape[0])<180.0: self.fcX = x
+        data = src[:,x-STRIP_WIDTH+2:x-2]
+        if minValue/(STRIP_WIDTH*src.shape[0])<180.0: self.fcX = x+FUNC_LINE[0]-STRIP_WIDTH-1
         else: return -1
-        print(minValue/(STRIP_WIDTH*src.shape[0]))
+        # print(minValue/(STRIP_WIDTH*src.shape[0]))
+
+        #开始处理Y
+        win.initData(data, False)
+        #todo
+        #卷积min/max(delta)
         return x
 
         # _, bw = cv2.threshold(gray, self.THRESHOLD, 255.0, cv2.THRESH_BINARY)
