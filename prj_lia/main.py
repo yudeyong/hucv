@@ -31,7 +31,7 @@ def recognition(file, category):
 
 
 def main():
-    end = i=0x30
+    end = i=0x31
     count = 4
     end += count
     while i<end:

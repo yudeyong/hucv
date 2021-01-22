@@ -51,13 +51,15 @@ class StripTemplate:
                     continue
                 else: flag = True
             if line[0]!='blank':
-                self.references.append( (posi, posi+line[1]) )
+                self.references.append( [posi, posi+line[1]] )
                 self.titles.append(line[0])
             posi += line[1]
-        self.references.append((posi, posi))
-        self.sampleRef = self.references[3:-1]
-        self.persentage = [[0.0,0.0]] * len(self.references)
-        self.titles.append("tail")
+        unitStrip = self.STRIP_AREA_WIDTH/(self.references[2][0]-self.references[1][0])
+        for line in self.references:
+            line[0] = line[0]*unitStrip
+            line[1] = line[1]*unitStrip
+        # self.references.append((posi, posi))
+
 
     def _checkShape(self, shape):
         return shape[0] < self.VALID_XY[3] and shape[0] > self.VALID_XY[2] \
@@ -215,7 +217,7 @@ class StripTemplate:
         # cv2.imshow('1-gray', gray)
         # _, bw = cv2.threshold(gray, self.THRESHOLD, 255.0, cv2.THRESH_BINARY)
         height = self.hkb[0] * HEADER_WIDTH
-        y = 0#+self.STRIP_INTERVAL*2
+        y = 0#+self.STRIP_INTERVAL*1
         bottom = gray.shape[0]
         # dH = height if height>0 else 0
         i = 0
@@ -223,8 +225,7 @@ class StripTemplate:
         flag = False
         while (y<bottom):
         #便利查找header
-            listP = utils.derivative(gray, (5,round(y+3),HEADER_WIDTH, round(self.STRIP_INTERVAL+y-3)), self.hkb[0],
-                                     self.STRIP_INTERVAL, self.STRIP_AREA_WIDTH)
+            listP = utils.derivative(gray, (5,round(y+3),HEADER_WIDTH, round(self.STRIP_INTERVAL+y-3)), self.hkb[0], self.STRIP_INTERVAL)
             # if DEBUG_HEADER:
             #     for line in listP:
             #         for p in line[2]:
@@ -234,17 +235,17 @@ class StripTemplate:
                 flag = True
 
                 fcX = sr.StripRegion.checkFunctionLineX(gray, y, self.FUNC_LINE, self.STRIP_WIDTH)
-                if fcX<0 :
-                    #assert( fcX<self.FUNC_LINE[0] or fcX>self.FUNC_LINE[2])#找不到func line
-                    continue
-                strips[i] = sr.StripRegion(listP, index, winSize, self.hkb[0], fcX, y,self.STRIP_INTERVAL, self.STRIP_WIDTH, self.references)
-                strips[i].getFunctionLineY(gray )
-                strips[i].recognise(gray)
-                # break
-                if False:
-                    ty = strips[i].midY
-                    tx = strips[i].midX[0]
-                    cv2.line(gray, (tx, ty), (gray.shape[0], int((gray.shape[0]-tx)*self.hkb[0])+ty),  128 , 1)
+                if fcX>=0 :
+                    #assert( fcX<self.FUNC_LINE[0] or fcX>self.FUNC_LINE[2])#找到func line
+                    strips[i] = sr.StripRegion(listP, index, winSize, self.hkb[0], fcX, y,self.STRIP_INTERVAL
+                                               , self.STRIP_WIDTH, self.references, self.STRIP_AREA_WIDTH)
+                    strips[i].getFunctionLineY(gray )
+                    strips[i].recognise(gray)
+                    # break
+                    if False:
+                        ty = strips[i].midY
+                        tx = strips[i].midX[0]
+                        cv2.line(gray, (tx, ty), (gray.shape[0], int((gray.shape[0]-tx)*self.hkb[0])+ty),  128 , 1)
 
                 # for line in listP:
                 #     print(",", line[0], end='')

@@ -62,7 +62,7 @@ class StripRegion:
             win.append(src[:, i])
             i += 1
 
-        if minValue/(STRIP_WIDTH*src.shape[0])<180.0: return x+FUNC_LINE[0]-STRIP_WIDTH-1
+        if minValue/(STRIP_WIDTH*src.shape[0])<200.0: return x+FUNC_LINE[0]-STRIP_WIDTH-1
         else: return -1
         # print(minValue/(STRIP_WIDTH*src.shape[0]))
         return x
@@ -128,8 +128,11 @@ class StripRegion:
 
         if DEBUG_STRIP:
             i = 0
-
-
+        for line in self.lines:
+            x = self.fcX+line[0]
+            deltaY = x*self.slope
+            utils.drawRectBy2P(gray, (int(x), int(self.fcY0+deltaY),
+                                      int(self.fcX + line[1]), int(self.fcY1+deltaY)))
 
     @staticmethod
     def __getDeltaMax( data, left, right ):
