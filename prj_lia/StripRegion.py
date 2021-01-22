@@ -10,16 +10,15 @@ import math
 DEBUG_SR = not False
 DEBUG_LINE = not False
 
-DEBUG_STRIP =  False and DEBUG_SR
+DEBUG_STRIP = not False and DEBUG_SR
 DEBUG_DRAW_ALL =  False and DEBUG_SR
 
 
 class StripRegion:
-    FIRST_LINE_WIDTH = 3
-    FIRST_LINE_THRESHOLD = ((FIRST_LINE_WIDTH+1)>>2)*sl.SAMPLING_LINES*0xff
-
-    SAMPLING_WIDTH = const.SAMPLING_WIDTH * st.X_TIMES
-    STRIP_HEIGHT = const.STRIP_HEIGHT * st.Y_TIMES
+    #function control
+    FC_THRESHOLD = 200
+    #samplys
+    SAMPLY_THRESHOLD = 237
     def __init__(self, listP, index, size, slope, fcX, y, INTERVAL, STRIP_WIDTH, LINES, STRIP_AREA_WIDTH):
         #找中点
         index = index + (size >> 1)
@@ -62,7 +61,7 @@ class StripRegion:
             win.append(src[:, i])
             i += 1
 
-        if minValue/(STRIP_WIDTH*src.shape[0])<200.0: return x+FUNC_LINE[0]-STRIP_WIDTH-1
+        if minValue/(STRIP_WIDTH*src.shape[0])<StripRegion.FC_THRESHOLD: return x+FUNC_LINE[0]-STRIP_WIDTH-1
         else: return -1
         # print(minValue/(STRIP_WIDTH*src.shape[0]))
         return x
@@ -118,22 +117,70 @@ class StripRegion:
         if  True:
             self.fcY1 = maxX-HEIGHT+marginTop
             self.fcY0 = minX-HEIGHT+marginTop
+            self.refHeight = (self.fcY1-self.fcY0)
+            self.refY = self.fcY0
         else:
             self.fcY0 = marginTop
             self.fcY1 = y+FUNC_LINE[3]+HEIGHT
         # img[self.fcY0:self.fcY1, self.fcX:self.fcX+STRIP_WIDTH]=0
         return
 
+    @staticmethod
+    def _getMidHalfByPW( l, w, minWidth):
+        '''
+        根据点, 宽度得到缩小的中心范围
+        :param l:
+        :param w:
+        :param minWidth:
+        :return:
+        '''
+        delta = w * 0.75
+        #最小宽度
+        if delta<minWidth : delta = minWidth
+
+        #assert w>delta
+        #margin
+        w = (w - delta)/2
+        l += w
+        return l,l+delta
+
+    @staticmethod
+    def _getMidHalfBy2P( l, r, minWidth):
+        return StripRegion._getMidHalfByPW(l, r-l, minWidth)
+
     def recognise(self, gray):
 
         if DEBUG_STRIP:
             i = 0
-        for line in self.lines:
-            x = self.fcX+line[0]
-            deltaY = x*self.slope
-            utils.drawRectBy2P(gray, (int(x), int(self.fcY0+deltaY),
-                                      int(self.fcX + line[1]), int(self.fcY1+deltaY)))
 
+        #收窄边界
+        y0,y1 = StripRegion._getMidHalfByPW(self.refY, self.refHeight, 8)
+        for line in self.lines:
+            x0, x1 = StripRegion._getMidHalfBy2P(self.fcX + line[0], self.fcX + line[1], 5)
+            deltaY = x0 * self.slope
+            value = StripRegion.__calculateValue(gray[int(y0+deltaY):int(y1+deltaY), int(x0):int(x1)])
+            if value<StripRegion.SAMPLY_THRESHOLD:
+                if DEBUG_STRIP:
+                    print(i, value)
+            if DEBUG_STRIP:
+                i+=1
+                utils.drawRectBy2P(gray, (int(x0), int(y0+deltaY),
+                                      int(x1), int(y1+deltaY)))
+
+    @staticmethod
+    def __calculateValue( data):
+        count = data.size
+        data = data.reshape((-1))
+        data = np.sort(data)
+        value = count>>4
+        i0 = (count>>3)+value
+        i1 = (count>>2)+value
+        value = np.average(data[i0:i1])
+        # value += 0xff - bgColor
+
+        # print("val:",value)
+        return value
+################################
     @staticmethod
     def __getDeltaMax( data, left, right ):
         i = right
