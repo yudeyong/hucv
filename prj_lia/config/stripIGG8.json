@@ -25,6 +25,10 @@
 ["GT1b",2],
 ["blank",2],
 ["GQ1b",2],
+["blank",2],
+["Unknown",2],
+["blank",2],
+["unknown",2],
 ["blank",4]
 ],
   "RGB_GRAY": "r",

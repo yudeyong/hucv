@@ -13,10 +13,10 @@ DEBUG_LINE = not False
 DEBUG_STRIP = not False and DEBUG_SR
 DEBUG_DRAW_ALL =  False and DEBUG_SR
 
+FC_THRESHOLD = 200
 
 class StripRegion:
     #function control
-    FC_THRESHOLD = 200
     #samplys
     SAMPLY_THRESHOLD = 237
     def __init__(self, listP, index, size, slope, fcX, y, INTERVAL, STRIP_WIDTH, LINES, STRIP_AREA_WIDTH):
@@ -32,6 +32,7 @@ class StripRegion:
             self.midY = listP[index][1]
         self.slope = slope
         self.fcX = fcX
+        self.refX = fcX
         self.top = fcX*slope+y
         self.INTERVAL = INTERVAL
         self.STRIP_WIDTH = STRIP_WIDTH
@@ -40,17 +41,17 @@ class StripRegion:
         self.samples = []
 
     @staticmethod
-    def checkFunctionLineX( img, y, FUNC_LINE,STRIP_WIDTH):
+    def checkFunctionLineX( img, y, testArea,STRIP_WIDTH,threshold = FC_THRESHOLD):
         y = int(y)
-        STRIP_WIDTH = STRIP_WIDTH-1-(STRIP_WIDTH>>2)
-        # utils.drawRectBy2P(src, (FUNC_LINE[0], y+FUNC_LINE[1], FUNC_LINE[2], y+FUNC_LINE[3]))
-        src = img[y+FUNC_LINE[1]:y+FUNC_LINE[3], FUNC_LINE[0]:FUNC_LINE[2]]
+        width = STRIP_WIDTH-(STRIP_WIDTH>>2)
+        # utils.drawRectBy2P(src, (testArea[0], y+testArea[1], testArea[2], y+testArea[3]))
+        src = img[y+testArea[1]:y+testArea[3], testArea[0]:testArea[2]]
 
-        minValue = STRIP_WIDTH*src.shape[0]*255
-        win = sw.SlidingWindow(STRIP_WIDTH)
+        minValue = width*src.shape[0]*255
+        win = sw.SlidingWindow(width)
 
         win.initData(src, True)
-        i = STRIP_WIDTH
+        i = width
         x = i
         i1 = src.shape[1]
         while True:
@@ -61,9 +62,9 @@ class StripRegion:
             win.append(src[:, i])
             i += 1
 
-        if minValue/(STRIP_WIDTH*src.shape[0])<StripRegion.FC_THRESHOLD: return x+FUNC_LINE[0]-STRIP_WIDTH-1
+        if minValue/(width*src.shape[0])<threshold: return x+testArea[0]-width-1
         else: return -1
-        # print(minValue/(STRIP_WIDTH*src.shape[0]))
+        # print(minValue/(width*src.shape[0]))
         return x
 
     def getFunctionLineY(self, img):
@@ -154,18 +155,30 @@ class StripRegion:
             i = 0
 
         #收窄边界
-        y0,y1 = StripRegion._getMidHalfByPW(self.refY, self.refHeight, 8)
+        baseY0,baseY1 = StripRegion._getMidHalfByPW(self.refY, self.refHeight, 8)
         for line in self.lines:
             x0, x1 = StripRegion._getMidHalfBy2P(self.fcX + line[0], self.fcX + line[1], 5)
-            deltaY = x0 * self.slope
-            value = StripRegion.__calculateValue(gray[int(y0+deltaY):int(y1+deltaY), int(x0):int(x1)])
+            deltaY = (x0-self.refX) * self.slope
+            y0 = int(baseY0+deltaY)
+            y1 = int(baseY1+deltaY)
+            value = StripRegion.__calculateValue(gray[y0:y1, int(x0):int(x1)])
+            sx = -3
             if value<StripRegion.SAMPLY_THRESHOLD:
+                sx = StripRegion.checkFunctionLineX(gray, 0,
+                                                    (int(x0-self.STRIP_WIDTH/2), int(y0-self.STRIP_WIDTH),int(x1+self.STRIP_WIDTH/2),int(y1+self.STRIP_WIDTH))
+                                                    ,self.STRIP_WIDTH-4, StripRegion.SAMPLY_THRESHOLD)
+                if sx>0:
+                    pass
                 if DEBUG_STRIP:
                     print(i, value)
             if DEBUG_STRIP:
                 i+=1
-                utils.drawRectBy2P(gray, (int(x0), int(y0+deltaY),
+                if sx>0:
+                    utils.drawRectBy2P(gray, (int(sx), int(y0+deltaY),
                                       int(x1), int(y1+deltaY)))
+                else:
+                    utils.drawDot(gray, (int((x0+x1)/2), int((y0+deltaY+y1+deltaY)/2)),sx+6)
+
 
     @staticmethod
     def __calculateValue( data):

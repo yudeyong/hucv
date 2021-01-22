@@ -217,12 +217,13 @@ class StripTemplate:
         # cv2.imshow('1-gray', gray)
         # _, bw = cv2.threshold(gray, self.THRESHOLD, 255.0, cv2.THRESH_BINARY)
         height = self.hkb[0] * HEADER_WIDTH
-        y = 0#+self.STRIP_INTERVAL*1
         bottom = gray.shape[0]
         # dH = height if height>0 else 0
         i = 0
         strips = [None] * self.TOTAL
         flag = False
+
+        y = 0+self.STRIP_INTERVAL*3
         while (y<bottom):
         #便利查找header
             listP = utils.derivative(gray, (5,round(y+3),HEADER_WIDTH, round(self.STRIP_INTERVAL+y-3)), self.hkb[0], self.STRIP_INTERVAL)
@@ -253,6 +254,7 @@ class StripTemplate:
                 # print("line:",i, winSize)
             y += self.STRIP_INTERVAL
             i += 1
+            print('i.',i)
 
         if not False:
             y=0

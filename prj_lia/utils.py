@@ -230,7 +230,7 @@ def getCross(hkb,vkb):
     return None
 
 
-def drawDot(src, p, i):
+def drawDot(src, p, i=3):
     '''
         i>0 cross
         i<0 rect
