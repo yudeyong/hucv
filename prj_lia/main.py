@@ -19,7 +19,7 @@ def recognition(file, category):
         return err
     template.locatArea(src)
     ###cut borad from image
-    strips = template.findHeader()
+    strips = template.recognise()
 
     # sr.StripRegion.recognise(gray, strips)
 

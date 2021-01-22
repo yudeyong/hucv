@@ -20,7 +20,7 @@ class StripRegion:
 
     SAMPLING_WIDTH = const.SAMPLING_WIDTH * st.X_TIMES
     STRIP_HEIGHT = const.STRIP_HEIGHT * st.Y_TIMES
-    def __init__(self, listP, index, size, slope, fcX, y, INTERVAL, STRIP_WIDTH):
+    def __init__(self, listP, index, size, slope, fcX, y, INTERVAL, STRIP_WIDTH, LINES, STRIP_AREA_WIDTH):
         #找中点
         index = index + (size >> 1)
         if size&1==0:
@@ -36,6 +36,8 @@ class StripRegion:
         self.top = fcX*slope+y
         self.INTERVAL = INTERVAL
         self.STRIP_WIDTH = STRIP_WIDTH
+        self.lines = LINES
+        self.STRIP_AREA_WIDTH = STRIP_AREA_WIDTH
         self.samples = []
 
     @staticmethod
@@ -122,24 +124,12 @@ class StripRegion:
         # img[self.fcY0:self.fcY1, self.fcX:self.fcX+STRIP_WIDTH]=0
         return
 
-    @staticmethod
-    def recognise(gray, regions):
+    def recognise(self, gray):
+
         if DEBUG_STRIP:
             i = 0
-        for region in regions:
-            if not region.funcLine :
-                continue
-            region.__analysis(gray)
-            if DEBUG_LINE:
-                # region.drawFullLineDebug()
-                pass
-            if DEBUG_STRIP:
-                i += 1
-                # if DEBUG_DRAW_ALL:
-                #     region.__drawAllDebug()
-                # if i != 2: continue
-            cv2.imshow("bb", region.img)
-            cv2.waitKey()
+
+
 
     @staticmethod
     def __getDeltaMax( data, left, right ):

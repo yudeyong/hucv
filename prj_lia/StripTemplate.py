@@ -27,22 +27,29 @@ Y_TIMES = 1 if ZOOMOUT_FIRST else PRE_Y_TIMES
 class StripTemplate:
 
     def __init__(self, jsonDic):
-        self.name = jsonDic['name']
+        # self.name = jsonDic['name']
         self.references = []
         self.titles = []
         self.RGB_GRAY = jsonDic['RGB_GRAY']
         self.THRESHOLD = jsonDic['THRESHOLD']
         self.VALID_XY = jsonDic['VALID_XY']
         self.BOARD_AREA = jsonDic["BOARD_AREA"]
-        self.STRIP_AREA = jsonDic["STRIP_AREA"]
+        self.STRIPS_AREA = jsonDic["STRIPS_AREA"]
         self.STRIP_INTERVAL = jsonDic["STRIP_INTERVAL"]
         self.STRIP_WIDTH = jsonDic["STRIP_WIDTH"]
         self.TOTAL = jsonDic["TOTAL"]
         self.FUNC_LINE = jsonDic["FUNC_LINE"]
+        # self.lines = jsonDic["lines"]
+        self.STRIP_AREA_WIDTH = jsonDic["STRIP_AREA_WIDTH"]
 
         lines = jsonDic['lines']
         posi = 0
+        flag = False
         for line in lines:
+            if not flag:
+                if line[0]!='Functional Control' :
+                    continue
+                else: flag = True
             if line[0]!='blank':
                 self.references.append( (posi, posi+line[1]) )
                 self.titles.append(line[0])
@@ -117,8 +124,8 @@ class StripTemplate:
 
     #映射到膜条区域左顶点
     def _mapOrigin(self):
-        X_OFFSET = self.STRIP_AREA[0]
-        Y_OFFSET = self.STRIP_AREA[1]
+        X_OFFSET = self.STRIPS_AREA[0]
+        Y_OFFSET = self.STRIPS_AREA[1]
         x = self.origin[0]
         y = self.origin[1]
         if self.vkb[0] != float("inf"):
@@ -177,7 +184,7 @@ class StripTemplate:
 
         x = round(self.BOARD_AREA[0]+PRE_X_TIMES*self.origin[0])
         y = round(self.BOARD_AREA[1]+PRE_Y_TIMES*self.origin[1])
-        src = self.src[y:y+self.STRIP_AREA[3], x:x+self.STRIP_AREA[2]]
+        src = self.src[y:y+self.STRIPS_AREA[3], x:x+self.STRIPS_AREA[2]]
         if DEBUG_DRAW_LOCATION:
             i = 2+self.TOTAL * self.STRIP_INTERVAL
             while (i>=0):
@@ -216,7 +223,8 @@ class StripTemplate:
         flag = False
         while (y<bottom):
         #便利查找header
-            listP = utils.derivative(gray, (5,round(y+3),HEADER_WIDTH, round(self.STRIP_INTERVAL+y-3)), self.hkb[0], self.STRIP_INTERVAL)
+            listP = utils.derivative(gray, (5,round(y+3),HEADER_WIDTH, round(self.STRIP_INTERVAL+y-3)), self.hkb[0],
+                                     self.STRIP_INTERVAL, self.STRIP_AREA_WIDTH)
             # if DEBUG_HEADER:
             #     for line in listP:
             #         for p in line[2]:
@@ -229,8 +237,9 @@ class StripTemplate:
                 if fcX<0 :
                     #assert( fcX<self.FUNC_LINE[0] or fcX>self.FUNC_LINE[2])#找不到func line
                     continue
-                strips[i] = sr.StripRegion(listP, index, winSize, self.hkb[0], fcX, y,self.STRIP_INTERVAL, self.STRIP_WIDTH)
+                strips[i] = sr.StripRegion(listP, index, winSize, self.hkb[0], fcX, y,self.STRIP_INTERVAL, self.STRIP_WIDTH, self.references)
                 strips[i].getFunctionLineY(gray )
+                strips[i].recognise(gray)
                 # break
                 if False:
                     ty = strips[i].midY
@@ -255,15 +264,13 @@ class StripTemplate:
             cv2.waitKey()
         return strips if flag else None
 
-
     #check header, locate
-    def findHeader(self):
-        srcDetect = self.src[:,:300]
-        # if not ZOOMOUT_FIRST:
-        #     srcDetect = utils.shrink3(src, PRE_X_TIMES, PRE_Y_TIMES)
+    def recognise(self):
         strips = self._checkHeaders()
 
         if strips is None: return None
-
+        # for strip in strips:
+        #     if not strip is None:
+        #         strip.recognise()
 
         return strips

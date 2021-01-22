@@ -2,7 +2,7 @@
   "name" : "ANA12",
   "lines": [["头",9],
 ["blank",3],
-["Functonal Control",2],
+["Functional Control",2],
 ["blank",2],
 ["GM1",2],
 ["blank",2],
@@ -31,9 +31,10 @@
   "THRESHOLD": 160,
   "VALID_XY" : [3444, 3594, 2406, 2540],
   "BOARD_AREA" : [40,90,1950,1500],
-  "STRIP_AREA" : [130,206, 620, 1200],
+  "STRIPS_AREA" : [130,206, 620, 1200],
   "STRIP_INTERVAL" : 58.88,
-  "STRIP_WIDTH" : 15,
+  "STRIP_WIDTH" : 14,
+  "STRIP_AREA_WIDTH" : 24,
   "TOTAL" : 20,
   "FUNC_LINE" : [160, 5, 278, 45]
 }
