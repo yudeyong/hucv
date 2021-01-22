@@ -80,44 +80,10 @@ class StripRegion:
 
         data = img[marginTop:marginBottom,self.fcX+3:self.fcX+self.STRIP_WIDTH-3]
         # data[:,:] = 0
-        # assert data.shape[0]>HEIGHT
-        win = sw.SlidingWindow(HEIGHT)
-
-        win.initData(data, False)
-
-        i1 = data.shape[0]
-        oldValue = [0]*HEIGHT
-        minValue = maxValue = 0
-        minX = maxX = i = HEIGHT-1
-        maxBorder = ((i1+i)>>1)
-        minBorder = maxBorder
-        maxBorder += 3
-        oldValue[0] = win.total
-        recordCursor = 0
-        while recordCursor<HEIGHT:
-            oldValue[recordCursor] = win.total
-            recordCursor += 1
-            i += 1
-            win.append(data[i])
-        recordCursor = 0
-        while True:
-            delta = win.total-oldValue[recordCursor]
-            if i<minBorder and minValue > delta:
-                minValue = delta
-                minX = i
-            if i>maxBorder and maxValue < delta:
-                maxValue = delta
-                maxX = i
-            i += 1
-            if i >= i1: break;
-            oldValue[recordCursor] = win.total
-            recordCursor += 1
-            if recordCursor>=HEIGHT:
-                recordCursor = 0
-            win.append(data[i])
+        y0,y1 = StripRegion._getSampleY(data, HEIGHT)
         if  True:
-            self.fcY1 = maxX-HEIGHT+marginTop
-            self.fcY0 = minX-HEIGHT+marginTop
+            self.fcY1 = y1-HEIGHT+marginTop
+            self.fcY0 = y0-HEIGHT+marginTop
             self.refHeight = (self.fcY1-self.fcY0)
             self.refY = self.fcY0
         else:
@@ -125,6 +91,46 @@ class StripRegion:
             self.fcY1 = y+FUNC_LINE[3]+HEIGHT
         # img[self.fcY0:self.fcY1, self.fcX:self.fcX+STRIP_WIDTH]=0
         return
+
+    @staticmethod
+    def _getSampleY(data, HEIGHT):
+
+        # assert data.shape[0]>HEIGHT
+        win = sw.SlidingWindow(HEIGHT)
+
+        win.initData(data, False)
+
+        i1 = data.shape[0]
+        oldValue = [0] * HEIGHT
+        minValue = maxValue = 0
+        minY = maxY = i = HEIGHT - 1
+        maxBorder = ((i1 + i) >> 1)
+        minBorder = maxBorder
+        maxBorder += 3
+        oldValue[0] = win.total
+        recordCursor = 0
+        while recordCursor < HEIGHT:
+            oldValue[recordCursor] = win.total
+            recordCursor += 1
+            i += 1
+            win.append(data[i])
+        recordCursor = 0
+        while True:
+            delta = win.total - oldValue[recordCursor]
+            if i < minBorder and minValue > delta:
+                minValue = delta
+                minY = i
+            if i > maxBorder and maxValue < delta:
+                maxValue = delta
+                maxY = i
+            i += 1
+            if i >= i1: break;
+            oldValue[recordCursor] = win.total
+            recordCursor += 1
+            if recordCursor >= HEIGHT:
+                recordCursor = 0
+            win.append(data[i])
+        return minY, maxY
 
     @staticmethod
     def _getMidHalfByPW( l, w, minWidth):
@@ -164,13 +170,19 @@ class StripRegion:
             value = StripRegion.__calculateValue(gray[y0:y1, int(x0):int(x1)])
             sx = -3
             if value<StripRegion.SAMPLY_THRESHOLD:
-                sx = StripRegion.checkFunctionLineX(gray, 0,
-                                                    (int(x0-self.STRIP_WIDTH/2), int(y0-self.STRIP_WIDTH),int(x1+self.STRIP_WIDTH/2),int(y1+self.STRIP_WIDTH))
-                                                    ,self.STRIP_WIDTH-4, StripRegion.SAMPLY_THRESHOLD)
-                if sx>0:
-                    pass
                 if DEBUG_STRIP:
                     print(i, value)
+                l = int(x0-self.STRIP_WIDTH/2)
+                t = int(y0-self.STRIP_WIDTH)
+                r = int(x1+self.STRIP_WIDTH/2)
+                b = int(y1+self.STRIP_WIDTH)
+                sx = StripRegion.checkFunctionLineX(gray, 0,
+                                                    (l, t,r,b)
+                                                    ,self.STRIP_WIDTH-4, StripRegion.SAMPLY_THRESHOLD)
+                if sx>0:
+                    data = gray[t:b,l:r]
+                    y0, y1 = StripRegion._getSampleY(data, 8)
+
             if DEBUG_STRIP:
                 i+=1
                 if sx>0:

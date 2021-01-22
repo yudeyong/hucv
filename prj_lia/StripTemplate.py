@@ -223,7 +223,7 @@ class StripTemplate:
         strips = [None] * self.TOTAL
         flag = False
 
-        y = 0+self.STRIP_INTERVAL*3
+        y = 0#+self.STRIP_INTERVAL*3
         while (y<bottom):
         #便利查找header
             listP = utils.derivative(gray, (5,round(y+3),HEADER_WIDTH, round(self.STRIP_INTERVAL+y-3)), self.hkb[0], self.STRIP_INTERVAL)
