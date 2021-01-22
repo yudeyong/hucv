@@ -224,14 +224,13 @@ class StripTemplate:
             index,winSize = utils.maxWind(listP, 5, 10, 1)
             if index>=0:
                 flag = True
-                strips[i] = sr.StripRegion(listP, index, winSize, self.hkb[0])
 
-                fcX = strips[i].checkFunctionLineX(gray, y, self.FUNC_LINE, self.STRIP_WIDTH)
-                if fcX<0:#找不到func line
-                    strips[i] = None
+                fcX = sr.StripRegion.checkFunctionLineX(gray, y, self.FUNC_LINE, self.STRIP_WIDTH)
+                if fcX<0 :
+                    #assert( fcX<self.FUNC_LINE[0] or fcX>self.FUNC_LINE[2])#找不到func line
                     continue
-
-                strips[i].checkFunctionLineY(gray, y+fcX*self.hkb[0], self.STRIP_INTERVAL, self.STRIP_WIDTH)
+                strips[i] = sr.StripRegion(listP, index, winSize, self.hkb[0], fcX, y,self.STRIP_INTERVAL, self.STRIP_WIDTH)
+                strips[i].getFunctionLineY(gray )
                 # break
                 if False:
                     ty = strips[i].midY

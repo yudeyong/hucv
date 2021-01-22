@@ -20,7 +20,7 @@ class StripRegion:
 
     SAMPLING_WIDTH = const.SAMPLING_WIDTH * st.X_TIMES
     STRIP_HEIGHT = const.STRIP_HEIGHT * st.Y_TIMES
-    def __init__(self, listP, index, size, slope):
+    def __init__(self, listP, index, size, slope, fcX, y, INTERVAL, STRIP_WIDTH):
         #找中点
         index = index + (size >> 1)
         if size&1==0:
@@ -32,10 +32,14 @@ class StripRegion:
             self.midX = listP[index][2][0]
             self.midY = listP[index][1]
         self.slope = slope
+        self.fcX = fcX
+        self.top = fcX*slope+y
+        self.INTERVAL = INTERVAL
+        self.STRIP_WIDTH = STRIP_WIDTH
         self.samples = []
-        self.funcLine = None
 
-    def checkFunctionLineX(self, img, y, FUNC_LINE,STRIP_WIDTH):
+    @staticmethod
+    def checkFunctionLineX( img, y, FUNC_LINE,STRIP_WIDTH):
         y = int(y)
         STRIP_WIDTH = STRIP_WIDTH-1-(STRIP_WIDTH>>2)
         # utils.drawRectBy2P(src, (FUNC_LINE[0], y+FUNC_LINE[1], FUNC_LINE[2], y+FUNC_LINE[3]))
@@ -56,22 +60,23 @@ class StripRegion:
             win.append(src[:, i])
             i += 1
 
-        if minValue/(STRIP_WIDTH*src.shape[0])<180.0: self.fcX = x+FUNC_LINE[0]-STRIP_WIDTH-1
+        if minValue/(STRIP_WIDTH*src.shape[0])<180.0: return x+FUNC_LINE[0]-STRIP_WIDTH-1
         else: return -1
         # print(minValue/(STRIP_WIDTH*src.shape[0]))
         return x
 
-    def checkFunctionLineY(self, img, y, areaHeight, STRIP_WIDTH):
+    def getFunctionLineY(self, img):
 
         #开始处理Y
+        #检测窗口高度
         HEIGHT = 9
-        marginTop = int(y) - HEIGHT
+        marginTop = int(self.top) - HEIGHT
         if marginTop<0: marginTop = 0
 
-        marginBottom = int(y+areaHeight)+HEIGHT
+        marginBottom = int(self.top+self.INTERVAL)+HEIGHT
         if marginBottom>=img.shape[0] : marginBottom = img.shape[0]
 
-        data = img[marginTop:marginBottom,self.fcX+3:self.fcX+STRIP_WIDTH-3]
+        data = img[marginTop:marginBottom,self.fcX+3:self.fcX+self.STRIP_WIDTH-3]
         # data[:,:] = 0
         # assert data.shape[0]>HEIGHT
         win = sw.SlidingWindow(HEIGHT)
@@ -116,8 +121,6 @@ class StripRegion:
             self.fcY1 = y+FUNC_LINE[3]+HEIGHT
         # img[self.fcY0:self.fcY1, self.fcX:self.fcX+STRIP_WIDTH]=0
         return
-
-        # _, bw = cv2.threshold(gray, self.THRESHOLD, 255.0, cv2.THRESH_BINARY)
 
     @staticmethod
     def recognise(gray, regions):
