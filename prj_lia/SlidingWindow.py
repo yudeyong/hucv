@@ -2,8 +2,13 @@ import numpy as np
 
 class SlidingWindow:
     def __init__(self, width):
+        self.setWidth(width)
+
+    def setWidth(self, width):
+        if not hasattr(self, "width") or self.width!=width:
+            self.summary = np.zeros([width])
         self.width = width
-        self.summary = np.zeros([width])
+
 
     def initData(self, data, rotate):
         '''

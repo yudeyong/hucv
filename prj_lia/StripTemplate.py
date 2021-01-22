@@ -196,7 +196,7 @@ class StripTemplate:
         src = self.src
 
         gray = utils.toGray(src, self.RGB_GRAY)
-        if False: #缩一半,方便调试
+        if  False: #缩一半,方便调试
             gray = utils.shrink(gray, 2, 2)
             self.STRIP_INTERVAL /= 2
             self.STRIP_WIDTH >>= 1
@@ -208,7 +208,7 @@ class StripTemplate:
         # cv2.imshow('1-gray', gray)
         # _, bw = cv2.threshold(gray, self.THRESHOLD, 255.0, cv2.THRESH_BINARY)
         height = self.hkb[0] * HEADER_WIDTH
-        y = 0
+        y = 0#+self.STRIP_INTERVAL*2
         bottom = gray.shape[0]
         # dH = height if height>0 else 0
         i = 0
@@ -226,8 +226,14 @@ class StripTemplate:
                 flag = True
                 strips[i] = sr.StripRegion(listP, index, winSize, self.hkb[0])
 
-                fcX = strips[i].checkFunctionLine(gray, y, self.FUNC_LINE, self.STRIP_WIDTH)
-                if not False:
+                fcX = strips[i].checkFunctionLineX(gray, y, self.FUNC_LINE, self.STRIP_WIDTH)
+                if fcX<0:#找不到func line
+                    strips[i] = None
+                    continue
+
+                strips[i].checkFunctionLineY(gray, y+fcX*self.hkb[0], self.STRIP_INTERVAL, self.STRIP_WIDTH)
+                # break
+                if False:
                     ty = strips[i].midY
                     tx = strips[i].midX[0]
                     cv2.line(gray, (tx, ty), (gray.shape[0], int((gray.shape[0]-tx)*self.hkb[0])+ty),  128 , 1)
@@ -243,7 +249,7 @@ class StripTemplate:
             y=0
             for strip in strips:
                 if not strip is None:
-                    utils.drawRectBy2P(gray, (strip.fcX, int(y)+5, strip.fcX+self.STRIP_WIDTH, int(y)+45))
+                    utils.drawRectBy2P(gray, (strip.fcX, strip.fcY0, strip.fcX+self.STRIP_WIDTH, strip.fcY1))
                 y += self.STRIP_INTERVAL
         if DEBUG_HEADER:
             cv2.imshow("bg", gray)

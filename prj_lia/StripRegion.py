@@ -35,11 +35,11 @@ class StripRegion:
         self.samples = []
         self.funcLine = None
 
-    def checkFunctionLine(self, src, y, FUNC_LINE,STRIP_WIDTH):
+    def checkFunctionLineX(self, img, y, FUNC_LINE,STRIP_WIDTH):
         y = int(y)
         STRIP_WIDTH = STRIP_WIDTH-1-(STRIP_WIDTH>>2)
         # utils.drawRectBy2P(src, (FUNC_LINE[0], y+FUNC_LINE[1], FUNC_LINE[2], y+FUNC_LINE[3]))
-        src = src[y+FUNC_LINE[1]:y+FUNC_LINE[3], FUNC_LINE[0]:FUNC_LINE[2]]
+        src = img[y+FUNC_LINE[1]:y+FUNC_LINE[3], FUNC_LINE[0]:FUNC_LINE[2]]
 
         minValue = STRIP_WIDTH*src.shape[0]*255
         win = sw.SlidingWindow(STRIP_WIDTH)
@@ -48,22 +48,74 @@ class StripRegion:
         i = STRIP_WIDTH
         x = i
         i1 = src.shape[1]
-        while i<i1:
-            win.append(src[:,i])
-            i += 1
+        while True:
             if minValue>win.total:
                 minValue = win.total
                 x = i
-        data = src[:,x-STRIP_WIDTH+2:x-2]
+            if i >= i1: break;
+            win.append(src[:, i])
+            i += 1
+
         if minValue/(STRIP_WIDTH*src.shape[0])<180.0: self.fcX = x+FUNC_LINE[0]-STRIP_WIDTH-1
         else: return -1
         # print(minValue/(STRIP_WIDTH*src.shape[0]))
+        return x
+
+    def checkFunctionLineY(self, img, y, areaHeight, STRIP_WIDTH):
 
         #开始处理Y
+        HEIGHT = 9
+        marginTop = int(y) - HEIGHT
+        if marginTop<0: marginTop = 0
+
+        marginBottom = int(y+areaHeight)+HEIGHT
+        if marginBottom>=img.shape[0] : marginBottom = img.shape[0]
+
+        data = img[marginTop:marginBottom,self.fcX+3:self.fcX+STRIP_WIDTH-3]
+        # data[:,:] = 0
+        # assert data.shape[0]>HEIGHT
+        win = sw.SlidingWindow(HEIGHT)
+
         win.initData(data, False)
-        #todo
-        #卷积min/max(delta)
-        return x
+
+        i1 = data.shape[0]
+        oldValue = [0]*HEIGHT
+        minValue = maxValue = 0
+        minX = maxX = i = HEIGHT-1
+        maxBorder = ((i1+i)>>1)
+        minBorder = maxBorder
+        maxBorder += 3
+        oldValue[0] = win.total
+        recordCursor = 0
+        while recordCursor<HEIGHT:
+            oldValue[recordCursor] = win.total
+            recordCursor += 1
+            i += 1
+            win.append(data[i])
+        recordCursor = 0
+        while True:
+            delta = win.total-oldValue[recordCursor]
+            if i<minBorder and minValue > delta:
+                minValue = delta
+                minX = i
+            if i>maxBorder and maxValue < delta:
+                maxValue = delta
+                maxX = i
+            i += 1
+            if i >= i1: break;
+            oldValue[recordCursor] = win.total
+            recordCursor += 1
+            if recordCursor>=HEIGHT:
+                recordCursor = 0
+            win.append(data[i])
+        if  True:
+            self.fcY1 = maxX-HEIGHT+marginTop
+            self.fcY0 = minX-HEIGHT+marginTop
+        else:
+            self.fcY0 = marginTop
+            self.fcY1 = y+FUNC_LINE[3]+HEIGHT
+        # img[self.fcY0:self.fcY1, self.fcX:self.fcX+STRIP_WIDTH]=0
+        return
 
         # _, bw = cv2.threshold(gray, self.THRESHOLD, 255.0, cv2.THRESH_BINARY)
 
