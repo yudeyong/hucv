@@ -19,7 +19,7 @@ class StripRegion:
     #function control
     #samplys
     SAMPLY_THRESHOLD = 237
-    def __init__(self, listP, index, size, slope, fcX, y, INTERVAL, STRIP_WIDTH, LINES, STRIP_AREA_WIDTH):
+    def __init__(self, listP, index, size, slope, fcX, y, INTERVAL, STRIP_WIDTH, STRIP_HEIGHT, LINES, STRIP_AREA_WIDTH):
         #找中点
         index = index + (size >> 1)
         if size&1==0:
@@ -36,6 +36,7 @@ class StripRegion:
         self.top = fcX*slope+y
         self.INTERVAL = INTERVAL
         self.STRIP_WIDTH = STRIP_WIDTH
+        self.STRIP_HEIGHT = STRIP_HEIGHT
         self.lines = LINES
         self.STRIP_AREA_WIDTH = STRIP_AREA_WIDTH
         self.samples = []
@@ -78,12 +79,11 @@ class StripRegion:
         marginBottom = int(self.top+self.INTERVAL)+HEIGHT
         if marginBottom>=img.shape[0] : marginBottom = img.shape[0]
 
-        data = img[marginTop:marginBottom,self.fcX+3:self.fcX+self.STRIP_WIDTH-3]
         # data[:,:] = 0
-        y0,y1 = StripRegion._getSampleY(data, HEIGHT)
+        y0,y1 = StripRegion._getSampleY(img, (self.fcX+3,marginTop,self.fcX+self.STRIP_WIDTH-3,marginBottom), HEIGHT)
         if  True:
-            self.fcY1 = y1-HEIGHT+marginTop
-            self.fcY0 = y0-HEIGHT+marginTop
+            self.fcY1 = y1
+            self.fcY0 = y0
             self.refHeight = (self.fcY1-self.fcY0)
             self.refY = self.fcY0
         else:
@@ -93,8 +93,16 @@ class StripRegion:
         return
 
     @staticmethod
-    def _getSampleY(data, HEIGHT):
+    def _getSampleY(img, rect, HEIGHT):
+        '''
 
+        :param data: srcImg
+        :param rect: dectect area
+        :param HEIGHT: window size
+        :return:
+        '''
+
+        data = img[rect[1]:rect[3],rect[0]:rect[2]]
         # assert data.shape[0]>HEIGHT
         win = sw.SlidingWindow(HEIGHT)
 
@@ -130,7 +138,7 @@ class StripRegion:
             if recordCursor >= HEIGHT:
                 recordCursor = 0
             win.append(data[i])
-        return minY, maxY
+        return minY+rect[1]-HEIGHT, maxY+rect[1]-HEIGHT
 
     @staticmethod
     def _getMidHalfByPW( l, w, minWidth):
@@ -157,12 +165,14 @@ class StripRegion:
 
     def recognise(self, gray):
 
-        if DEBUG_STRIP:
-            i = 0
+        i = 0
 
         #收窄边界
         baseY0,baseY1 = StripRegion._getMidHalfByPW(self.refY, self.refHeight, 8)
         for line in self.lines:
+            if i==0 :
+                i += 1
+                continue
             x0, x1 = StripRegion._getMidHalfBy2P(self.fcX + line[0], self.fcX + line[1], 5)
             deltaY = (x0-self.refX) * self.slope
             y0 = int(baseY0+deltaY)
@@ -171,7 +181,7 @@ class StripRegion:
             sx = -3
             if value<StripRegion.SAMPLY_THRESHOLD:
                 if DEBUG_STRIP:
-                    print(i, value)
+                    print("##", i, value)
                 l = int(x0-self.STRIP_WIDTH/2)
                 t = int(y0-self.STRIP_WIDTH)
                 r = int(x1+self.STRIP_WIDTH/2)
@@ -180,14 +190,23 @@ class StripRegion:
                                                     (l, t,r,b)
                                                     ,self.STRIP_WIDTH-4, StripRegion.SAMPLY_THRESHOLD)
                 if sx>0:
-                    data = gray[t:b,l:r]
-                    y0, y1 = StripRegion._getSampleY(data, 8)
+                    t, b = StripRegion._getSampleY(gray, (l,t,r,b), 8)
+                    height = b-t-self.STRIP_HEIGHT
+                    if height>=-5 and height<=6:
+                        pass#todo adject position
+                        print("h:", height)
+                    else:
+                        t = y0
+                        b = y1
+                else:
+                    t = y0
+                    b = y1
 
+            i += 1
             if DEBUG_STRIP:
-                i+=1
                 if sx>0:
-                    utils.drawRectBy2P(gray, (int(sx), int(y0+deltaY),
-                                      int(x1), int(y1+deltaY)))
+                    utils.drawRectBy2P(gray, (int(sx), int(t+deltaY),
+                                      int(x1), int(b+deltaY)))
                 else:
                     utils.drawDot(gray, (int((x0+x1)/2), int((y0+deltaY+y1+deltaY)/2)),sx+6)
 

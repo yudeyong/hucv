@@ -37,6 +37,7 @@ class StripTemplate:
         self.STRIPS_AREA = jsonDic["STRIPS_AREA"]
         self.STRIP_INTERVAL = jsonDic["STRIP_INTERVAL"]
         self.STRIP_WIDTH = jsonDic["STRIP_WIDTH"]
+        self.STRIP_HEIGHT = jsonDic["STRIP_HEIGHT"]
         self.TOTAL = jsonDic["TOTAL"]
         self.FUNC_LINE = jsonDic["FUNC_LINE"]
         # self.lines = jsonDic["lines"]
@@ -223,7 +224,7 @@ class StripTemplate:
         strips = [None] * self.TOTAL
         flag = False
 
-        y = 0#+self.STRIP_INTERVAL*3
+        y = 0#+self.STRIP_INTERVAL*4
         while (y<bottom):
         #便利查找header
             listP = utils.derivative(gray, (5,round(y+3),HEADER_WIDTH, round(self.STRIP_INTERVAL+y-3)), self.hkb[0], self.STRIP_INTERVAL)
@@ -239,7 +240,7 @@ class StripTemplate:
                 if fcX>=0 :
                     #assert( fcX<self.FUNC_LINE[0] or fcX>self.FUNC_LINE[2])#找到func line
                     strips[i] = sr.StripRegion(listP, index, winSize, self.hkb[0], fcX, y,self.STRIP_INTERVAL
-                                               , self.STRIP_WIDTH, self.references, self.STRIP_AREA_WIDTH)
+                                               , self.STRIP_WIDTH, self.STRIP_HEIGHT, self.references, self.STRIP_AREA_WIDTH)
                     strips[i].getFunctionLineY(gray )
                     strips[i].recognise(gray)
                     # break
@@ -254,9 +255,9 @@ class StripTemplate:
                 # print("line:",i, winSize)
             y += self.STRIP_INTERVAL
             i += 1
-            print('i.',i)
+            print('######i.',i)
 
-        if not False:
+        if  False:
             y=0
             for strip in strips:
                 if not strip is None:

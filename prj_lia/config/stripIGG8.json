@@ -26,9 +26,9 @@
 ["blank",2],
 ["GQ1b",2],
 ["blank",2],
-["Unknown",2],
+["MAG",2],
 ["blank",2],
-["unknown",2],
+["Sulfatide",2],
 ["blank",4]
 ],
   "RGB_GRAY": "r",
@@ -38,6 +38,7 @@
   "STRIPS_AREA" : [130,206, 620, 1200],
   "STRIP_INTERVAL" : 58.88,
   "STRIP_WIDTH" : 14,
+  "STRIP_HEIGHT" : 22,
   "STRIP_AREA_WIDTH" : 24,
   "TOTAL" : 20,
   "FUNC_LINE" : [160, 5, 278, 45]
