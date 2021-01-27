@@ -170,9 +170,9 @@ class StripRegion:
         #收窄边界
         baseY0,baseY1 = StripRegion._getMidHalfByPW(self.refY, self.refHeight, 8)
         for line in self.lines:
-            if i==0 :
-                i += 1
-                continue
+            # if i==0 :
+            #     i += 1
+            #     continue
             x0, x1 = StripRegion._getMidHalfBy2P(self.fcX + line[0], self.fcX + line[1], 5)
             deltaY = (x0-self.refX) * self.slope
             y0 = int(baseY0+deltaY)

@@ -7,13 +7,13 @@ import cv2
 import StripRegion as sr
 
 DEBUG = not False
-DEBUG_DRAW_LOCATION =  False and DEBUG
+DEBUG_DRAW_LOCATION = not False and DEBUG
 #tail line
 # rgb to gray value: None or R,G,B to gray value: 0x1 r, 0x100 g, 0x10000 b
 # RGB_GRAY = 0x10000
 DEBUG_HEADER = not False and DEBUG
 #None 不使用canny, 0, 5效果比较好
-CANNY_GAUSS = 5
+CANNY_GAUSS = 7
 
 ZOOMOUT_FIRST = True
 
@@ -84,6 +84,7 @@ class StripTemplate:
         h2ndSlope = vSlopeSetting = 20
         for l in lines:
             line = l[0]
+            cv2.line(self.img, (line[[0]], line[1]), (line[2], line[3]), (255, 0, 255 ), 1)
             slope, bias = utils.getSlopeBias(line)
             if abs(slope)>vSlopeSetting:
                 aBias = abs(bias)
@@ -151,10 +152,10 @@ class StripTemplate:
 
         if CANNY_GAUSS>0:
             bw = utils.toCanny(bw, CANNY_GAUSS)
-        lines = cv2.HoughLinesP(bw, 1, np.pi / 180, 160, minLineLength=200, maxLineGap=30)
+        lines = cv2.HoughLinesP(bw, 1, np.pi / 180, 136, minLineLength=140, maxLineGap=30)
         self._filterLines(lines)
         self.origin = utils.getCross(self.hkb,self.vkb)
-        if not self.origin:
+        if self.origin is None:
             return False
         if DEBUG_DRAW_LOCATION: utils.drawDot(src, self.origin, 5)
         self._mapOrigin()

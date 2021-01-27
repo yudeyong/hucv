@@ -31,15 +31,23 @@ def recognition(file, category):
 
 
 def main():
-    end = i=0x31
-    count = 4
+    i=9
+    count = 14
+    if i+count>18: count = 18-i
+    if i>10 : i+=7
+    end = i = i + 0x30
     end += count
     while i<end:
+        if i == 0x3A:
+            i=0x41
+            end+=7
+        print("file", chr(i))
         msg = recognition( ('./samples/AGL' ) +chr(i)+'.jpg', "IGG8")
         if msg :
             print(msg )
-        cv2.waitKey(0)
+
         i+=1
+    cv2.waitKey(0)
 
 
 if __name__ == '__main__':
