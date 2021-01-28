@@ -19,7 +19,7 @@ class StripRegion:
     #function control
     #samplys
     SAMPLY_THRESHOLD = 237
-    def __init__(self, listP, index, size, slope, fcX, y, INTERVAL, STRIP_WIDTH, STRIP_HEIGHT, LINES, STRIP_AREA_WIDTH):
+    def __init__(self, listP, index, size, slope, fcX, y, lines,config):
         #找中点
         index = index + (size >> 1)
         if size&1==0:
@@ -34,11 +34,8 @@ class StripRegion:
         self.fcX = fcX
         self.refX = fcX
         self.top = fcX*slope+y
-        self.INTERVAL = INTERVAL
-        self.STRIP_WIDTH = STRIP_WIDTH
-        self.STRIP_HEIGHT = STRIP_HEIGHT
-        self.lines = LINES
-        self.STRIP_AREA_WIDTH = STRIP_AREA_WIDTH
+        self.config = config
+        self.lines = lines
         self.samples = []
 
     @staticmethod
@@ -76,11 +73,11 @@ class StripRegion:
         marginTop = int(self.top) - HEIGHT
         if marginTop<0: marginTop = 0
 
-        marginBottom = int(self.top+self.INTERVAL)+HEIGHT
+        marginBottom = int(self.top+self.config.STRIP_INTERVAL)+HEIGHT
         if marginBottom>=img.shape[0] : marginBottom = img.shape[0]
 
         # data[:,:] = 0
-        y0,y1 = StripRegion._getSampleY(img, (self.fcX+3,marginTop,self.fcX+self.STRIP_WIDTH-3,marginBottom), HEIGHT)
+        y0,y1 = StripRegion._getSampleY(img, (self.fcX+3,marginTop,self.fcX+self.config.STRIP_WIDTH-3,marginBottom), HEIGHT)
         if  True:
             self.fcY1 = y1
             self.fcY0 = y0
@@ -183,17 +180,17 @@ class StripRegion:
                 if DEBUG_STRIP:
                     # print("##", i, value)
                     pass
-                l = int(x0-self.STRIP_WIDTH/2)
-                t = int(y0-self.STRIP_WIDTH)
+                l = int(x0-self.config.STRIP_WIDTH/2)
+                t = int(y0-self.config.STRIP_WIDTH)
                 if t<0 :t = 0
-                r = int(x1+self.STRIP_WIDTH/2)
-                b = int(y1+self.STRIP_WIDTH)
+                r = int(x1+self.config.STRIP_WIDTH/2)
+                b = int(y1+self.config.STRIP_WIDTH)
                 sx = StripRegion.checkFunctionLineX(gray, 0,
                                                     (l, t,r,b)
-                                                    ,self.STRIP_WIDTH-4, StripRegion.SAMPLY_THRESHOLD)
+                                                    ,self.config.STRIP_WIDTH-4, StripRegion.SAMPLY_THRESHOLD)
                 if sx>0:
                     t, b = StripRegion._getSampleY(gray, (l,t,r,b), 8)
-                    height = b-t-self.STRIP_HEIGHT
+                    height = b-t-self.config.STRIP_HEIGHT
                     if height>=-5 and height<=6:
                         pass#todo adject position
                         print("h:", height)

@@ -33,7 +33,7 @@ def recognition(file, category):
 
 def main():
     #todo 68bch
-    i=17
+    i=7
     count = 14
     if i+count>18: count = 18-i
     if i>10 : i+=7

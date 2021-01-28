@@ -26,27 +26,15 @@ Y_TIMES = 1 if ZOOMOUT_FIRST else PRE_Y_TIMES
 
 class StripTemplate:
 
-    def __init__(self, jsonDic):
+    def __init__(self, config):
         # self.name = jsonDic['name']
         self.references = []
         self.titles = []
-        self.RGB_GRAY = jsonDic['RGB_GRAY']
-        self.THRESHOLD = jsonDic['THRESHOLD']
-        self.VALID_XY = jsonDic['VALID_XY']
-        self.BOARD_AREA = jsonDic["BOARD_AREA"]
-        self.STRIPS_AREA = jsonDic["STRIPS_AREA"]
-        self.STRIP_INTERVAL = jsonDic["STRIP_INTERVAL"]
-        self.STRIP_WIDTH = jsonDic["STRIP_WIDTH"]
-        self.STRIP_HEIGHT = jsonDic["STRIP_HEIGHT"]
-        self.TOTAL = jsonDic["TOTAL"]
-        self.FUNC_LINE = jsonDic["FUNC_LINE"]
-        # self.lines = jsonDic["lines"]
-        self.STRIP_AREA_WIDTH = jsonDic["STRIP_AREA_WIDTH"]
+        self.config = config
 
-        lines = jsonDic['lines']
         posi = 0
         flag = False
-        for line in lines:
+        for line in config.lines:
             if not flag:
                 if line[0]!='Functional Control' :
                     continue
@@ -55,7 +43,7 @@ class StripTemplate:
                 self.references.append( [posi, posi+line[1]] )
                 self.titles.append(line[0])
             posi += line[1]
-        unitStrip = self.STRIP_AREA_WIDTH/(self.references[2][0]-self.references[1][0])
+        unitStrip = self.config.STRIP_AREA_WIDTH/(self.references[2][0]-self.references[1][0])
         for line in self.references:
             line[0] = line[0]*unitStrip
             line[1] = line[1]*unitStrip
@@ -63,15 +51,15 @@ class StripTemplate:
 
 
     def _checkShape(self, shape):
-        return shape[0] < self.VALID_XY[3] and shape[0] > self.VALID_XY[2] \
-               and shape[1] < self.VALID_XY[1] and shape[1] > self.VALID_XY[0]
+        return shape[0] < self.config.VALID_XY[3] and shape[0] > self.config.VALID_XY[2] \
+               and shape[1] < self.config.VALID_XY[1] and shape[1] > self.config.VALID_XY[0]
 
     def getImg(self, file):
         src = self.src = cv2.imread(file)
         if src is None: return None,"file not found " + file
         if not self._checkShape(src.shape):
             return None,"invalid size."
-        src = src[self.BOARD_AREA[1]:self.BOARD_AREA[1] + self.BOARD_AREA[3], self.BOARD_AREA[0]:self.BOARD_AREA[0] + self.BOARD_AREA[2]]
+        src = src[self.config.BOARD_AREA[1]:self.config.BOARD_AREA[1] + self.config.BOARD_AREA[3], self.config.BOARD_AREA[0]:self.config.BOARD_AREA[0] + self.config.BOARD_AREA[2]]
         if ZOOMOUT_FIRST:
             src = utils.shrink3(src, PRE_X_TIMES, PRE_Y_TIMES)
         return src, None
@@ -139,8 +127,8 @@ class StripTemplate:
 
     #映射到膜条区域左顶点
     def _mapOrigin(self):
-        X_OFFSET = self.STRIPS_AREA[0]
-        Y_OFFSET = self.STRIPS_AREA[1]
+        X_OFFSET = self.config.STRIPS_AREA[0]
+        Y_OFFSET = self.config.STRIPS_AREA[1]
         x = self.origin[0]
         y = self.origin[1]
         if self.vkb[0] != float("inf"):
@@ -158,7 +146,7 @@ class StripTemplate:
     #寻找最左顶点
     def _locateOrigin(self):
         src = self.img
-        _, bw = cv2.threshold(src, self.THRESHOLD, 255.0, cv2.THRESH_BINARY)
+        _, bw = cv2.threshold(src, self.config.THRESHOLD, 255.0, cv2.THRESH_BINARY)
         # __showDebug("bw",bw)
 
         if CANNY_GAUSS>0:
@@ -177,10 +165,10 @@ class StripTemplate:
         if DEBUG_DRAW_LOCATION:
             utils.drawDot(src, self.origin, 15)
             # origin = self.origin
-            # i = 20 * self.STRIP_INTERVAL
+            # i = 20 * self.config.STRIP_INTERVAL
             # while (i>=0):
             #     utils.drawDot(src, (origin[0],origin[1]+round(i)), 5)
-            #     i -= self.STRIP_INTERVAL
+            #     i -= self.config.STRIP_INTERVAL
 
         if not False and not lines is None and DEBUG_DRAW_LOCATION:
             color = 0
@@ -199,18 +187,18 @@ class StripTemplate:
 
     #定位膜条区域
     def locatArea(self, src):
-        self.img = utils.toGray(src, self.RGB_GRAY)
+        self.img = utils.toGray(src, self.config.RGB_GRAY)
         if not self._locateOrigin():
             return
 
-        x = round(self.BOARD_AREA[0]+PRE_X_TIMES*self.origin[0])
-        y = round(self.BOARD_AREA[1]+PRE_Y_TIMES*self.origin[1])
-        src = self.src[y:y+self.STRIPS_AREA[3], x:x+self.STRIPS_AREA[2]]
+        x = round(self.config.BOARD_AREA[0]+PRE_X_TIMES*self.origin[0])
+        y = round(self.config.BOARD_AREA[1]+PRE_Y_TIMES*self.origin[1])
+        src = self.src[y:y+self.config.STRIPS_AREA[3], x:x+self.config.STRIPS_AREA[2]]
         if DEBUG_DRAW_LOCATION:
-            i = 2+self.TOTAL * self.STRIP_INTERVAL
+            i = 2+self.config.TOTAL * self.config.STRIP_INTERVAL
             while (i>=0):
                 utils.drawDot(src, (8,round(i)), 15)
-                i -= self.STRIP_INTERVAL
+                i -= self.config.STRIP_INTERVAL
             # cv2.imshow('canny', src)
             # cv2.waitKey()
             self.gray = utils.toGray(src, 'r')
@@ -223,29 +211,29 @@ class StripTemplate:
 
         src = self.src
 
-        gray = utils.toGray(src, self.RGB_GRAY)
+        gray = utils.toGray(src, self.config.RGB_GRAY)
         if  False: #缩一半,方便调试
             gray = utils.shrink(gray, 2, 2)
-            self.STRIP_INTERVAL /= 2
-            self.STRIP_WIDTH >>= 1
+            self.config.STRIP_INTERVAL /= 2
+            self.config.STRIP_WIDTH >>= 1
             HEADER_WIDTH >>= 1
-            self.FUNC_LINE[0] >>=1
-            self.FUNC_LINE[1] >>= 1
-            self.FUNC_LINE[2] >>= 1
-            self.FUNC_LINE[3] >>= 1
+            self.config.FUNC_LINE[0] >>=1
+            self.config.FUNC_LINE[1] >>= 1
+            self.config.FUNC_LINE[2] >>= 1
+            self.config.FUNC_LINE[3] >>= 1
         # cv2.imshow('1-gray', gray)
-        # _, bw = cv2.threshold(gray, self.THRESHOLD, 255.0, cv2.THRESH_BINARY)
+        # _, bw = cv2.threshold(gray, self.config.THRESHOLD, 255.0, cv2.THRESH_BINARY)
         height = self.hkb[0] * HEADER_WIDTH
         bottom = gray.shape[0]
         # dH = height if height>0 else 0
         i = 0
-        strips = [None] * self.TOTAL
+        strips = [None] * self.config.TOTAL
         flag = False
 
-        y = 0#+self.STRIP_INTERVAL*4
+        y = 0#+self.config.STRIP_INTERVAL*4
         while (y<bottom):
         #便利查找header
-            listP = utils.derivative(gray, (5,round(y+3),HEADER_WIDTH, round(self.STRIP_INTERVAL+y-3)), self.hkb[0], self.STRIP_INTERVAL)
+            listP = utils.derivative(gray, (5,round(y+3),HEADER_WIDTH, round(self.config.STRIP_INTERVAL+y-3)), self.hkb[0], self.config.STRIP_INTERVAL)
             # if DEBUG_HEADER:
             #     for line in listP:
             #         for p in line[2]:
@@ -254,11 +242,10 @@ class StripTemplate:
             if index>=0:
                 flag = True
 
-                fcX = sr.StripRegion.checkFunctionLineX(gray, y, self.FUNC_LINE, self.STRIP_WIDTH)
+                fcX = sr.StripRegion.checkFunctionLineX(gray, y, self.config.FUNC_LINE, self.config.STRIP_WIDTH)
                 if fcX>=0 :
-                    #assert( fcX<self.FUNC_LINE[0] or fcX>self.FUNC_LINE[2])#找到func line
-                    strips[i] = sr.StripRegion(listP, index, winSize, self.hkb[0], fcX, y,self.STRIP_INTERVAL
-                                               , self.STRIP_WIDTH, self.STRIP_HEIGHT, self.references, self.STRIP_AREA_WIDTH)
+                    #assert( fcX<self.config.FUNC_LINE[0] or fcX>self.config.FUNC_LINE[2])#找到func line
+                    strips[i] = sr.StripRegion(listP, index, winSize, self.hkb[0], fcX, y, self.references, self.config)
                     strips[i].getFunctionLineY(gray )
                     strips[i].recognise(gray)
                     # break
@@ -271,7 +258,7 @@ class StripTemplate:
                 #     print(",", line[0], end='')
                 # print('.')
                 # print("line:",i, winSize)
-            y += self.STRIP_INTERVAL
+            y += self.config.STRIP_INTERVAL
             i += 1
             print('######i.',i)
 
@@ -279,8 +266,8 @@ class StripTemplate:
             y=0
             for strip in strips:
                 if not strip is None:
-                    utils.drawRectBy2P(gray, (strip.fcX, strip.fcY0, strip.fcX+self.STRIP_WIDTH, strip.fcY1))
-                y += self.STRIP_INTERVAL
+                    utils.drawRectBy2P(gray, (strip.fcX, strip.fcY0, strip.fcX+self.config.STRIP_WIDTH, strip.fcY1))
+                y += self.config.STRIP_INTERVAL
         if DEBUG_HEADER:
             cv2.imshow("bg", gray)
             cv2.waitKey()
