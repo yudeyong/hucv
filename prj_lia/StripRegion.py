@@ -181,9 +181,11 @@ class StripRegion:
             sx = -3
             if value<StripRegion.SAMPLY_THRESHOLD:
                 if DEBUG_STRIP:
-                    print("##", i, value)
+                    # print("##", i, value)
+                    pass
                 l = int(x0-self.STRIP_WIDTH/2)
                 t = int(y0-self.STRIP_WIDTH)
+                if t<0 :t = 0
                 r = int(x1+self.STRIP_WIDTH/2)
                 b = int(y1+self.STRIP_WIDTH)
                 sx = StripRegion.checkFunctionLineX(gray, 0,

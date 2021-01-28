@@ -76,15 +76,27 @@ class StripTemplate:
             src = utils.shrink3(src, PRE_X_TIMES, PRE_Y_TIMES)
         return src, None
 
-    #找最顶,最左线
-    def _filterLines(self, lines):
+    #找最顶线,最左线
+    @staticmethod
+    def _filterLines(img, lines):
+        '''
+
+        :param img: debug only
+        :param lines:
+        :return:  h(slope, bias),v(slope,bias)
+        '''
         v2ndBias = h2ndBias = vMinBias = hMinBias = 0x7fff
         vSlope = hSlope = 0.0
         v2ndSlope = hSlopeSetting = 0.05
         h2ndSlope = vSlopeSetting = 20
+        # for l in lines:
+        #     line = l[0]
+        #     cv2.line(self.img, (line[[0]], line[1]), (line[2], line[3]), (0, 0, 0 ), 1)
+        # cv2.imshow('canny', self.img)
+        # cv2.waitKey()
         for l in lines:
             line = l[0]
-            cv2.line(self.img, (line[[0]], line[1]), (line[2], line[3]), (255, 0, 255 ), 1)
+            cv2.line(img, (line[[0]], line[1]), (line[2], line[3]), (255, 0, 255 ), 1)
             slope, bias = utils.getSlopeBias(line)
             if abs(slope)>vSlopeSetting:
                 aBias = abs(bias)
@@ -119,12 +131,11 @@ class StripTemplate:
             vMinBias = (vMinBias+v2ndBias)/2
             # utils.drawFullLine(self.img,(0,round(vMinBias)), vSlope, vMinBias, 8)
         if DEBUG_DRAW_LOCATION:
-            utils.drawFullLine(self.img,(0,round(hMinBias)), hSlope, hMinBias, -2)
-            utils.drawFullLine(self.img,(0,round(vMinBias)), vSlope, vMinBias, -2)
-            # cv2.imshow('canny', self.img)
+            utils.drawFullLine(img,(0,round(hMinBias)), hSlope, hMinBias, -2)
+            utils.drawFullLine(img,(0,round(vMinBias)), vSlope, vMinBias, -2)
+            # cv2.imshow('canny', img)
             # cv2.waitKey()
-        self.hkb=(hSlope,hMinBias)
-        self.vkb=(vSlope,vMinBias)
+        return (hSlope,hMinBias),(vSlope,vMinBias)
 
     #映射到膜条区域左顶点
     def _mapOrigin(self):
@@ -152,8 +163,12 @@ class StripTemplate:
 
         if CANNY_GAUSS>0:
             bw = utils.toCanny(bw, CANNY_GAUSS)
-        lines = cv2.HoughLinesP(bw, 1, np.pi / 180, 136, minLineLength=140, maxLineGap=30)
-        self._filterLines(lines)
+        lines = cv2.HoughLinesP(bw, 1, np.pi / 180, 116, minLineLength=120, maxLineGap=30)
+        h,v = StripTemplate._filterLines(self.img, lines)
+        if v[0]!=0:
+            self.hkb = h
+            self.vkb = v
+        else: return False
         self.origin = utils.getCross(self.hkb,self.vkb)
         if self.origin is None:
             return False
@@ -180,11 +195,13 @@ class StripTemplate:
             # cv2.imshow('canny', src)
             # cv2.waitKey()
             pass
+        return True
 
     #定位膜条区域
     def locatArea(self, src):
         self.img = utils.toGray(src, self.RGB_GRAY)
-        self._locateOrigin()
+        if not self._locateOrigin():
+            return
 
         x = round(self.BOARD_AREA[0]+PRE_X_TIMES*self.origin[0])
         y = round(self.BOARD_AREA[1]+PRE_Y_TIMES*self.origin[1])

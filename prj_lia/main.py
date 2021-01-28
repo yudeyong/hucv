@@ -17,7 +17,8 @@ def recognition(file, category):
     # cv2.waitKey()
     if err :
         return err
-    template.locatArea(src)
+    if template.locatArea(src) is None:
+        return "识别失败"
     ###cut borad from image
     strips = template.recognise()
 
@@ -31,7 +32,8 @@ def recognition(file, category):
 
 
 def main():
-    i=9
+    #todo 68bch
+    i=17
     count = 14
     if i+count>18: count = 18-i
     if i>10 : i+=7
