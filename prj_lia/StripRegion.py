@@ -193,7 +193,7 @@ class StripRegion:
                     height = b-t-self.config.STRIP_HEIGHT
                     if height>=-5 and height<=6:
                         pass#todo adject position
-                        print("h:", height)
+                        # print("h:", height)
                     else:
                         t = y0
                         b = y1

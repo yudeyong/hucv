@@ -84,7 +84,7 @@ class StripTemplate:
         # cv2.waitKey()
         for l in lines:
             line = l[0]
-            cv2.line(img, (line[[0]], line[1]), (line[2], line[3]), (255, 0, 255 ), 1)
+            # cv2.line(img, (line[[0]], line[1]), (line[2], line[3]), (255, 0, 255 ), 1)
             slope, bias = utils.getSlopeBias(line)
             if abs(slope)>vSlopeSetting:
                 aBias = abs(bias)
@@ -125,6 +125,50 @@ class StripTemplate:
             # cv2.waitKey()
         return (hSlope,hMinBias),(vSlope,vMinBias)
 
+
+    def _findTopLine(img, lines):
+        '''
+
+        :param img: debug only
+        :param lines:
+        :return:  h(slope, bias),v(slope,bias)
+        '''
+        h2ndBias = hMinBias = 0x7fff
+        hSlope = 0.0
+        hSlopeSetting = 0.05
+        h2ndSlope = 20
+        # for l in lines:
+        #     line = l[0]
+        #     cv2.line(self.img, (line[[0]], line[1]), (line[2], line[3]), (0, 0, 0 ), 1)
+        # cv2.imshow('canny', self.img)
+        # cv2.waitKey()
+        for l in lines:
+            line = l[0]
+            # cv2.line(img, (line[[0]], line[1]), (line[2], line[3]), (255, 0, 255 ), 1)
+            slope, bias = utils.getSlopeBias(line)
+            if abs(slope) < hSlopeSetting:
+                aBias = abs(bias)
+                if aBias < abs(h2ndBias):
+                    if aBias < abs(hMinBias):
+                        h2ndBias = hMinBias
+                        h2ndSlope = hSlope
+                        hMinBias = bias
+                        hSlope = slope
+                    else:
+                        h2ndBias = bias
+                        h2ndSlope = slope
+            # utils.drawFullLine(self.img,(0,round(h2ndBias)), hSlope, h2ndBias, -3)
+            # utils.drawFullLine(self.img,(0,round(v2ndBias)), vSlope, v2ndBias, -3)
+        if abs(h2ndSlope - hSlope) < 0.02 and abs(h2ndBias - hMinBias) <= 4:
+            hSlope = (hSlope + h2ndSlope) / 2
+            hMinBias = (hMinBias + h2ndBias) / 2
+        if DEBUG_DRAW_LOCATION:
+            utils.drawFullLine(img,(0,round(hMinBias)), hSlope, hMinBias, -2)
+            # cv2.imshow('canny', img)
+            # cv2.waitKey()
+        # print("len:",len(lines))
+        return (hSlope,hMinBias)
+
     #映射到膜条区域左顶点
     def _mapOrigin(self):
         X_OFFSET = self.config.STRIPS_AREA[0]
@@ -141,16 +185,19 @@ class StripTemplate:
         else:
             deltaX = X_OFFSET
             deltaY = Y_OFFSET
-        self.origin = (x+deltaX,y+deltaY)
+        self.origin = [x+deltaX,y+deltaY]
 
     #寻找最左顶点
     def _locateOrigin(self):
         src = self.img
         _, bw = cv2.threshold(src, self.config.THRESHOLD, 255.0, cv2.THRESH_BINARY)
-        # __showDebug("bw",bw)
+        # cv2.imshow('bw',bw)
+        # cv2.waitKey()
 
-        if CANNY_GAUSS>0:
+        if CANNY_GAUSS > 0:
             bw = utils.toCanny(bw, CANNY_GAUSS)
+        # cv2.imshow('bw',bw)
+        # cv2.waitKey()
         lines = cv2.HoughLinesP(bw, 1, np.pi / 180, 116, minLineLength=120, maxLineGap=30)
         h,v = StripTemplate._filterLines(self.img, lines)
         if v[0]!=0:
@@ -162,6 +209,14 @@ class StripTemplate:
             return False
         if DEBUG_DRAW_LOCATION: utils.drawDot(src, self.origin, 5)
         self._mapOrigin()
+        x = int(self.origin[0])
+        y = int(self.origin[1]-self.config.STRIP_DECTCT_BUF/PRE_Y_TIMES)
+        bw = bw[y:y+int(self.config.STRIP_INTERVAL*2/PRE_Y_TIMES), x:x+int(self.config.STRIPS_AREA[2]/PRE_Y_TIMES)]
+        lines = cv2.HoughLinesP(bw, 1, np.pi / 180, 58, minLineLength=73, maxLineGap=20)
+        # cv2.imshow('bw1',bw)
+        # cv2.waitKey()
+        h = StripTemplate._findTopLine(self.img, lines)
+        self.origin[1] = y+round(h[0]*self.origin[0]+h[1])
         if DEBUG_DRAW_LOCATION:
             utils.drawDot(src, self.origin, 15)
             # origin = self.origin
@@ -170,15 +225,6 @@ class StripTemplate:
             #     utils.drawDot(src, (origin[0],origin[1]+round(i)), 5)
             #     i -= self.config.STRIP_INTERVAL
 
-        if not False and not lines is None and DEBUG_DRAW_LOCATION:
-            color = 0
-            for l in lines:
-                line = l[0]
-                if abs(line[0]-line[2])<abs(line[1]-line[3]): continue
-                slope, bias = utils.getSlopeBias(line)
-                # print(bias)
-                color = 255 - color
-                cv2.line(src, (line[[0]], line[1]), (line[2], line[3]), (255, color, 255-color), 1)
         if DEBUG_DRAW_LOCATION:
             # cv2.imshow('canny', src)
             # cv2.waitKey()
@@ -191,8 +237,8 @@ class StripTemplate:
         if not self._locateOrigin():
             return
 
-        x = round(self.config.BOARD_AREA[0]+PRE_X_TIMES*self.origin[0])
-        y = round(self.config.BOARD_AREA[1]+PRE_Y_TIMES*self.origin[1])
+        x = int(self.config.BOARD_AREA[0]+PRE_X_TIMES*self.origin[0])
+        y = int(self.config.BOARD_AREA[1]+PRE_Y_TIMES*self.origin[1])
         src = self.src[y:y+self.config.STRIPS_AREA[3], x:x+self.config.STRIPS_AREA[2]]
         if DEBUG_DRAW_LOCATION:
             i = 2+self.config.TOTAL * self.config.STRIP_INTERVAL
@@ -260,7 +306,7 @@ class StripTemplate:
                 # print("line:",i, winSize)
             y += self.config.STRIP_INTERVAL
             i += 1
-            print('######i.',i)
+            # print('######i.',i)
 
         if  False:
             y=0
