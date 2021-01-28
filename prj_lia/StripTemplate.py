@@ -66,10 +66,10 @@ class StripTemplate:
 
     #找最顶线,最左线
     @staticmethod
-    def _filterLines(img, lines):
+    def _filterLines(src, lines):
         '''
 
-        :param img: debug only
+        :param src: debug only
         :param lines:
         :return:  h(slope, bias),v(slope,bias)
         '''
@@ -79,12 +79,12 @@ class StripTemplate:
         h2ndSlope = vSlopeSetting = 20
         # for l in lines:
         #     line = l[0]
-        #     cv2.line(self.img, (line[[0]], line[1]), (line[2], line[3]), (0, 0, 0 ), 1)
+        #     cv2.line(self.src, (line[[0]], line[1]), (line[2], line[3]), (0, 0, 0 ), 1)
         # cv2.imshow('canny', self.img)
         # cv2.waitKey()
         for l in lines:
             line = l[0]
-            # cv2.line(img, (line[[0]], line[1]), (line[2], line[3]), (255, 0, 255 ), 1)
+            # cv2.line(src, (line[[0]], line[1]), (line[2], line[3]), (255, 0, 255 ), 1)
             slope, bias = utils.getSlopeBias(line)
             if abs(slope)>vSlopeSetting:
                 aBias = abs(bias)
@@ -108,28 +108,28 @@ class StripTemplate:
                     else:
                         h2ndBias = bias
                         h2ndSlope = slope
-        # utils.drawFullLine(self.img,(0,round(h2ndBias)), hSlope, h2ndBias, -3)
-        # utils.drawFullLine(self.img,(0,round(v2ndBias)), vSlope, v2ndBias, -3)
+        # utils.drawFullLine(self.src,(0,round(h2ndBias)), hSlope, h2ndBias, -3)
+        # utils.drawFullLine(self.src,(0,round(v2ndBias)), vSlope, v2ndBias, -3)
         if abs(h2ndSlope-hSlope) < 0.02 and abs(h2ndBias-hMinBias)<4:
             hSlope = (hSlope+h2ndSlope)/2
             hMinBias = (hMinBias+h2ndBias)/2
-            # utils.drawFullLine(self.img,(0,round(hMinBias)), hSlope, hMinBias, 8)
+            # utils.drawFullLine(self.src,(0,round(hMinBias)), hSlope, hMinBias, 8)
         if (v2ndSlope==vSlope and abs(v2ndBias-vMinBias)<4) or (abs(v2ndSlope-vSlope) < 0.051 and abs(v2ndBias-vMinBias)<4*abs(vSlope)):
             vSlope = (vSlope+v2ndSlope)/2
             vMinBias = (vMinBias+v2ndBias)/2
-            # utils.drawFullLine(self.img,(0,round(vMinBias)), vSlope, vMinBias, 8)
+            # utils.drawFullLine(self.src,(0,round(vMinBias)), vSlope, vMinBias, 8)
         if DEBUG_DRAW_LOCATION:
-            utils.drawFullLine(img,(0,round(hMinBias)), hSlope, hMinBias, -2)
-            utils.drawFullLine(img,(0,round(vMinBias)), vSlope, vMinBias, -2)
-            # cv2.imshow('canny', img)
+            utils.drawFullLine(src,0, hSlope, hMinBias, -2)
+            utils.drawFullLine(src,0, vSlope, vMinBias, -2)
+            # cv2.imshow('canny', src)
             # cv2.waitKey()
         return (hSlope,hMinBias),(vSlope,vMinBias)
 
 
-    def _findTopLine(img, lines):
+    def _findTopLine(src, lines):
         '''
 
-        :param img: debug only
+        :param src: debug only
         :param lines:
         :return:  h(slope, bias),v(slope,bias)
         '''
@@ -139,12 +139,12 @@ class StripTemplate:
         h2ndSlope = 20
         # for l in lines:
         #     line = l[0]
-        #     cv2.line(self.img, (line[[0]], line[1]), (line[2], line[3]), (0, 0, 0 ), 1)
-        # cv2.imshow('canny', self.img)
+        #     cv2.line(self.src, (line[[0]], line[1]), (line[2], line[3]), (0, 0, 0 ), 1)
+        # cv2.imshow('canny', self.src)
         # cv2.waitKey()
         for l in lines:
             line = l[0]
-            # cv2.line(img, (line[[0]], line[1]), (line[2], line[3]), (255, 0, 255 ), 1)
+            # cv2.line(src, (line[[0]], line[1]), (line[2], line[3]), (255, 0, 255 ), 1)
             slope, bias = utils.getSlopeBias(line)
             if abs(slope) < hSlopeSetting:
                 aBias = abs(bias)
@@ -157,14 +157,14 @@ class StripTemplate:
                     else:
                         h2ndBias = bias
                         h2ndSlope = slope
-            # utils.drawFullLine(self.img,(0,round(h2ndBias)), hSlope, h2ndBias, -3)
-            # utils.drawFullLine(self.img,(0,round(v2ndBias)), vSlope, v2ndBias, -3)
+            # utils.drawFullLine(self.src,(0,round(h2ndBias)), hSlope, h2ndBias, -3)
+            # utils.drawFullLine(self.src,(0,round(v2ndBias)), vSlope, v2ndBias, -3)
         if abs(h2ndSlope - hSlope) < 0.02 and abs(h2ndBias - hMinBias) <= 4:
             hSlope = (hSlope + h2ndSlope) / 2
             hMinBias = (hMinBias + h2ndBias) / 2
         if DEBUG_DRAW_LOCATION:
-            utils.drawFullLine(img,(0,round(hMinBias)), hSlope, hMinBias, -2)
-            # cv2.imshow('canny', img)
+            utils.drawFullLine(src,0, hSlope, hMinBias, -2)
+            # cv2.imshow('canny', src)
             # cv2.waitKey()
         # print("len:",len(lines))
         return (hSlope,hMinBias)
@@ -276,7 +276,7 @@ class StripTemplate:
         strips = [None] * self.config.TOTAL
         flag = False
 
-        y = 0#+self.config.STRIP_INTERVAL*12
+        y = 0#+self.config.STRIP_INTERVAL*15
         while (y<bottom):
         #便利查找header
             listP = utils.derivative(gray, (5,round(y+3),HEADER_WIDTH, round(self.config.STRIP_INTERVAL+y-3)), self.hkb[0], self.config.STRIP_INTERVAL)
@@ -306,7 +306,7 @@ class StripTemplate:
                 # print("line:",i, winSize)
             y += self.config.STRIP_INTERVAL
             i += 1
-            print('######i.',i)
+            print('# # # # # #i.',i)
 
         if  False:
             y=0

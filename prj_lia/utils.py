@@ -169,6 +169,7 @@ def enlarge(img, xTimes, yTimes):
         img = np.repeat(img, xTimes, axis=0)
     if yTimes>1:
         img = np.repeat(img, yTimes, axis=1)
+    return img
 
 def drawRectBy2P(src, p):
     p = ((p[0], p[1]), (p[2], p[1]), (p[0], p[3]), (p[2], p[3]))
@@ -189,12 +190,21 @@ def mid2PBy4P(p):
     p1 = [(p[0][0] + p[2][0]) >> 1, (p[0][1] + p[2][1]) >> 1 ]
     return p1,[(p[1][0] + p[3][0]) >> 1, (p[1][1] + p[3][1]) >> 1 ]
 
-def drawFullLine(src, p, k, b, i):
+def drawFullLine(src, x0, k, b, i):
+    '''
+
+    :param src:
+    :param p: 点
+    :param k: 斜率
+    :param b: 截距
+    :param i: 颜色参数
+    :return:
+    '''
     if k != float("inf") :
-        x2 = src.shape[0]
+        x2 = src.shape[1]
         y2 = round(k * x2 + b)
-        x1 = p[0]
-        y1 = p[1]
+        x1 = x0
+        y1 = round(x0*k+b)
     else:
         x1 = round(b)
         y1 = 0
@@ -212,8 +222,8 @@ def drawFullLine(src, p, k, b, i):
 def drawMidLineBy4P(src, p, i):
     p1,p2=mid2PBy4P(p)
     k, b = getSlopeBiasBy2P(p1,p2)
-    p1 = ((p[0][0] + p[2][0]) >> 1, (p[0][1] + p[2][1]) >> 1 )
-    drawFullLine(src,p1, k, b, i)
+    # p1 = ((p[0][0] + p[2][0]) >> 1, (p[0][1] + p[2][1]) >> 1 )
+    drawFullLine(src,(p[0][0] + p[2][0]) >> 1, k, b, i)
 
 def mergePoints(p1, p2):
     return ((p1[0]+p2[0])>>1,(p1[1]+p2[1])>>1,
