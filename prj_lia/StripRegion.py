@@ -30,7 +30,8 @@ class StripRegion:
         else:
             self.midX = listP[index][2][0]
             self.midY = listP[index][1]
-        self.slope = slope
+        #整个模板的斜率
+        self.setSlope = slope
         self.fcX = fcX
         self.refX = fcX
         self.top = fcX*slope+y
@@ -77,7 +78,8 @@ class StripRegion:
         if marginBottom>=img.shape[0] : marginBottom = img.shape[0]
 
         # data[:,:] = 0
-        y0,y1 = StripRegion._getSampleY(img, (self.fcX+3,marginTop,self.fcX+self.config.STRIP_WIDTH-3,marginBottom), HEIGHT)
+        right = self.fcX+self.config.STRIP_WIDTH-3
+        y0,y1 = StripRegion._getSampleY(img, (self.fcX+3,marginTop, right, marginBottom), HEIGHT)
         if  True:
             self.fcY1 = y1
             self.fcY0 = y0
@@ -87,7 +89,34 @@ class StripRegion:
             self.fcY0 = marginTop
             self.fcY1 = y+FUNC_LINE[3]+HEIGHT
         # img[self.fcY0:self.fcY1, self.fcX:self.fcX+STRIP_WIDTH]=0
+
+        #膜条的斜率
+        self.slope = StripRegion._findSlope(img, right, self.fcY0, self.config.THRESHOLD)
         return
+
+    @staticmethod
+    def _findSlope(img, x, y, threshold ):
+        img = img[y-6:y+6,x:x+110]
+        _, bw = cv2.threshold(img, 220, 255.0, cv2.THRESH_BINARY)
+        # cv2.imshow('bw',bw)
+
+        bw = utils.toCanny(bw, 5)
+        lines = cv2.HoughLinesP(bw, 1, np.pi / 270, 57, minLineLength=60, maxLineGap=20)
+
+        if lines is None : return None
+        x0 = x1 = y0 = y1 = 0
+        for l in lines:
+            line = l[0]
+            x0 += line[0]
+            x1 += line[2]
+            y0 += line[1]
+            y1 += line[3]
+        slope,_ = utils.getSlopeBias((x0,y0,x1,y1))
+        # print(lines)
+        # cv2.imshow('canny',bw)
+        # if lines is None:
+        #     cv2.waitKey()
+        return slope
 
     @staticmethod
     def _getSampleY(img, rect, HEIGHT):
@@ -171,7 +200,7 @@ class StripRegion:
             #     i += 1
             #     continue
             x0, x1 = StripRegion._getMidHalfBy2P(self.fcX + line[0], self.fcX + line[1], 5)
-            deltaY = (x0-self.refX) * self.slope
+            deltaY = (x0-self.refX) * self.setSlope
             y0 = int(baseY0+deltaY)
             y1 = int(baseY1+deltaY)
             value = StripRegion.__calculateValue(gray[y0:y1, int(x0):int(x1)])
@@ -286,7 +315,7 @@ class StripRegion:
             self.points.append(mid)
             self.points.append(mid)
             self.__getFitLine()
-            # self.slope,self.bias = utils.getSlopeBiasBy2P(self.midHeader[0], mid)
+            # self.setSlope,self.bias = utils.getSlopeBiasBy2P(self.midHeader[0], mid)
             if DEBUG_DRAW_ALL: self.__drawAllDebug()
 
             if DEBUG_STRIP: print("perfect cutline & scale:", self.scale)
@@ -297,13 +326,13 @@ class StripRegion:
             if mid<=32 and mid>=28:
                 line = ((listP[0][1], listP[0][2]), (listP[-1][1], listP[-1][2]))
                 x = line[0][0]+line[1][0]>>1
-                y = self.slope*(x)+self.bias
+                y = self.setSlope*(x)+self.bias
                 y1 = y-((line[0][1]+line[1][1])>>1)
                 if abs(y1)>0.5 :
                     y1 = 0.5 if y1>0 else -0.5
                 y1 += y
                 mid =  x,y1
-                self.slope,self.bias = utils.getSlopeBiasBy2P(self.midHeader[0], mid)
+                self.setSlope,self.bias = utils.getSlopeBiasBy2P(self.midHeader[0], mid)
                 if DEBUG_DRAW_ALL: self.__drawAllDebug()
 
             if DEBUG_STRIP:
@@ -547,7 +576,7 @@ class StripRegion:
     def __getTestRegion(self, x1, x2):
         x2 += self.midHeader[0][0]
         x1 += self.midHeader[0][0]
-        y2 = x2 * self.slope + self.bias
+        y2 = x2 * self.setSlope + self.bias
         y1 = self.funcLine[1][1]
         y1 = int(min(y1, y2-StripRegion.STRIP_HEIGHT))
         if y1<0: y1 = 0
@@ -560,7 +589,7 @@ class StripRegion:
     def __drawAllDebug(self):
         for p in self.template.references :
             x = self.midHeader[0][0]+self.scale * p[0]
-            y = round(x * self.slope + self.bias)
+            y = round(x * self.setSlope + self.bias)
             self.__setSymbleDebug(round(x), round(self.midHeader[0][0]+self.scale*p[1]), y)
 
     def __getFitLine(self):
@@ -569,7 +598,7 @@ class StripRegion:
         k = out[1]/out[0]
         b = out[3] - k * out[2]
         # self.midHeader[0][0] = round((self.midHeader[0][1] - b[0] )/k[0])
-        self.slope = k[0]
+        self.setSlope = k[0]
         self.bias = b[0]
 
     def __setFuncLine(self, f):
@@ -591,7 +620,7 @@ class StripRegion:
             i -= 1
             f = funcLines[i]
             if f[0][0] >= x: continue
-            y = f[0][0] * self.slope + self.bias
+            y = f[0][0] * self.setSlope + self.bias
             if y>f[0][1] and y<f[2][1]:
                 self.__setFuncLine( f )
                 del funcLines[i]
@@ -636,7 +665,7 @@ class StripRegion:
 
     def drawFullLineDebug(self):
         if self.midFuncLine :
-            k, b = self.slope, self.bias
+            k, b = self.setSlope, self.bias
             utils.drawFullLine(self.img, (self.midHeader[0][0],self.midHeader[0][1]-StripRegion.STRIP_HEIGHT+5), k, b-StripRegion.STRIP_HEIGHT+5, 0)
             pass
         # self.getValuesByPostion(gray)

@@ -276,7 +276,7 @@ class StripTemplate:
         strips = [None] * self.config.TOTAL
         flag = False
 
-        y = 0#+self.config.STRIP_INTERVAL*4
+        y = 0#+self.config.STRIP_INTERVAL*12
         while (y<bottom):
         #便利查找header
             listP = utils.derivative(gray, (5,round(y+3),HEADER_WIDTH, round(self.config.STRIP_INTERVAL+y-3)), self.hkb[0], self.config.STRIP_INTERVAL)
@@ -306,7 +306,7 @@ class StripTemplate:
                 # print("line:",i, winSize)
             y += self.config.STRIP_INTERVAL
             i += 1
-            # print('######i.',i)
+            print('######i.',i)
 
         if  False:
             y=0

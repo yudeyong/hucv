@@ -12,7 +12,7 @@ def toGray(img, rgb_gray):
     else:
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2BGRA)
         b, g, r, _ = cv2.split(gray)
-        if False:
+        if  False:
             cv2.imshow('1-r', r)
             cv2.imshow('2-g', g)
             cv2.imshow('3-b', b)
@@ -79,6 +79,11 @@ def getCosReciprocalBy2P(p1, p2):
 
 # 获取斜率,截距
 def getSlopeBias(twoPoints):
+    '''
+
+    :param twoPoints: (x0,y0,x1,y1)
+    :return:
+    '''
     if twoPoints[2] != twoPoints[0]:
         slope = (twoPoints[3] - twoPoints[1]) / (twoPoints[2] - twoPoints[0])
         bias = (twoPoints[0] * twoPoints[3] - twoPoints[2] * twoPoints[1]) / (twoPoints[0] - twoPoints[2])
