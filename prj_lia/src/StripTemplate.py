@@ -3,8 +3,7 @@ import math
 import cv2
 import numpy as np
 
-import StripRegion as sr
-import utils
+from src import utils, StripRegion as sr
 
 DEBUG = not False
 DEBUG_DRAW_LOCATION = not False and DEBUG

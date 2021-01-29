@@ -1,6 +1,6 @@
 import json
 
-import StripTemplate
+from src import StripTemplate
 
 
 class Dict(dict):

@@ -1,6 +1,6 @@
 import cv2
 
-import config
+from src import config
 
 
 #############

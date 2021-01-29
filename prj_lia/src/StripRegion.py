@@ -1,8 +1,7 @@
 import cv2
 import numpy as np
 
-import SlidingWindow as sw
-import utils
+from src import SlidingWindow as sw, utils
 
 DEBUG_SR = not False
 DEBUG_LINE = not False
@@ -94,11 +93,11 @@ class StripRegion:
         self.points[1] = (self.fcX, (y1 + y0) / 2)
         # 膜条的斜率
         self.slope, b = utils.getFitLine(self.points)
-        utils.drawFullLine(src, 0, self.slope, b, -1)
+        utils.drawFullLine(src, 0, self.slope, b, -16)
 
         self.sideSlope, b = StripRegion._findSlope(src, right, self.fcY0)
         if not self.sideSlope is None:
-            utils.drawFullLine(src, 0, self.sideSlope, self.fcY0 + b, -16)
+            # utils.drawFullLine(src, 0, self.sideSlope, self.fcY0 + b, -16)
             # print("set slope",self.sideSlope,self.setSlope)
             self.slope = (self.sideSlope + self.setSlope * 3) / 4
             pass
