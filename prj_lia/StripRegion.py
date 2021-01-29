@@ -90,12 +90,16 @@ class StripRegion:
             self.fcY1 = y+FUNC_LINE[3]+HEIGHT
         # src[self.fcY0:self.fcY1, self.fcX:self.fcX+STRIP_WIDTH]=0
 
+        self.points[1] = (self.fcX, (y1+y0)/2)
         #膜条的斜率
-        self.slope, b = StripRegion._findSlope(src, right, self.fcY0, self.config.THRESHOLD)
-        if not self.slope is None:
-            utils.drawFullLine(src, 0, self.slope, self.fcY0+b, -16)
-            # print("set slope",self.slope,self.setSlope)
-            # self.slope = (self.slope*3+self.setSlope)/4
+        self.slope,b = utils.getFitLine(self.points)
+        utils.drawFullLine(src, 0, self.slope, b, -1)
+
+        self.sideSlope, b = StripRegion._findSlope(src, right, self.fcY0, self.config.THRESHOLD)
+        if not self.sideSlope is None:
+            utils.drawFullLine(src, 0, self.sideSlope, self.fcY0+b, -16)
+            # print("set slope",self.sideSlope,self.setSlope)
+            self.slope = (self.sideSlope+self.setSlope*3)/4
             pass
         return
 
@@ -205,7 +209,7 @@ class StripRegion:
             #     i += 1
             #     continue
             x0, x1 = StripRegion._getMidHalfBy2P(self.fcX + line[0], self.fcX + line[1], 5)
-            slope = self.setSlope if self.slope is None else self.slope
+            slope = self.slope
             deltaY = (x0-self.refX) * slope
             y0 = int(baseY0+deltaY)
             y1 = int(baseY1+deltaY)
@@ -223,12 +227,12 @@ class StripRegion:
                 sx = StripRegion.checkFunctionLineX(gray, 0,
                                                     (l, t,r,b)
                                                     ,STRIP_WIDTH-4, StripRegion.SAMPLY_THRESHOLD)
-                if self.slope is None:
+                if self.sideSlope is None:
                     # if sx>0:
                     #     t, b = StripRegion._getSampleY(gray, (l,t,r,b), 8)
                     #     height = b-t-self.config.STRIP_HEIGHT
                     #     if height>=-5 and height<=6:
-                    #         pass#todo adject position
+                    #         pass#todo 暂时不用校正, 后续如果需要, 首先可以优化header中点精度, 再不行再在这里优化
                     #         # print("h:", height)
                     #         t = y0
                     #         b = y1
@@ -283,3 +287,49 @@ class StripRegion:
 
         # print("val:",value)
         return value
+
+    def getHeaderMid(self, listP, offset, size):
+        list = [0] * size
+        for i in range(0, size):
+            list[i] = listP[i + offset][2][0][0]
+
+        midy = (listP[size-1+offset][1]+listP[offset][1])>>1
+        src = np.array(list)
+        left = StripRegion._filteringAnomaly(src, StripRegion._modeCheck)
+
+        src = StripRegion._filteringAnomaly(left, StripRegion._two_sigma)
+        midx = np.average(src)
+        self.points = [()]*2
+        self.points[0] = (midx,midy)
+
+    @staticmethod
+    def _filteringAnomaly(data, func):
+        '''
+        过滤噪点, 异常值
+        :param data:
+        :param list:
+        :return:
+        '''
+        if data.max() - data.min() <= 2: return data
+        index = func(data)
+        data = np.delete(data, index)
+        return data
+
+    @staticmethod
+    def _modeCheck(Ser1):
+        c = np.bincount(Ser1)
+        # 返回众数
+        i = np.argmax(c)
+        rule = (i - 2 > Ser1) | (i + 2 < Ser1)
+        index = np.arange(Ser1.shape[0])[rule]
+        return index
+
+    # 定义3σ法则(实际使用的更严格的2σ,也许多次3σ更好,需要试)识别异常值函数
+    @staticmethod
+    def _two_sigma(Ser1):
+        '''
+        Ser1：表示传入DataFrame的某一列。
+        '''
+        rule = (Ser1.mean() -  2 * Ser1.std() > Ser1) | (Ser1.mean() + 2 * Ser1.std() < Ser1)
+        index = np.arange(Ser1.shape[0])[rule]
+        return index

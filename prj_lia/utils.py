@@ -66,7 +66,6 @@ def mergeLine(linesSet, lines):
     lines[maxV][2] = round(x2 / l) if x1 != 0 else avg
     lines[maxV][3] = round(y2 / l)
 
-
 # 获取斜率,截距
 def getSlopeBiasBy2P(p1, p2):
     return ((p2[1] - p1[1]) / (p2[0] - p1[0])
@@ -263,7 +262,7 @@ def showDebug(name,img):
     cv2.imshow(name, a)
     cv2.waitKey()
 
-def derivative(img, rect,slope, stripHeight):
+def derivative(img, rect, stripHeight):
     '''
     针对区域'求导', 确定采样线边界
     :param rect: 监测区域
@@ -365,6 +364,13 @@ def maxWind(array, size, threshold, faultTolerant):
     return -1,0
 
 
+def getFitLine(points):
+    p = np.asanyarray(points)
+    out = cv2.fitLine(p, cv2.DIST_L2, 0, 0.01, 0.01)
+    k = out[1]/out[0]
+    b = out[3] - k * out[2]
+    # self.midHeader[0][0] = round((self.midHeader[0][1] - b[0] )/k[0])
+    return k[0],b[0]
 
 def main():
     pass

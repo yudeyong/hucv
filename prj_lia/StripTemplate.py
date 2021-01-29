@@ -279,7 +279,7 @@ class StripTemplate:
         y = 0#+self.config.STRIP_INTERVAL*15
         while (y<bottom):
         #便利查找header
-            listP = utils.derivative(gray, (5,round(y+3),HEADER_WIDTH, round(self.config.STRIP_INTERVAL+y-3)), self.hkb[0], self.config.STRIP_INTERVAL)
+            listP = utils.derivative(gray, (5,round(y+3),HEADER_WIDTH, round(self.config.STRIP_INTERVAL+y-3)), self.config.STRIP_INTERVAL)
             # if DEBUG_HEADER:
             #     for line in listP:
             #         for p in line[2]:
@@ -292,6 +292,7 @@ class StripTemplate:
                 if fcX>=0 :
                     #assert( fcX<self.config.FUNC_LINE[0] or fcX>self.config.FUNC_LINE[2])#找到func line
                     strips[i] = sr.StripRegion(listP, index, winSize, self.hkb[0], fcX, y, self.references, self.config)
+                    strips[i].getHeaderMid(listP,index,winSize)
                     strips[i].getFunctionLineY(gray )
                     strips[i].recognise(gray)
                     # break
