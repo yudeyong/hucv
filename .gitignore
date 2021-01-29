@@ -41,3 +41,5 @@ Servers
 upload
 docs/generator/src/test
 docs/sql/3333
+
+__pycache__

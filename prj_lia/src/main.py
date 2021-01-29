@@ -42,7 +42,8 @@ def main():
             i = 0x41
             end += 7
         print("File *********", chr(i))
-        msg = recognition(('./samples/AGL') + chr(i) + '.jpg', "IGG8")
+        config = "AGIG8" if i <= 0x32 else ("AGIM9" if i == 0x33 else "AGIGM6")
+        msg = recognition(('./samples/AGL') + chr(i) + '.jpg', config)
         if msg:
             print(msg)
 
