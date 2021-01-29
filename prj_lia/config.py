@@ -1,13 +1,16 @@
 import json
+
 import StripTemplate
+
 
 class Dict(dict):
     def __init__(self, obj):
         self.__dict__.update(obj)
 
-def _loadFromFile( code ):
+
+def _loadFromFile(code):
     try:
-        with open("./config/strip"+code+".json",'r') as load_f:
+        with open("./config/strip" + code + ".json", 'r') as load_f:
             loadDict = json.load(load_f)
         # print(loadDict)
     except IOError:
@@ -17,10 +20,10 @@ def _loadFromFile( code ):
     return StripTemplate.StripTemplate(config)
 
 
-
 def _dict_to_object(dict_obj):
     res = Dict(dict_obj)
     return res
+
 
 def loadTemplate(category):
     return _loadFromFile(category)
