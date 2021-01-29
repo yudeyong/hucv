@@ -1,11 +1,8 @@
 import cv2
 import numpy as np
-import utils
-import SampleLine as sl
-import const
+
 import SlidingWindow as sw
-import StripTemplate as st
-import math
+import utils
 
 DEBUG_SR = not False
 DEBUG_LINE = not False
