@@ -1,6 +1,6 @@
 import cv2
 
-from src import config
+from src.hureco import config
 
 
 #############

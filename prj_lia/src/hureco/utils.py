@@ -3,8 +3,6 @@ import math
 import cv2
 import numpy as np
 
-from src import const
-
 
 ## rgb to gray value: None or R,G,B to gray value: 0x1 r, 0x100 b, 0x10000 g
 #   RGB_GRAY = 0x10000
@@ -38,36 +36,6 @@ def toCanny(bw, gaussian):
         img1 = cv2.GaussianBlur(bw, (gaussian, gaussian), 0)
         cannyGaus = cv2.Canny(img1, 10, 30, 453)
         return cannyGaus
-
-
-# 合并相近平行线
-def mergeLine(linesSet, lines):
-    x1, y1, x2, y2 = 0, 0, 0, 0
-    avg = 0
-    maxV = 0
-    # minV = lines.shape[0]
-    l = len(linesSet)
-
-    # 引入平均值, 过滤标准差较大点
-    if l > 2:
-        minSet = min(linesSet)
-        maxSet = max(linesSet)
-        avg = lines[minSet:maxSet + 1, 0].mean()
-    for i in linesSet:
-        if i > maxV: maxV = i
-        # if i < minV : minV = i
-        if l > 2 and abs(lines[i][0] - avg) > (const.SAMPLING_WIDTH << 1):
-            l -= 1
-            continue
-        x1 += lines[i][0]
-        x2 += lines[i][2]
-        y1 += lines[i][1]
-        y2 += lines[i][3]
-    lines[maxV][0] = round(x1 / l) if x1 != 0 else avg
-    lines[maxV][1] = round(y1 / l)
-    lines[maxV][2] = round(x2 / l) if x1 != 0 else avg
-    lines[maxV][3] = round(y2 / l)
-
 
 # 获取斜率,截距
 def getSlopeBiasBy2P(p1, p2):
