@@ -43,7 +43,7 @@ def main():
             end += 7
         print("File *********", chr(i))
         config = "AGIG8" if i <= 0x32 else ("AGIM9" if i == 0x33 else "AGIGM6")
-        msg = recognition(('./samples/AGL') + chr(i) + '.jpg', config)
+        msg = recognition(('./samples/AGL') + chr(i) + '.jpg', "./config/strip" + config + ".json")
         if msg:
             print(msg)
 

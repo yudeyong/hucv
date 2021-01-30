@@ -10,7 +10,7 @@ class Dict(dict):
 
 def _loadFromFile(code):
     try:
-        with open("./config/strip" + code + ".json", 'r') as load_f:
+        with open(code, 'r') as load_f:
             loadDict = json.load(load_f)
         # print(loadDict)
     except IOError:
