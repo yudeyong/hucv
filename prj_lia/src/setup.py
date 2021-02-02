@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="hureco",
-    version='0.6.3',
+    version='0.6.4',
     packages=['hureco', 'hureco.agi'],
     url='',
     license='',

@@ -4,12 +4,20 @@ from hureco import config
 
 
 #############
+def _loadTemplate(category):
+    return config.getDictFromFile(category)
 
-def recognization(file, category):
+def recognization(file, dict):
+    '''
+    识别一张图片
+    :param file: 图片文件名
+    :param dict: 配置字典
+    :return:  str: 错误信息
+    '''
     # cv2.imshow('src', src)
-    template = config.loadTemplate(category)
-    if not template:
-        return "未找到配置文件"
+    if dict is None:
+        return "未找到配置文件:"
+    template = config.getConfigFromDict(dict)
     src, err = template.getImg(file)
     # cv2.imshow('origin', src)
     # cv2.waitKey()
@@ -43,7 +51,8 @@ def main():
             end += 7
         config = "AGIM9" if i <= 0x30 else ("AGIG8" if i > 0x46 else "AGIGM6")
         print("File *********", chr(i), config)
-        msg = recognization(('./samples/AGL') + chr(i) + '.jpg', "./config/strip" + config + ".json")
+
+        msg = recognization(('./samples/AGL') + chr(i) + '.jpg', _loadTemplate("./config/strip" + config + ".json"))
         if msg:
             print(msg)
 
