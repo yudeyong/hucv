@@ -217,9 +217,9 @@ class StripRegion:
             #     continue
             x0, x1 = StripRegion._getMidHalfBy2P(self.fcX + line[0], self.fcX + line[1], 5)
             slope = self.slope
-            deltaY = (x0 - self.refX) * slope
-            y0 = int(baseY0 + deltaY)
-            y1 = int(baseY1 + deltaY)
+            deltaY = (x0 - self.refX) * slope * 2
+            y0 = round(baseY0 + deltaY)
+            y1 = round(baseY1 + deltaY)
             value = StripRegion._calculateValue(gray[y0:y1, int(x0):int(x1)])
             sx = -3
             if value < StripRegion.SAMPLY_THRESHOLD:
@@ -259,10 +259,11 @@ class StripRegion:
                         x0 = sx
                         x0 += StripRegion._narrowImg(gray[t:b, int(x0):int(x1)], STRIP_WIDTH - 4)
                         x1 = x0 + STRIP_WIDTH - 4
-
-                    utils.drawRectBy2P(gray, (int(x0), int(t), int(x1), int(b)))
+                    if i > -7:
+                        utils.drawRectBy2P(gray, (round(x0), int(t)), (round(x1), int(b)))
+                    # utils.drawDot(gray, (int((x0 + x1) / 2), int((y0 + y1 ) / 2)),  0)
                 else:
-                    utils.drawDot(gray, (int((x0 + x1) / 2), int((y0 + deltaY + y1 + deltaY) / 2)), sx + 6)
+                    utils.drawDot(gray, (int((x0 + x1) / 2), int((y0 + y1) / 2)), sx + 6)
 
     @staticmethod
     def _narrowImg(src, width):

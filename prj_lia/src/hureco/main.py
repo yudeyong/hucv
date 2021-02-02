@@ -31,7 +31,7 @@ def recognition(file, category):
 
 def main():
     # todo 68bch
-    i = 1
+    i = 0
     count = 18
     if i + count > 18: count = 18 - i
     if i > 10: i += 7
@@ -41,8 +41,8 @@ def main():
         if i == 0x3A:
             i = 0x41
             end += 7
-        print("File *********", chr(i))
-        config = "AGIG8" if i <= 0x32 else ("AGIM9" if i == 0x33 else "AGIGM6")
+        config = "AGIM9" if i <= 0x30 else ("AGIG8" if i > 0x46 else "AGIGM6")
+        print("File *********", chr(i), config)
         msg = recognition(('./samples/AGL') + chr(i) + '.jpg', "./config/strip" + config + ".json")
         if msg:
             print(msg)

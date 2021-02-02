@@ -279,7 +279,7 @@ class StripTemplate:
         strips = [None] * self.config.TOTAL
         flag = False
 
-        y = 0  # +self.config.STRIP_INTERVAL*15
+        y = 0  # +self.config.STRIP_INTERVAL*9
         while (y < bottom):
             # 便利查找header
             listP = utils.derivative(gray, (5, round(y + 3), HEADER_WIDTH, round(self.config.STRIP_INTERVAL + y - 3)),
@@ -317,7 +317,7 @@ class StripTemplate:
             y = 0
             for strip in strips:
                 if not strip is None:
-                    utils.drawRectBy2P(gray, (strip.fcX, strip.fcY0, strip.fcX + self.config.STRIP_WIDTH, strip.fcY1))
+                    utils.drawRectBy2P(gray, (strip.fcX, strip.fcY0), (strip.fcX + self.config.STRIP_WIDTH, strip.fcY1))
                 y += self.config.STRIP_INTERVAL
         if DEBUG_HEADER:
             cv2.imshow("bg", gray)

@@ -144,8 +144,8 @@ def enlarge(img, xTimes, yTimes):
     return img
 
 
-def drawRectBy2P(src, p):
-    p = ((p[0], p[1]), (p[2], p[1]), (p[0], p[3]), (p[2], p[3]))
+def drawRectBy2P(src, p0, p1):
+    p = ((p0[0], p0[1]), (p1[0], p0[1]), (p0[0], p1[1]), (p1[0], p1[1]))
     drawRectBy4P(src, p)
 
 
@@ -231,13 +231,15 @@ def drawDot(src, p, i=3):
         i>0 cross
         i<0 rect
     '''
-    p1 = (round(p[0] + i), round(p[1] + i))
-    p2 = (round(p[0]) - i, round(p[1] - i))
+    f = i
+    if i == 0: f = 3
+    p1 = (round(p[0] + f), round(p[1] + f))
+    p2 = (round(p[0]) - f, round(p[1] - f))
     if (i > 0):
         cv2.line(src, p1, p2, 0, 1)
         cv2.line(src, (p1[0], p2[1]), (p2[0], p1[1]), 0, 1)
     else:
-        drawRectBy2P(p1, p2)
+        drawRectBy2P(src, p1, p2)
 
 
 def showDebug(name, img):
