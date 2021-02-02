@@ -1,11 +1,11 @@
 import cv2
 
-from src.hureco import config
+from hureco import config
 
 
 #############
 
-def recognition(file, category):
+def recognization(file, category):
     # cv2.imshow('src', src)
     template = config.loadTemplate(category)
     if not template:
@@ -43,7 +43,7 @@ def main():
             end += 7
         config = "AGIM9" if i <= 0x30 else ("AGIG8" if i > 0x46 else "AGIGM6")
         print("File *********", chr(i), config)
-        msg = recognition(('./samples/AGL') + chr(i) + '.jpg', "./config/strip" + config + ".json")
+        msg = recognization(('./samples/AGL') + chr(i) + '.jpg', "./config/strip" + config + ".json")
         if msg:
             print(msg)
 

@@ -3,8 +3,8 @@ import math
 import cv2
 import numpy as np
 
-from src.hureco import utils
-from src.hureco.agi import StripRegion as sr
+from hureco import utils
+from hureco.agi import StripRegion as sr
 
 DEBUG = not False
 DEBUG_DRAW_LOCATION = not False and DEBUG

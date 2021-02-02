@@ -1,6 +1,6 @@
 import json
 
-from src.hureco.agi import StripTemplate
+from hureco.agi import StripTemplate
 
 
 class Dict(dict):
