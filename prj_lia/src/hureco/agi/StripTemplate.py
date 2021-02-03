@@ -6,12 +6,12 @@ import numpy as np
 from hureco import utils
 from hureco.agi import StripRegion as sr
 
-DEBUG = not False
-DEBUG_DRAW_LOCATION = False and DEBUG
+_DEBUG = False
+_DEBUG_DRAW_LOCATION = False and _DEBUG
 # tail line
 # rgb to gray value: None or R,G,B to gray value: 0x1 r, 0x100 g, 0x10000 b
 # RGB_GRAY = 0x10000
-DEBUG_HEADER = not False and DEBUG
+_DEBUG_HEADER = not False and _DEBUG
 # None 不使用canny, 0, 5效果比较好
 CANNY_GAUSS = 7
 
@@ -34,8 +34,11 @@ class StripTemplate:
 
         posi = 0
         flag = False
-        lines = config.references if hasattr(config, "references") else config.lines
-
+        if hasattr(config, "references"):
+            lines = config.references
+        else:
+            lines = config.lines
+            self.lines = list(filter(lambda x: x[0] != 'blank', lines))
         for line in lines:
             if not flag:
                 if line[0] != 'Functional Control':
@@ -72,7 +75,7 @@ class StripTemplate:
     def _filterLines(src, lines):
         '''
 
-        :param src: debug only
+        :param src: _DEBUG only
         :param lines:
         :return:  h(slope, bias),v(slope,bias)
         '''
@@ -122,7 +125,7 @@ class StripTemplate:
             vSlope = (vSlope + v2ndSlope) / 2
             vMinBias = (vMinBias + v2ndBias) / 2
             # utils.drawFullLine(self.src,(0,round(vMinBias)), vSlope, vMinBias, 8)
-        if DEBUG_DRAW_LOCATION:
+        if _DEBUG_DRAW_LOCATION:
             utils.drawFullLine(src, 0, hSlope, hMinBias, -2)
             utils.drawFullLine(src, 0, vSlope, vMinBias, -2)
             # cv2.imshow('canny', src)
@@ -132,7 +135,7 @@ class StripTemplate:
     def _findTopLine(src, lines):
         '''
 
-        :param src: debug only
+        :param src: _DEBUG only
         :param lines:
         :return:  h(slope, bias),v(slope,bias)
         '''
@@ -165,7 +168,7 @@ class StripTemplate:
         if abs(h2ndSlope - hSlope) < 0.02 and abs(h2ndBias - hMinBias) <= 4:
             hSlope = (hSlope + h2ndSlope) / 2
             hMinBias = (hMinBias + h2ndBias) / 2
-        if DEBUG_DRAW_LOCATION:
+        if _DEBUG_DRAW_LOCATION:
             utils.drawFullLine(src, 0, hSlope, hMinBias, -2)
             # cv2.imshow('canny', src)
             # cv2.waitKey()
@@ -211,7 +214,7 @@ class StripTemplate:
         self.origin = utils.getCross(self.hkb, self.vkb)
         if self.origin is None:
             return False
-        if DEBUG_DRAW_LOCATION: utils.drawDot(src, self.origin, 3)
+        if _DEBUG_DRAW_LOCATION: utils.drawDot(src, self.origin, 3)
         self._mapOrigin()
         x = int(self.origin[0])
         y = int(self.origin[1] - self.config.STRIP_DECTCT_BUF / PRE_Y_TIMES)
@@ -222,7 +225,7 @@ class StripTemplate:
         # cv2.waitKey()
         h = StripTemplate._findTopLine(self.img, lines)
         self.origin[1] = y + round(h[0] * self.origin[0] + h[1])
-        if DEBUG_DRAW_LOCATION:
+        if _DEBUG_DRAW_LOCATION:
             utils.drawDot(src, self.origin, 5)
             # origin = self.origin
             # i = 20 * self.config.STRIP_INTERVAL
@@ -230,7 +233,7 @@ class StripTemplate:
             #     utils.drawDot(src, (origin[0],origin[1]+round(i)), 5)
             #     i -= self.config.STRIP_INTERVAL
 
-        if DEBUG_DRAW_LOCATION:
+        if _DEBUG_DRAW_LOCATION:
             # cv2.imshow('canny', src)
             # cv2.waitKey()
             pass
@@ -245,7 +248,7 @@ class StripTemplate:
         x = int(self.config.BOARD_AREA[0] + PRE_X_TIMES * self.origin[0])
         y = int(self.config.BOARD_AREA[1] + PRE_Y_TIMES * self.origin[1])
         src = self.src[y:y + self.config.STRIPS_AREA[3], x:x + self.config.STRIPS_AREA[2]]
-        if DEBUG_DRAW_LOCATION:
+        if _DEBUG_DRAW_LOCATION:
             i = 2 + self.config.TOTAL * self.config.STRIP_INTERVAL
             while (i >= 0):
                 utils.drawDot(src, (8, round(i)), 5)
@@ -286,7 +289,7 @@ class StripTemplate:
             # 便利查找header
             listP = utils.derivative(gray, (5, round(y + 3), HEADER_WIDTH, round(self.config.STRIP_INTERVAL + y - 3)),
                                      self.config.STRIP_INTERVAL)
-            # if DEBUG_HEADER:
+            # if _DEBUG_HEADER:
             #     for line in listP:
             #         for p in line[2]:
             #             utils.drawDot(gray, (p[0],line[1]), 3)
@@ -297,7 +300,8 @@ class StripTemplate:
                 fcX = sr.StripRegion.checkFunctionLineX(gray, y, self.config.FUNC_LINE, self.config.STRIP_WIDTH)
                 if fcX >= 0:
                     # assert( fcX<self.config.FUNC_LINE[0] or fcX>self.config.FUNC_LINE[2])#找到func line
-                    strips[i] = sr.StripRegion(listP, index, winSize, self.hkb[0], fcX, y, self.references, self.config)
+                    strips[i] = sr.StripRegion(listP, i, index, winSize, self.hkb[0], fcX, y, self.references,
+                                               self.config)
                     strips[i].getHeaderMid(listP, index, winSize)
                     strips[i].getFunctionLineY(gray)
                     strips[i].recognise(gray)
@@ -321,7 +325,7 @@ class StripTemplate:
                 if not strip is None:
                     utils.drawRectBy2P(gray, (strip.fcX, strip.fcY0), (strip.fcX + self.config.STRIP_WIDTH, strip.fcY1))
                 y += self.config.STRIP_INTERVAL
-        if DEBUG_HEADER:
+        if _DEBUG_HEADER:
             cv2.imshow("bg", gray)
             cv2.waitKey()
         return strips if flag else None
@@ -331,8 +335,12 @@ class StripTemplate:
         strips = self._checkHeaders()
 
         if strips is None: return None
+        list = []
+        for strip in strips:
+            if not strip is None:
+                list.append(strip.result)
         # for strip in strips:
         #     if not strip is None:
         #         strip.recognise()
 
-        return strips
+        return list

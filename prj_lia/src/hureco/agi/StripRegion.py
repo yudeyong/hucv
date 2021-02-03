@@ -1,15 +1,17 @@
 import cv2
 import numpy as np
 
-from hureco import SlidingWindow as sw, utils
+from hureco import SlidingWindow as sw, utils, result
 
-DEBUG_SR = not False
-DEBUG_LINE = not False
+_DEBUG_SR = False
+_DEBUG_LINE = not False
 
-DEBUG_STRIP = not False and DEBUG_SR
-DEBUG_DRAW_ALL = False and DEBUG_SR
+_DEBUG_STRIP = not False and _DEBUG_SR
+_DEBUG_DRAW_ALL = False and _DEBUG_SR
 
-FC_THRESHOLD = 200
+_FC_THRESHOLD = 200
+
+_STAND = 100
 
 
 class StripRegion:
@@ -17,7 +19,7 @@ class StripRegion:
     # samplys
     SAMPLY_THRESHOLD = 239
 
-    def __init__(self, listP, index, size, slope, fcX, y, lines, config):
+    def __init__(self, listP, i, index, size, slope, fcX, y, lines, config):
         # 找中点
         index = index + (size >> 1)
         if size & 1 == 0:
@@ -36,9 +38,10 @@ class StripRegion:
         self.config = config
         self.lines = lines
         self.samples = []
+        self.result = result.Result(i)
 
     @staticmethod
-    def checkFunctionLineX(src, y, testArea, STRIP_WIDTH, threshold=FC_THRESHOLD):
+    def checkFunctionLineX(src, y, testArea, STRIP_WIDTH, threshold=_FC_THRESHOLD):
         y = int(y)
         width = STRIP_WIDTH - (STRIP_WIDTH >> 2)
         # utils.drawRectBy2P(src, (testArea[0], y+testArea[1], testArea[2], y+testArea[3]))
@@ -224,7 +227,7 @@ class StripRegion:
             value = StripRegion._calculateValue(gray[y0:y1, int(x0):int(x1)])
             sx = -3
             if value < StripRegion.SAMPLY_THRESHOLD:
-                if DEBUG_STRIP:
+                if _DEBUG_STRIP:
                     # print("##", i, value)
                     pass
                 l = int(x0 - HALF_WIDTH)
@@ -235,25 +238,23 @@ class StripRegion:
                 sx = StripRegion.checkFunctionLineX(gray, 0,
                                                     (l, t, r, b)
                                                     , STRIP_WIDTH - 4, StripRegion.SAMPLY_THRESHOLD)
-                if self.sideSlope is None:
-                    # if sx>0:
-                    #     t, b = StripRegion._getSampleY(gray, (l,t,r,b), 8)
-                    #     height = b-t-self.config.STRIP_HEIGHT
-                    #     if height>=-5 and height<=6:
-                    #         pass#todo 暂时不用校正, 后续如果需要, 首先可以优化header中点精度, 再不行再在这里优化
-                    #         # print("h:", height)
-                    #         t = y0
-                    #         b = y1
-                    #     else:
-                    #         t = y0
-                    #         b = y1
-                    # else:
-                    t = y0
-                    b = y1
-                else:
-                    t = y0
-                    b = y1
-            i += 1
+                t = y0
+                b = y1
+                # if self.sideSlope is None:
+                #     # if sx>0:
+                #     #     t, b = StripRegion._getSampleY(gray, (l,t,r,b), 8)
+                #     #     height = b-t-self.config.STRIP_HEIGHT
+                #     #     if height>=-5 and height<=6:
+                #     #         pass#todo 暂时不用校正, 后续如果需要, 首先可以优化header中点精度, 再不行再在这里优化
+                #     #         # print("h:", height)
+                #     #         t = y0
+                #     #         b = y1
+                #     #     else:
+                #     #         t = y0
+                #     #         b = y1
+                #     # else:
+                #     t = y0
+                #     b = y1
             if sx > 0:
                 if sx < x0:
                     x0 = sx
@@ -262,9 +263,13 @@ class StripRegion:
                 # utils.drawRectBy2P(gray, (round(x0), int(t)), (round(x1), int(b)))
                 # utils.drawDot(gray, (int((x0 + x1) / 2), int((y0 + y1 ) / 2)),  0)
             # else:
+
+            value = StripRegion._calculateValue(gray[t + 1:b - 1, int(x0 + 1):int(x1 - 1)])
+            self.result.appendValue(value, _STAND)
             utils.drawRectBy2P(gray, (round(x0), int(t)), (round(x1), int(b)))
             # utils.drawDot(gray, (int((x0 + x1) / 2), int((y0 + y1) / 2)), sx + 6)
             # print(",sx=",sx,x0,x1)
+            i += 1
 
     @staticmethod
     def _narrowImg(src, width):
@@ -285,8 +290,17 @@ class StripRegion:
 
     @staticmethod
     def _calculateValue(data):
+        '''
+        取排名75%-87.5%的像素区间求均值
+        :param data:
+        :return:
+        '''
+        data = data.flatten()
+        i = 3
+        while data.size > 100 and i > 0:
+            data = StripRegion._filteringAnomaly(data, StripRegion._two_sigma)
+            i -= 1
         count = data.size
-        data = data.reshape((-1))
         data = np.sort(data)
         value = count >> 4
         i0 = (count >> 3) + value
