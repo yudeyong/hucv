@@ -7,7 +7,7 @@ from hureco import utils
 from hureco.agi import StripRegion as sr
 
 DEBUG = not False
-DEBUG_DRAW_LOCATION = not False and DEBUG
+DEBUG_DRAW_LOCATION = False and DEBUG
 # tail line
 # rgb to gray value: None or R,G,B to gray value: 0x1 r, 0x100 g, 0x10000 b
 # RGB_GRAY = 0x10000
@@ -307,14 +307,14 @@ class StripTemplate:
                         ty = strips[i].midY
                         tx = strips[i].midX[0]
                         cv2.line(gray, (tx, ty), (gray.shape[0], int((gray.shape[0] - tx) * self.hkb[0]) + ty), 128, 1)
-
+                    print("true ", end='')
                 # for line in listP:
                 #     print(",", line[0], end='')
                 # print('.')
                 # print("line:",i, winSize)
             y += self.config.STRIP_INTERVAL
             i += 1
-            print('# # # # # #i.', i)
+            print(i, '# # # # # #i.')
 
         if False:
             y = 0

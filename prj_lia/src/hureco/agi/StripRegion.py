@@ -93,7 +93,7 @@ class StripRegion:
         self.points[1] = (self.fcX, (y1 + y0) / 2)
         # 膜条的斜率
         self.slope, b = utils.getFitLine(self.points)
-        utils.drawFullLine(src, 0, self.slope, b, -16)
+        # utils.drawFullLine(src, 0, self.slope, b, -16)
 
         self.sideSlope, b = StripRegion._findSlope(src, right, self.fcY0)
         if not self.sideSlope is None:
@@ -254,18 +254,16 @@ class StripRegion:
                     t = y0
                     b = y1
             i += 1
-            if DEBUG_STRIP:
-                if sx > 0:
-                    if sx < x0:
-                        x0 = sx
-                        x0 += StripRegion._narrowImg(gray[t:b, int(x0):int(x1)], STRIP_WIDTH - 4)
-                        x1 = x0 + STRIP_WIDTH - 4
-                    if i > -7:
-                        utils.drawRectBy2P(gray, (round(x0), int(t)), (round(x1), int(b)))
-                    # utils.drawDot(gray, (int((x0 + x1) / 2), int((y0 + y1 ) / 2)),  0)
-                else:
-                    utils.drawRectBy2P(gray, (round(x0), int(t)), (round(x1), int(b)))
-                    # utils.drawDot(gray, (int((x0 + x1) / 2), int((y0 + y1) / 2)), sx + 6)
+            if sx > 0:
+                if sx < x0:
+                    x0 = sx
+                    x0 += StripRegion._narrowImg(gray[t:b, int(x0):int(x1)], STRIP_WIDTH - 4)
+                    x1 = x0 + STRIP_WIDTH - 4
+                # utils.drawRectBy2P(gray, (round(x0), int(t)), (round(x1), int(b)))
+                # utils.drawDot(gray, (int((x0 + x1) / 2), int((y0 + y1 ) / 2)),  0)
+            # else:
+            utils.drawRectBy2P(gray, (round(x0), int(t)), (round(x1), int(b)))
+            # utils.drawDot(gray, (int((x0 + x1) / 2), int((y0 + y1) / 2)), sx + 6)
             # print(",sx=",sx,x0,x1)
 
     @staticmethod
