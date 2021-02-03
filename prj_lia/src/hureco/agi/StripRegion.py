@@ -216,6 +216,7 @@ class StripRegion:
             #     i += 1
             #     continue
             x0, x1 = StripRegion._getMidHalfBy2P(self.fcX + line[0], self.fcX + line[1], 5)
+            # print("L01",line[0],line[1],"x0,1=",x0,x1, end='')
             slope = self.slope
             deltaY = (x0 - self.refX) * slope * 2
             y0 = round(baseY0 + deltaY)
@@ -263,7 +264,9 @@ class StripRegion:
                         utils.drawRectBy2P(gray, (round(x0), int(t)), (round(x1), int(b)))
                     # utils.drawDot(gray, (int((x0 + x1) / 2), int((y0 + y1 ) / 2)),  0)
                 else:
-                    utils.drawDot(gray, (int((x0 + x1) / 2), int((y0 + y1) / 2)), sx + 6)
+                    utils.drawRectBy2P(gray, (round(x0), int(t)), (round(x1), int(b)))
+                    # utils.drawDot(gray, (int((x0 + x1) / 2), int((y0 + y1) / 2)), sx + 6)
+            # print(",sx=",sx,x0,x1)
 
     @staticmethod
     def _narrowImg(src, width):

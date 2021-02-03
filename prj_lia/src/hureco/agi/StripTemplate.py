@@ -34,7 +34,9 @@ class StripTemplate:
 
         posi = 0
         flag = False
-        for line in config.lines:
+        lines = config.references if hasattr(config, "references") else config.lines
+
+        for line in lines:
             if not flag:
                 if line[0] != 'Functional Control':
                     continue
@@ -45,6 +47,7 @@ class StripTemplate:
                 self.titles.append(line[0])
             posi += line[1]
         unitStrip = self.config.STRIP_AREA_WIDTH / (self.references[2][0] - self.references[1][0])
+        print("unitStrip ", unitStrip, self.config.STRIP_AREA_WIDTH)
         for line in self.references:
             line[0] = line[0] * unitStrip
             line[1] = line[1] * unitStrip
@@ -209,7 +212,7 @@ class StripTemplate:
         self.origin = utils.getCross(self.hkb, self.vkb)
         if self.origin is None:
             return False
-        if DEBUG_DRAW_LOCATION: utils.drawDot(src, self.origin, 5)
+        if DEBUG_DRAW_LOCATION: utils.drawDot(src, self.origin, 3)
         self._mapOrigin()
         x = int(self.origin[0])
         y = int(self.origin[1] - self.config.STRIP_DECTCT_BUF / PRE_Y_TIMES)
@@ -221,7 +224,7 @@ class StripTemplate:
         h = StripTemplate._findTopLine(self.img, lines)
         self.origin[1] = y + round(h[0] * self.origin[0] + h[1])
         if DEBUG_DRAW_LOCATION:
-            utils.drawDot(src, self.origin, 15)
+            utils.drawDot(src, self.origin, 5)
             # origin = self.origin
             # i = 20 * self.config.STRIP_INTERVAL
             # while (i>=0):
@@ -246,7 +249,7 @@ class StripTemplate:
         if DEBUG_DRAW_LOCATION:
             i = 2 + self.config.TOTAL * self.config.STRIP_INTERVAL
             while (i >= 0):
-                utils.drawDot(src, (8, round(i)), 15)
+                utils.drawDot(src, (8, round(i)), 5)
                 i -= self.config.STRIP_INTERVAL
             # cv2.imshow('canny', src)
             # cv2.waitKey()
