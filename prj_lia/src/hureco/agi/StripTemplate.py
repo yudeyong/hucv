@@ -47,7 +47,6 @@ class StripTemplate:
                 self.titles.append(line[0])
             posi += line[1]
         unitStrip = self.config.STRIP_AREA_WIDTH / (self.references[2][0] - self.references[1][0])
-        print("unitStrip ", unitStrip, self.config.STRIP_AREA_WIDTH)
         for line in self.references:
             line[0] = line[0] * unitStrip
             line[1] = line[1] * unitStrip
