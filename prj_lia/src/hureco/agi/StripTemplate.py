@@ -310,14 +310,14 @@ class StripTemplate:
                         ty = strips[i].midY
                         tx = strips[i].midX[0]
                         cv2.line(gray, (tx, ty), (gray.shape[0], int((gray.shape[0] - tx) * self.hkb[0]) + ty), 128, 1)
-                    print("true ", end='')
+                    # print("true ", end='')
                 # for line in listP:
                 #     print(",", line[0], end='')
                 # print('.')
                 # print("line:",i, winSize)
             y += self.config.STRIP_INTERVAL
             i += 1
-            print(i, '# # # # # #i.')
+            # print(i, '# # # # # #i.')
 
         if False:
             y = 0
@@ -325,7 +325,7 @@ class StripTemplate:
                 if not strip is None:
                     utils.drawRectBy2P(gray, (strip.fcX, strip.fcY0), (strip.fcX + self.config.STRIP_WIDTH, strip.fcY1))
                 y += self.config.STRIP_INTERVAL
-        if _DEBUG_HEADER:
+        if True or _DEBUG_HEADER:
             cv2.imshow("bg", gray)
             cv2.waitKey()
         return strips if flag else None

@@ -27,7 +27,7 @@ class Result:
             if v < 4: return 2
             return 3
         else:
-            if v < 0.2: return ''
+            if v < 0.4: return ''
             if v < 0.8: return '-'
             if v < 1.15: return 'o'
             if v < 2.5: return '+'

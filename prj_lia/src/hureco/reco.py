@@ -34,12 +34,14 @@ def recognization(file, dict):
     # cv2.imshow('src', src)
     # cv2.imshow('result', gray)
     # cv2.waitKey()
+    if len(results) == 0:
+        return "Zero result.", None
     return None, results
 
 
 def main():
     # todo 68bch
-    i = 1
+    i = 7
     count = 1
     if i + count > 18: count = 18 - i
     if i > 10: i += 7
@@ -58,8 +60,8 @@ def main():
             print(msg)
         else:
             for r in results:
-                print(r.index, r.result, r.values)
-
+                # print(r.index, r.results, r.values)
+                pass
         i += 1
     cv2.waitKey(0)
 

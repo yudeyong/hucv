@@ -11,7 +11,7 @@ _DEBUG_DRAW_ALL = False and _DEBUG_SR
 
 _FC_THRESHOLD = 200
 
-_STAND = 100
+_STAND = 40
 
 
 class StripRegion:
@@ -296,15 +296,19 @@ class StripRegion:
         :return:
         '''
         data = data.flatten()
+
+        # s = data.size
+        # print( "dsize=",s, "-",end='')
         i = 3
-        while data.size > 100 and i > 0:
+        while data.size > 80 and i > 0:
             data = StripRegion._filteringAnomaly(data, StripRegion._two_sigma)
             i -= 1
         count = data.size
+        # print(count, '=', s-count,round((s-count)*100/s),"%")
         data = np.sort(data)
         value = count >> 4
-        i0 = (count >> 3) + value
-        i1 = (count >> 2) + value
+        i0 = (count >> 3) - value
+        i1 = (count >> 2) - value
         value = np.average(data[i0:i1])
         # value += 0xff - bgColor
 
