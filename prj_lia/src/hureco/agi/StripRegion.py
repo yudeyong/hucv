@@ -215,7 +215,7 @@ class StripRegion:
         # 收窄边界
         baseY0, baseY1 = StripRegion._getMidHalfByPW(self.refY, self.refHeight, 8)
         for line in self.lines:
-            # if i==0 :
+            # if i<10 :
             #     i += 1
             #     continue
             x0, x1 = StripRegion._getMidHalfBy2P(self.fcX + line[0], self.fcX + line[1], 5)
@@ -226,15 +226,15 @@ class StripRegion:
             y1 = round(baseY1 + deltaY)
             value = StripRegion._calculateValue(gray[y0:y1, int(x0):int(x1)])
             sx = -3
+            l = int(x0 - HALF_WIDTH)
+            t = int(y0 - STRIP_WIDTH)
+            r = int(x1 + HALF_WIDTH)
+            b = int(y1 + STRIP_WIDTH)
             if value < StripRegion.SAMPLY_THRESHOLD:
                 if _DEBUG_STRIP:
                     # print("##", i, value)
                     pass
-                l = int(x0 - HALF_WIDTH)
-                t = int(y0 - STRIP_WIDTH)
                 if t < 0: t = 0
-                r = int(x1 + HALF_WIDTH)
-                b = int(y1 + STRIP_WIDTH)
                 sx = StripRegion.checkFunctionLineX(gray, 0,
                                                     (l, t, r, b)
                                                     , STRIP_WIDTH - 4, StripRegion.SAMPLY_THRESHOLD)
@@ -306,9 +306,10 @@ class StripRegion:
         count = data.size
         # print(count, '=', s-count,round((s-count)*100/s),"%")
         data = np.sort(data)
-        value = count >> 4
-        i0 = (count >> 3) - value
-        i1 = (count >> 2) - value
+        value = (count >> 3) + 1
+        i1 = (count >> 1)
+        i0 = i1 - value if i1 > value else 0
+
         value = np.average(data[i0:i1])
         # value += 0xff - bgColor
 
