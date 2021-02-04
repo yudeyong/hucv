@@ -226,20 +226,20 @@ class StripRegion:
             y1 = round(baseY1 + deltaY)
             value = StripRegion._calculateValue(gray[y0:y1, int(x0):int(x1)])
             sx = -3
-            l = int(x0 - HALF_WIDTH)
-            t = int(y0 - STRIP_WIDTH)
-            r = int(x1 + HALF_WIDTH)
-            b = int(y1 + STRIP_WIDTH)
             if value < StripRegion.SAMPLY_THRESHOLD:
                 if _DEBUG_STRIP:
                     # print("##", i, value)
                     pass
+                l = int(x0 - HALF_WIDTH)
+                t = int(y0 - STRIP_WIDTH)
                 if t < 0: t = 0
+                r = int(x1 + HALF_WIDTH)
+                b = int(y1 + STRIP_WIDTH)
                 sx = StripRegion.checkFunctionLineX(gray, 0,
                                                     (l, t, r, b)
                                                     , STRIP_WIDTH - 4, StripRegion.SAMPLY_THRESHOLD)
-                t = y0
-                b = y1
+                # t = y0
+                # b = y1
                 # if self.sideSlope is None:
                 #     # if sx>0:
                 #     #     t, b = StripRegion._getSampleY(gray, (l,t,r,b), 8)
@@ -253,8 +253,8 @@ class StripRegion:
                 #     #         t = y0
                 #     #         b = y1
                 #     # else:
-                #     t = y0
-                #     b = y1
+            t = y0
+            b = y1
             if sx > 0:
                 if sx < x0:
                     x0 = sx
