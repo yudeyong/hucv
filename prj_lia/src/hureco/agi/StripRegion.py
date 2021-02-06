@@ -39,6 +39,12 @@ class StripRegion:
         self.lines = lines
         self.samples = []
         self.result = result.Result(i)
+        x0 = round(self.fcX - config.fcHeader) - 150
+        if x0 < 0: x0 = 0
+        x1 = round(self.fcX + lines[-1][1]) + 110
+        if x1 >= config.STRIPS_AREA[2]:
+            x1 = config.STRIPS_AREA[2] - 1
+        self.result.area = (x0, x1, round(y + 6), round(y + config.STRIP_INTERVAL))
 
     @staticmethod
     def checkFunctionLineX(src, y, testArea, STRIP_WIDTH, threshold=_FC_THRESHOLD):

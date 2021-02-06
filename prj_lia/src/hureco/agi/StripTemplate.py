@@ -39,9 +39,11 @@ class StripTemplate:
         else:
             lines = config.lines
             self.lines = list(filter(lambda x: x[0] != 'blank', lines))
+        fcHeader = 0
         for line in lines:
             if not flag:
                 if line[0] != 'Functional Control':
+                    fcHeader += line[1]
                     continue
                 else:
                     flag = True
@@ -50,6 +52,7 @@ class StripTemplate:
                 self.titles.append(line[0])
             posi += line[1]
         unitStrip = self.config.STRIP_AREA_WIDTH / (self.references[2][0] - self.references[1][0])
+        config.fcHeader = unitStrip * fcHeader
         for line in self.references:
             line[0] = line[0] * unitStrip
             line[1] = line[1] * unitStrip
@@ -277,7 +280,7 @@ class StripTemplate:
             self.config.FUNC_LINE[3] >>= 1
         # cv2.imshow('1-gray', gray)
         # _, bw = cv2.threshold(gray, self.config.THRESHOLD, 255.0, cv2.THRESH_BINARY)
-        height = self.hkb[0] * HEADER_WIDTH
+        # height = self.hkb[0] * HEADER_WIDTH
         bottom = gray.shape[0]
         # dH = height if height>0 else 0
         i = 0
@@ -325,14 +328,14 @@ class StripTemplate:
                 if not strip is None:
                     utils.drawRectBy2P(gray, (strip.fcX, strip.fcY0), (strip.fcX + self.config.STRIP_WIDTH, strip.fcY1))
                 y += self.config.STRIP_INTERVAL
-        if True or _DEBUG_HEADER:
+        if _DEBUG_HEADER:
             cv2.imshow("bg", gray)
             cv2.waitKey()
-        return strips if flag else None
+        return (strips, gray) if flag else (None, None)
 
     # check header, locate
     def recognise(self):
-        strips = self._checkHeaders()
+        strips, img = self._checkHeaders()
 
         if strips is None: return None
         list = []
@@ -343,4 +346,4 @@ class StripTemplate:
         #     if not strip is None:
         #         strip.recognise()
 
-        return list
+        return list, img
