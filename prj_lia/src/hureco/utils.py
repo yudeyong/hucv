@@ -1,17 +1,19 @@
 import math
 
-import cv2
-import numpy as np
+from cv2 import split, COLOR_BGR2GRAY, COLOR_BGR2BGRA, cvtColor, Canny, GaussianBlur, fitLine, DIST_L2, line as cvline, \
+    imshow, waitKey
+from numpy import empty as np_empty, repeat as np_repeat, \
+    asanyarray as np_asanyarray
 
 
 ## rgb to gray value: None or R,G,B to gray value: 0x1 r, 0x100 b, 0x10000 g
 #   RGB_GRAY = 0x10000
 def toGray(img, rgb_gray):
     if not rgb_gray:
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        gray = cvtColor(img, COLOR_BGR2GRAY)
     else:
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2BGRA)
-        b, g, r, _ = cv2.split(gray)
+        gray = cvtColor(img, COLOR_BGR2BGRA)
+        b, g, r, _ = split(gray)
         if False:
             cv2.imshow('1-r', r)
             cv2.imshow('2-g', g)
@@ -30,12 +32,13 @@ def toGray(img, rgb_gray):
 # param gaussian canny, 0 canny only, 3, 5
 def toCanny(bw, gaussian):
     if gaussian == 0:
-        canny = cv2.Canny(bw, 200, 230, 3)
+        canny = Canny(bw, 200, 230, 3)
         return canny
     else:
-        img1 = cv2.GaussianBlur(bw, (gaussian, gaussian), 0)
-        cannyGaus = cv2.Canny(img1, 10, 30, 453)
+        img1 = GaussianBlur(bw, (gaussian, gaussian), 0)
+        cannyGaus = Canny(img1, 10, 30, 453)
         return cannyGaus
+
 
 # 获取斜率,截距
 def getSlopeBiasBy2P(p1, p2):
@@ -79,7 +82,7 @@ def shrink(img, xTimes, yTimes):
     tH = math.ceil(h / yTimes)
 
     # 1维寻址快
-    tImg = np.empty([tH, tW], dtype='uint8')
+    tImg = np_empty([tH, tW], dtype='uint8')
     sBuf = img.reshape((-1))
     tBuf = tImg.reshape((-1))
     tCur = tW * tH
@@ -110,7 +113,7 @@ def shrink3(img, xTimes, yTimes):
     tH = math.ceil(h / yTimes)
 
     # 1维寻址快
-    tImg = np.empty([tH, tW, 3], dtype='uint8')
+    tImg = np_empty([tH, tW, 3], dtype='uint8')
     sBuf = img.reshape((-1, 3))
     tBuf = tImg.reshape((-1, 3))
     tCur = tW * tH
@@ -138,9 +141,9 @@ def shrink3(img, xTimes, yTimes):
 def enlarge(img, xTimes, yTimes):
     # todo 未调试
     if xTimes > 1:
-        img = np.repeat(img, xTimes, axis=0)
+        img = np_repeat(img, xTimes, axis=0)
     if yTimes > 1:
-        img = np.repeat(img, yTimes, axis=1)
+        img = np_repeat(img, yTimes, axis=1)
     return img
 
 
@@ -150,10 +153,10 @@ def drawRectBy2P(src, p0, p1):
 
 
 def drawRectBy4P(src, p):
-    cv2.line(src, (p[0][0], p[0][1]), (p[1][0], p[1][1]), (0, 0, 0), 1)
-    cv2.line(src, (p[2][0], p[2][1]), (p[3][0], p[3][1]), (0, 0, 0), 1)
-    cv2.line(src, (p[0][0], p[0][1]), (p[2][0], p[2][1]), (0, 0, 0), 1)
-    cv2.line(src, (p[1][0], p[1][1]), (p[3][0], p[3][1]), (0, 0, 0), 1)
+    cvline(src, (p[0][0], p[0][1]), (p[1][0], p[1][1]), (0, 0, 0), 1)
+    cvline(src, (p[2][0], p[2][1]), (p[3][0], p[3][1]), (0, 0, 0), 1)
+    cvline(src, (p[0][0], p[0][1]), (p[2][0], p[2][1]), (0, 0, 0), 1)
+    cvline(src, (p[1][0], p[1][1]), (p[3][0], p[3][1]), (0, 0, 0), 1)
 
 
 def drawMidLineBy2P(src, p, i):
@@ -194,7 +197,7 @@ def drawFullLine(src, x0, k, b, i):
     else:
         c = (0xff, 0, 0xff * (i & 1))
 
-    cv2.line(src, (x1, y1), (x2, y2), c, 2 - (i < 0) * 1)
+    cvline(src, (x1, y1), (x2, y2), c, 2 - (i < 0) * 1)
 
 
 def drawMidLineBy4P(src, p, i):
@@ -236,16 +239,16 @@ def drawDot(src, p, i=3):
     p1 = (round(p[0] + f), round(p[1] + f))
     p2 = (round(p[0]) - f, round(p[1] - f))
     if (i > 0):
-        cv2.line(src, p1, p2, 0, 1)
-        cv2.line(src, (p1[0], p2[1]), (p2[0], p1[1]), 0, 1)
+        cvline(src, p1, p2, 0, 1)
+        cvline(src, (p1[0], p2[1]), (p2[0], p1[1]), 0, 1)
     else:
         drawRectBy2P(src, p1, p2)
 
 
 def showDebug(name, img):
     a = shrink(img, 2, 2)
-    cv2.imshow(name, a)
-    cv2.waitKey()
+    imshow(name, a)
+    waitKey()
 
 
 def derivative(img, rect, stripHeight):
@@ -351,8 +354,8 @@ def maxWind(array, size, threshold, faultTolerant):
 
 
 def getFitLine(points):
-    p = np.asanyarray(points)
-    out = cv2.fitLine(p, cv2.DIST_L2, 0, 0.01, 0.01)
+    p = np_asanyarray(points)
+    out = fitLine(p, DIST_L2, 0, 0.01, 0.01)
     k = out[1] / out[0]
     b = out[3] - k * out[2]
     # self.midHeader[0][0] = round((self.midHeader[0][1] - b[0] )/k[0])

@@ -1,4 +1,4 @@
-import cv2
+from cv2 import waitKey
 
 from hureco import config
 
@@ -7,6 +7,7 @@ from hureco import config
 def _loadTemplate(category):
     return config.getDictFromFile(category)
 
+
 def recognization(file, dict):
     '''
     识别一张图片
@@ -14,13 +15,13 @@ def recognization(file, dict):
     :param dict: 配置字典
     :return:  str: 错误信息
     '''
-    # cv2.imshow('src', src)
+    # imshow('src', src)
     if dict is None:
         return "Miss config file.", None, None
     template = config.getConfigFromDict(dict)
     src, err = template.getImg(file)
-    # cv2.imshow('origin', src)
-    # cv2.waitKey()
+    # imshow('origin', src)
+    # waitKey()
     if err:
         return err, None, None
     if template.locatArea(src) is None:
@@ -30,10 +31,10 @@ def recognization(file, dict):
 
     # sr.StripRegion.recognise(gray, strips)
 
-    # cv2.imshow('bw',bw)
-    # cv2.imshow('src', src)
-    # cv2.imshow('result', gray)
-    # cv2.waitKey()
+    # imshow('bw',bw)
+    # imshow('src', src)
+    # imshow('result', gray)
+    # waitKey()
     if len(results) == 0:
         return "Zero result.", None, None
     return None, results, img
@@ -60,10 +61,10 @@ def main():
             print(msg)
         else:
             for r in results:
-                # print(r.index, r.results, r.values)
+                print(r.index, r.results, r.values)
                 pass
         i += 1
-    cv2.waitKey(0)
+    waitKey(0)
 
 
 if __name__ == '__main__':

@@ -1,7 +1,7 @@
 import math
 
-import cv2
-import numpy as np
+from cv2 import imread, line as cvline, imshow, waitKey, HoughLinesP, threshold as cvthreshold, THRESH_BINARY
+from numpy import pi as np_pi
 
 from hureco import utils
 from hureco.agi import StripRegion as sr
@@ -63,7 +63,7 @@ class StripTemplate:
                and shape[1] < self.config.VALID_XY[1] and shape[1] > self.config.VALID_XY[0]
 
     def getImg(self, file):
-        src = self.src = cv2.imread(file)
+        src = self.src = imread(file)
         if src is None: return None, "file not found " + file
         if not self._checkShape(src.shape):
             return None, "invalid size."
@@ -88,12 +88,12 @@ class StripTemplate:
         h2ndSlope = vSlopeSetting = 20
         # for l in lines:
         #     line = l[0]
-        #     cv2.line(self.src, (line[[0]], line[1]), (line[2], line[3]), (0, 0, 0 ), 1)
-        # cv2.imshow('canny', self.img)
-        # cv2.waitKey()
+        #     cvline(self.src, (line[[0]], line[1]), (line[2], line[3]), (0, 0, 0 ), 1)
+        # imshow('canny', self.img)
+        # waitKey()
         for l in lines:
             line = l[0]
-            # cv2.line(src, (line[[0]], line[1]), (line[2], line[3]), (255, 0, 255 ), 1)
+            # cvline(src, (line[[0]], line[1]), (line[2], line[3]), (255, 0, 255 ), 1)
             slope, bias = utils.getSlopeBias(line)
             if abs(slope) > vSlopeSetting:
                 aBias = abs(bias)
@@ -131,8 +131,8 @@ class StripTemplate:
         if _DEBUG_DRAW_LOCATION:
             utils.drawFullLine(src, 0, hSlope, hMinBias, -2)
             utils.drawFullLine(src, 0, vSlope, vMinBias, -2)
-            # cv2.imshow('canny', src)
-            # cv2.waitKey()
+            # imshow('canny', src)
+            # waitKey()
         return (hSlope, hMinBias), (vSlope, vMinBias)
 
     def _findTopLine(src, lines):
@@ -148,12 +148,12 @@ class StripTemplate:
         h2ndSlope = 20
         # for l in lines:
         #     line = l[0]
-        #     cv2.line(self.src, (line[[0]], line[1]), (line[2], line[3]), (0, 0, 0 ), 1)
-        # cv2.imshow('canny', self.src)
-        # cv2.waitKey()
+        #     cvline(self.src, (line[[0]], line[1]), (line[2], line[3]), (0, 0, 0 ), 1)
+        # imshow('canny', self.src)
+        # waitKey()
         for l in lines:
             line = l[0]
-            # cv2.line(src, (line[[0]], line[1]), (line[2], line[3]), (255, 0, 255 ), 1)
+            # cvline(src, (line[[0]], line[1]), (line[2], line[3]), (255, 0, 255 ), 1)
             slope, bias = utils.getSlopeBias(line)
             if abs(slope) < hSlopeSetting:
                 aBias = abs(bias)
@@ -173,8 +173,8 @@ class StripTemplate:
             hMinBias = (hMinBias + h2ndBias) / 2
         if _DEBUG_DRAW_LOCATION:
             utils.drawFullLine(src, 0, hSlope, hMinBias, -2)
-            # cv2.imshow('canny', src)
-            # cv2.waitKey()
+            # imshow('canny', src)
+            # waitKey()
         # print("len:",len(lines))
         return (hSlope, hMinBias)
 
@@ -199,15 +199,15 @@ class StripTemplate:
     # 寻找最左顶点
     def _locateOrigin(self):
         src = self.img
-        _, bw = cv2.threshold(src, self.config.THRESHOLD, 255.0, cv2.THRESH_BINARY)
-        # cv2.imshow('bw',bw)
-        # cv2.waitKey()
+        _, bw = cvthreshold(src, self.config.THRESHOLD, 255.0, THRESH_BINARY)
+        # imshow('bw',bw)
+        # waitKey()
 
         if CANNY_GAUSS > 0:
             bw = utils.toCanny(bw, CANNY_GAUSS)
-        # cv2.imshow('bw',bw)
-        # cv2.waitKey()
-        lines = cv2.HoughLinesP(bw, 1, np.pi / 180, 116, minLineLength=120, maxLineGap=30)
+        # imshow('bw',bw)
+        # waitKey()
+        lines = HoughLinesP(bw, 1, np_pi / 180, 116, minLineLength=120, maxLineGap=30)
         h, v = StripTemplate._filterLines(self.img, lines)
         if v[0] != 0:
             self.hkb = h
@@ -223,9 +223,9 @@ class StripTemplate:
         y = int(self.origin[1] - self.config.STRIP_DECTCT_BUF / PRE_Y_TIMES)
         bw = bw[y:y + int(self.config.STRIP_INTERVAL * 2 / PRE_Y_TIMES),
              x:x + int(self.config.STRIPS_AREA[2] / PRE_Y_TIMES)]
-        lines = cv2.HoughLinesP(bw, 1, np.pi / 180, 58, minLineLength=73, maxLineGap=20)
-        # cv2.imshow('bw1',bw)
-        # cv2.waitKey()
+        lines = HoughLinesP(bw, 1, np_pi / 180, 58, minLineLength=73, maxLineGap=20)
+        # imshow('bw1',bw)
+        # waitKey()
         h = StripTemplate._findTopLine(self.img, lines)
         self.origin[1] = y + round(h[0] * self.origin[0] + h[1])
         if _DEBUG_DRAW_LOCATION:
@@ -237,8 +237,8 @@ class StripTemplate:
             #     i -= self.config.STRIP_INTERVAL
 
         if _DEBUG_DRAW_LOCATION:
-            # cv2.imshow('canny', src)
-            # cv2.waitKey()
+            # imshow('canny', src)
+            # waitKey()
             pass
         return True
 
@@ -256,8 +256,8 @@ class StripTemplate:
             while (i >= 0):
                 utils.drawDot(src, (8, round(i)), 5)
                 i -= self.config.STRIP_INTERVAL
-            # cv2.imshow('canny', src)
-            # cv2.waitKey()
+            # imshow('canny', src)
+            # waitKey()
             self.gray = utils.toGray(src, 'r')
         # 更新膜条区域
         self.src = src
@@ -278,8 +278,8 @@ class StripTemplate:
             self.config.FUNC_LINE[1] >>= 1
             self.config.FUNC_LINE[2] >>= 1
             self.config.FUNC_LINE[3] >>= 1
-        # cv2.imshow('1-gray', gray)
-        # _, bw = cv2.threshold(gray, self.config.THRESHOLD, 255.0, cv2.THRESH_BINARY)
+        # imshow('1-gray', gray)
+        # _, bw = cvthreshold(gray, self.config.THRESHOLD, 255.0, THRESH_BINARY)
         # height = self.hkb[0] * HEADER_WIDTH
         bottom = gray.shape[0]
         # dH = height if height>0 else 0
@@ -312,7 +312,7 @@ class StripTemplate:
                     if False:
                         ty = strips[i].midY
                         tx = strips[i].midX[0]
-                        cv2.line(gray, (tx, ty), (gray.shape[0], int((gray.shape[0] - tx) * self.hkb[0]) + ty), 128, 1)
+                        cvline(gray, (tx, ty), (gray.shape[0], int((gray.shape[0] - tx) * self.hkb[0]) + ty), 128, 1)
                     # print("true ", end='')
                 # for line in listP:
                 #     print(",", line[0], end='')
@@ -329,8 +329,8 @@ class StripTemplate:
                     utils.drawRectBy2P(gray, (strip.fcX, strip.fcY0), (strip.fcX + self.config.STRIP_WIDTH, strip.fcY1))
                 y += self.config.STRIP_INTERVAL
         if _DEBUG_HEADER:
-            cv2.imshow("bg", gray)
-            cv2.waitKey()
+            imshow("bg", gray)
+            waitKey()
         return (strips, gray) if flag else (None, None)
 
     # check header, locate

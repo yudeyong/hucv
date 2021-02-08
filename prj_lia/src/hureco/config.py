@@ -1,4 +1,4 @@
-import json
+from json import load
 
 from hureco.agi import StripTemplate
 
@@ -15,6 +15,7 @@ def getConfigFromDict(dict):
 def _dict_to_object(dict_obj):
     return Dict(dict_obj)
 
+
 def getDictFromFile(file):
     '''
 
@@ -23,10 +24,9 @@ def getDictFromFile(file):
     '''
     try:
         with open(file, 'r') as load_f:
-            loadDict = json.load(load_f)
+            loadDict = load(load_f)
         # print(loadDict)
     except IOError:
         return None
     # load_dict['line'] = [8200,{1:[['Python',81],['shirt',300]]}]
     return loadDict
-
