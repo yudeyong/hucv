@@ -64,14 +64,14 @@ class StripTemplate:
 
     def getImg(self, file):
         src = self.src = imread(file)
-        if src is None: return None, "file not found " + file
+        if src is None: return "file not found " + file, None
         if not self._checkShape(src.shape):
-            return None, "invalid size."
+            return "invalid size.", None
         src = src[self.config.BOARD_AREA[1]:self.config.BOARD_AREA[1] + self.config.BOARD_AREA[3],
               self.config.BOARD_AREA[0]:self.config.BOARD_AREA[0] + self.config.BOARD_AREA[2]]
         if ZOOMOUT_FIRST:
             src = utils.shrink3(src, PRE_X_TIMES, PRE_Y_TIMES)
-        return src, None
+        return None, src
 
     # 找最顶线,最左线
     @staticmethod

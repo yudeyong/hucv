@@ -1,5 +1,3 @@
-from cv2 import waitKey
-
 from hureco import config
 
 
@@ -19,7 +17,7 @@ def recognization(file, dict):
     if dict is None:
         return "Miss config file.", None
     template = config.getConfigFromDict(dict)
-    src, err = template.getImg(file)
+    err, src = template.getImg(file)
     # imshow('origin', src)
     # waitKey()
     if err:
@@ -69,7 +67,7 @@ def main():
                 print(r.index, r.results, r.values)
                 pass
         i += 1
-    waitKey(0)
+    # waitKey(0)
 
 
 if __name__ == '__main__':

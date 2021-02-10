@@ -77,6 +77,13 @@ def getYFromLine(line):
 
 
 def shrink(img, xTimes, yTimes):
+    '''
+    shrink gray scale
+    :param img:
+    :param xTimes:
+    :param yTimes:
+    :return:
+    '''
     (h, w) = img.shape
     tW = math.ceil(w / xTimes)
     tH = math.ceil(h / yTimes)
@@ -108,6 +115,13 @@ def shrink(img, xTimes, yTimes):
 
 
 def shrink3(img, xTimes, yTimes):
+    '''
+    shrink RGB
+    :param img:
+    :param xTimes:
+    :param yTimes:
+    :return:
+    '''
     (h, w, _) = img.shape
     tW = math.ceil(w / xTimes)
     tH = math.ceil(h / yTimes)
