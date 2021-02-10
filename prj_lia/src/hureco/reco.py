@@ -17,17 +17,17 @@ def recognization(file, dict):
     '''
     # imshow('src', src)
     if dict is None:
-        return "Miss config file.", None, None
+        return "Miss config file.", None
     template = config.getConfigFromDict(dict)
     src, err = template.getImg(file)
     # imshow('origin', src)
     # waitKey()
     if err:
-        return err, None, None
-    if template.locatArea(src) is None:
-        return "Recognize Failed", None, None
+        return err, None
+    if template.locateArea(src) is None:
+        return "Recognize Failed", None
     ###cut borad from image
-    results, img = template.recognise()
+    list, img = template.recognise()
 
     # sr.StripRegion.recognise(gray, strips)
 
@@ -35,9 +35,14 @@ def recognization(file, dict):
     # imshow('src', src)
     # imshow('result', gray)
     # waitKey()
-    if len(results) == 0:
-        return "Zero result.", None, None
-    return None, results, img
+    if len(list) == 0:
+        return "Zero result.", None
+    results = config.Dict()
+    setattr(results, 'resultList', list)
+    setattr(results, 'stripOffset', template.origin)
+    setattr(results, 'stripImg', img)
+
+    return None, results
 
 
 def main():
@@ -55,12 +60,12 @@ def main():
         config = "AGL9" if i <= 0x30 else ("AGL8" if i > 0x46 else "AGL6")
         print("File *********", chr(i), config)
 
-        msg, results, img = recognization(('./samples/AGL') + chr(i) + '.jpg',
-                                          _loadTemplate("./config/strip" + config + ".json"))
+        msg, results = recognization(('./samples/AGL') + chr(i) + '.jpg',
+                                     _loadTemplate("./config/strip" + config + ".json"))
         if msg:
             print(msg)
         else:
-            for r in results:
+            for r in results.resultList:
                 print(r.index, r.results, r.values)
                 pass
         i += 1

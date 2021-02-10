@@ -4,16 +4,21 @@ from hureco.agi import StripTemplate
 
 
 class Dict(dict):
-    def __init__(self, obj):
-        self.__dict__.update(obj)
+    @staticmethod
+    def getDict(obj):
+        dict = Dict()
+        dict.__dict__.update(obj)
+        return dict
 
+    def __init__(self):
+        pass
 
 def getConfigFromDict(dict):
     return StripTemplate.StripTemplate(_dict_to_object(dict))
 
 
 def _dict_to_object(dict_obj):
-    return Dict(dict_obj)
+    return Dict.getDict(dict_obj)
 
 
 def getDictFromFile(file):

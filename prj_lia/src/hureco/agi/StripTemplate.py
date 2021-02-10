@@ -243,7 +243,7 @@ class StripTemplate:
         return True
 
     # 定位膜条区域
-    def locatArea(self, src):
+    def locateArea(self, src):
         self.img = utils.toGray(src, self.config.RGB_GRAY)
         if not self._locateOrigin():
             return
