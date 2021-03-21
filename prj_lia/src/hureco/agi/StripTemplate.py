@@ -1,7 +1,7 @@
 import math
 
-from cv2 import imread, line as cvline, imshow, waitKey, HoughLinesP, threshold as cvthreshold, THRESH_BINARY
-from numpy import pi as np_pi
+from cv2 import imdecode, imread, line as cvline, imshow, waitKey, HoughLinesP, threshold as cvthreshold, THRESH_BINARY
+from numpy import fromfile, uint8 as npuint8, pi as np_pi
 
 from hureco import utils
 from hureco.agi import StripRegion as sr
@@ -63,7 +63,7 @@ class StripTemplate:
                and shape[1] < self.config.VALID_XY[1] and shape[1] > self.config.VALID_XY[0]
 
     def getImg(self, file):
-        src = self.src = imread(file)
+        src = self.src = imdecode(fromfile(file, dtype=npuint8),-1)
         if src is None: return "file not found " + file, None
         if not self._checkShape(src.shape):
             return "invalid size.", None
