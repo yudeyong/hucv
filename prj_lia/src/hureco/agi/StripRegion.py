@@ -3,7 +3,7 @@ from numpy import pi as np_pi, sum as np_sum, sort as np_sort, \
     average as np_average, array as np_array, delete as np_delete, bincount as np_bincount, \
     argmax as np_argmax, arange as np_arange
 
-from hureco import SlidingWindow as sw, utils, result
+import SlidingWindow as sw, utils, result
 
 _DEBUG_SR = False
 _DEBUG_LINE = not False
@@ -230,8 +230,8 @@ class StripRegion:
             # print("L01",line[0],line[1],"x0,1=",x0,x1, end='')
             slope = self.slope
             deltaY = (x0 - self.refX) * slope * 2
-            y0 = round(baseY0 + deltaY)
-            y1 = round(baseY1 + deltaY)
+            y0 = int(round(baseY0 + deltaY))
+            y1 = int(round(baseY1 + deltaY))
             value = StripRegion._calculateValue(gray[y0:y1, int(x0):int(x1)])
             sx = -3
             if value < StripRegion.SAMPLY_THRESHOLD:

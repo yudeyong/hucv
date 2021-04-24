@@ -1,6 +1,6 @@
 from json import load
 
-from hureco.agi import StripTemplate
+from agi import StripTemplate
 
 
 class Dict(dict):

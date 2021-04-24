@@ -264,7 +264,6 @@ def showDebug(name, img):
     imshow(name, a)
     waitKey()
 
-
 def derivative(img, rect, stripHeight):
     '''
     针对区域'求导', 确定采样线边界
@@ -308,7 +307,6 @@ def derivative(img, rect, stripHeight):
         fLine += deltaH
 
     return listP
-
 
 def maxWind(array, size, threshold, faultTolerant):
     '''

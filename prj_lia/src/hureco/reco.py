@@ -1,10 +1,13 @@
-from hureco import config
+import utils
+import config
 
 
 #############
 def _loadTemplate(category):
     return config.getDictFromFile(category)
 
+def shink(img, w, h):
+    utils.shrink(img, w, h)
 
 def recognization(file, dict):
     '''
@@ -45,7 +48,7 @@ def recognization(file, dict):
 
 def main():
     # todo 68bch
-    i = 7
+    i = 15
     count = 1
     if i + count > 18: count = 18 - i
     if i > 10: i += 7
@@ -58,8 +61,8 @@ def main():
         config = "AGL9" if i <= 0x30 else ("AGL8" if i > 0x46 else "AGL6")
         print("File *********", chr(i), config)
 
-        msg, results = recognization(('./samples/AGL') + chr(i) + '.jpg',
-                                     _loadTemplate("./config/strip" + config + ".json"))
+        msg, results = recognization(('../../samples/AGL') + chr(i) + '.jpg',
+                                     _loadTemplate("../../config/strip" + config + ".json"))
         if msg:
             print(msg)
         else:
