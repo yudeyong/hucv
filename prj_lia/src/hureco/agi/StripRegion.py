@@ -3,7 +3,7 @@ from numpy import pi as np_pi, sum as np_sum, sort as np_sort, \
     average as np_average, array as np_array, delete as np_delete, bincount as np_bincount, \
     argmax as np_argmax, arange as np_arange
 
-import SlidingWindow as sw, utils, result
+from hureco import SlidingWindow as sw, utils, result
 
 _DEBUG_SR = False
 _DEBUG_LINE = not False

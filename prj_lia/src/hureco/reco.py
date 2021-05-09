@@ -1,6 +1,5 @@
-import utils
-import config
-
+from hureco import config
+from hureco import utils
 
 #############
 def _loadTemplate(category):
