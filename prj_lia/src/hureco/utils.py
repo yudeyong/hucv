@@ -362,7 +362,7 @@ def maxWind(array, size, threshold, faultTolerant):
                     for k in range(0, fIndex):
                         cursor[k] = cursor[k + delta]
                 j = 0
-    return -1, 0
+    return (length if length >= size else -1), length
 
 
 def getFitLine(points):
