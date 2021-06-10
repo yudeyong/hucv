@@ -224,6 +224,9 @@ class StripTemplate:
         bw = bw[y:y + int(self.config.STRIP_INTERVAL * 2 / PRE_Y_TIMES),
              x:x + int(self.config.STRIPS_AREA[2] / PRE_Y_TIMES)]
         lines = HoughLinesP(bw, 1, np_pi / 180, 58, minLineLength=73, maxLineGap=20)
+        if lines is None:
+            print('Failed to locate top point.')
+            return False
         # imshow('bw1',bw)
         # waitKey()
         h = StripTemplate._findTopLine(self.img, lines)

@@ -44,8 +44,20 @@ def recognization(file, dict):
 
     return None, results
 
+def debugreco(jpgfile, config):
+    msg, results = recognization(jpgfile,
+                                 config)
+    if msg:
+        print(msg)
+    else:
+        for r in results.resultList:
+            print(r.index, r.results, r.values)
+            pass
+
 
 def main():
+    debugreco('../../samples/IMG_20210607_0005.jpg',_loadTemplate("../../config/stripAGL6.json"))
+    return
     # todo 68bch
     i = 15
     count = 1
@@ -60,14 +72,8 @@ def main():
         config = "AGL9" if i <= 0x30 else ("AGL8" if i > 0x46 else "AGL6")
         print("File *********", chr(i), config)
 
-        msg, results = recognization(('../../samples/AGL') + chr(i) + '.jpg',
+        debugreco(('../../samples/AGL') + chr(i) + '.jpg',
                                      _loadTemplate("../../config/strip" + config + ".json"))
-        if msg:
-            print(msg)
-        else:
-            for r in results.resultList:
-                print(r.index, r.results, r.values)
-                pass
         i += 1
     # waitKey(0)
 

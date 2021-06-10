@@ -1,4 +1,4 @@
-from cv2 import HoughLinesP, threshold as cvthreshold, THRESH_BINARY
+from cv2 import HoughLinesP, threshold as cvthreshold, THRESH_BINARY, imshow, waitKey
 from numpy import pi as np_pi, sum as np_sum, sort as np_sort, \
     average as np_average, array as np_array, delete as np_delete, bincount as np_bincount, \
     argmax as np_argmax, arange as np_arange
@@ -123,9 +123,12 @@ class StripRegion:
         :param y:
         :return: 边缘斜率, 边缘截距(截距没用)
         '''
+        if y<10 :
+            y=10;
         src = src[y - 10:y + 13, x:x + 230]
         _, bw = cvthreshold(src, 220, 255.0, THRESH_BINARY)
         # imshow('bw',bw)
+        # waitKey
 
         bw = utils.toCanny(bw, 3)
         lines = HoughLinesP(bw, 1, np_pi / 270, 100, minLineLength=160, maxLineGap=40)
