@@ -254,13 +254,13 @@ class StripTemplate:
         x = int(self.config.BOARD_AREA[0] + PRE_X_TIMES * self.origin[0])
         y = int(self.config.BOARD_AREA[1] + PRE_Y_TIMES * self.origin[1])
         src = self.src[y:y + self.config.STRIPS_AREA[3], x:x + self.config.STRIPS_AREA[2]]
-        if _DEBUG_DRAW_LOCATION:
+        if _DEBUG_DRAW_LOCATION: # 显示每格标记
             i = 2 + self.config.TOTAL * self.config.STRIP_INTERVAL
             while (i >= 0):
                 utils.drawDot(src, (8, round(i)), 5)
                 i -= self.config.STRIP_INTERVAL
-            # imshow('canny', src)
-            # waitKey()
+            imshow('canny', src)
+            waitKey()
             self.gray = utils.toGray(src, 'r')
         # 更新膜条区域
         self.src = src

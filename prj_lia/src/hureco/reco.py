@@ -56,7 +56,7 @@ def debugreco(jpgfile, config):
 
 
 def main():
-    debugreco('../../samples/IMG_20210607_0005.jpg',_loadTemplate("../../config/stripAGL6.json"))
+    debugreco('../../samples/IMG_20210607_0005.jpg',_loadTemplate("../../config/stripAGL3.json"))
     return
     # todo 68bch
     i = 15

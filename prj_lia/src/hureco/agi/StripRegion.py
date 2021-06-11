@@ -136,7 +136,7 @@ class StripRegion:
         # imshow('canny', bw)
         # waitKey()
         if lines is None:
-            print(lines)
+            print('line is none')
             return None, None
         x0 = x1 = y0 = y1 = 0
         for l in lines:
