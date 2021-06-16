@@ -11,7 +11,7 @@ _DEBUG_LINE = not False
 _DEBUG_STRIP = not False and _DEBUG_SR
 _DEBUG_DRAW_ALL = False and _DEBUG_SR
 
-_FC_THRESHOLD = 200
+_FC_THRESHOLD = 211
 
 _STAND = 40
 
@@ -51,8 +51,9 @@ class StripRegion:
     @staticmethod
     def checkFunctionLineX(src, y, testArea, STRIP_WIDTH, threshold=_FC_THRESHOLD):
         y = int(y)
-        width = STRIP_WIDTH - (STRIP_WIDTH >> 2)
-        # utils.drawRectBy2P(src, (testArea[0], y+testArea[1], testArea[2], y+testArea[3]))
+        width = STRIP_WIDTH - ((STRIP_WIDTH+6) >> 2)
+        #src1 = src
+        #utils.drawRectBy2P(src, (testArea[0], y+testArea[1]), (testArea[2], y+testArea[3]))
         src = src[y + testArea[1]:y + testArea[3], testArea[0]:testArea[2]]
 
         minValue = width * src.shape[0] * 255
@@ -69,7 +70,7 @@ class StripRegion:
             if i >= i1: break;
             win.append(src[:, i])
             i += 1
-
+        #utils.drawRectBy2P(src1, (x + testArea[0] - width - 1, y + testArea[1]+3), (x+ testArea[0] , y + testArea[3]-3))
         if minValue / (width * src.shape[0]) < threshold:
             return x + testArea[0] - width - 1
         else:
