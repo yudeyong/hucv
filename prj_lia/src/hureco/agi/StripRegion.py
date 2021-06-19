@@ -71,6 +71,7 @@ class StripRegion:
             win.append(src[:, i])
             i += 1
         #utils.drawRectBy2P(src1, (x + testArea[0] - width - 1, y + testArea[1]+3), (x+ testArea[0] , y + testArea[3]-3))
+        # print(round(minValue / (width * src.shape[0]),1) ," <? ",threshold)
         if minValue / (width * src.shape[0]) < threshold:
             return x + testArea[0] - width - 1
         else:
@@ -137,7 +138,7 @@ class StripRegion:
         # imshow('canny', bw)
         # waitKey()
         if lines is None:
-            print('line is none')
+            #print('line is none')
             return None, None
         x0 = x1 = y0 = y1 = 0
         for l in lines:

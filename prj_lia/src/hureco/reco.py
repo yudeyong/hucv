@@ -13,7 +13,8 @@ def recognization(file, dict):
     识别一张图片
     :param file: 图片文件名
     :param dict: 配置字典
-    :return:  str: 错误信息
+    :return:  str: 错误信息, result: result list
+    str == None Xor result == None
     '''
     # imshow('src', src)
     if dict is None:
@@ -56,7 +57,7 @@ def debugreco(jpgfile, config):
 
 
 def main():
-    debugreco('../../samples/IMG_20210607_0005.jpg',_loadTemplate("../../config/stripAGL3.json"))
+    debugreco('../../samples/unreco.jpg',_loadTemplate("../../config/stripAGL3.json"))
     return
     # todo 68bch
     i = 15
