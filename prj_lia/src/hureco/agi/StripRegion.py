@@ -21,11 +21,43 @@ class StripRegion:
     # samplys
     SAMPLY_THRESHOLD = 239
 
+    @staticmethod
+    def _locateIndex(listP, index):
+        """
+        @deprecated
+        定位 index
+        :param listP:
+        :param index:
+        :return:  -1 not found, >0 index
+        """
+        l = index-1
+        r = index+1
+        length = len(listP)
+        last = -2
+        while l>=0 and r<length :
+            if l >= length - r:
+                if len(listP[l][2])>0:
+                    if last == l + 1:
+                        return l
+                    last = l
+                l -= 1
+            else:
+                if len(listP[r][2])>0:
+                    if last + 1 == r:
+                        return last
+                    last = r
+                r += 1
+        return -1
+
     def __init__(self, listP, i, index, size, slope, fcX, y, lines, config):
         # 找中点
         index = index + (size >> 1)
         if size & 1 == 0:
             # 下标大的
+            if len(listP[index][2]) == 0:
+                # index = StripRegion._locateIndex(listP, index)
+                # if index<0:
+                    return
             self.midX = listP[index][2][0] if listP[index][1] >= listP[index + 1][1] else listP[index + 1][2][0]
             # 均值
             self.midY = (listP[index][1] + listP[index + 1][1]) >> 1

@@ -308,6 +308,7 @@ class StripTemplate:
                     # assert( fcX<self.config.FUNC_LINE[0] or fcX>self.config.FUNC_LINE[2])#找到func line
                     strips[i] = sr.StripRegion(listP, i, index, winSize, self.hkb[0], fcX, y, self.references,
                                                self.config)
+                    if not hasattr(strips[i], 'setSlope'): return (None, None)
                     strips[i].getHeaderMid(listP, index, winSize)
                     strips[i].getFunctionLineY(gray)
                     strips[i].recognise(gray)
@@ -340,7 +341,7 @@ class StripTemplate:
     def recognise(self):
         strips, img = self._checkHeaders()
 
-        if strips is None: return None
+        if strips is None: return None, None
         list = []
         for strip in strips:
             if not strip is None:
