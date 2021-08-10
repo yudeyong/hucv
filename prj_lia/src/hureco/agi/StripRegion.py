@@ -52,12 +52,12 @@ class StripRegion:
     def __init__(self, listP, i, index, size, slope, fcX, y, lines, config):
         # 找中点
         index = index + (size >> 1)
+        if len(listP[index][2]) == 0:
+            # index = StripRegion._locateIndex(listP, index)
+            # if index<0:
+            return
         if size & 1 == 0:
             # 下标大的
-            if len(listP[index][2]) == 0:
-                # index = StripRegion._locateIndex(listP, index)
-                # if index<0:
-                    return
             self.midX = listP[index][2][0] if listP[index][1] >= listP[index + 1][1] else listP[index + 1][2][0]
             # 均值
             self.midY = (listP[index][1] + listP[index + 1][1]) >> 1

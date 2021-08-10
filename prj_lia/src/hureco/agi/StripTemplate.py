@@ -308,16 +308,19 @@ class StripTemplate:
                     # assert( fcX<self.config.FUNC_LINE[0] or fcX>self.config.FUNC_LINE[2])#找到func line
                     strips[i] = sr.StripRegion(listP, i, index, winSize, self.hkb[0], fcX, y, self.references,
                                                self.config)
-                    if not hasattr(strips[i], 'setSlope'): return (None, None)
-                    strips[i].getHeaderMid(listP, index, winSize)
-                    strips[i].getFunctionLineY(gray)
-                    strips[i].recognise(gray)
-                    # break
-                    if False:
-                        ty = strips[i].midY
-                        tx = strips[i].midX[0]
-                        cvline(gray, (tx, ty), (gray.shape[0], int((gray.shape[0] - tx) * self.hkb[0]) + ty), 128, 1)
-                    # print("true ", end='')
+                    if hasattr(strips[i], 'setSlope'):
+                        strips[i].getHeaderMid(listP, index, winSize)
+                        strips[i].getFunctionLineY(gray)
+                        strips[i].recognise(gray)
+                        # break
+                        if False:
+                            ty = strips[i].midY
+                            tx = strips[i].midX[0]
+                            cvline(gray, (tx, ty), (gray.shape[0], int((gray.shape[0] - tx) * self.hkb[0]) + ty), 128, 1)
+                        # print("true ", end='')
+                    # else:
+                    #     return (None, None)
+
                 # for line in listP:
                 #     print(",", line[0], end='')
                 # print('.')
@@ -344,7 +347,7 @@ class StripTemplate:
         if strips is None: return None, None
         list = []
         for strip in strips:
-            if not strip is None:
+            if not strip is None and hasattr(strip, 'result'):
                 list.append(strip.result)
         # for strip in strips:
         #     if not strip is None:

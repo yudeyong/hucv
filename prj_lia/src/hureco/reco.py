@@ -36,7 +36,7 @@ def recognization(file, dict):
     # imshow('src', src)
     # imshow('result', gray)
     # waitKey()
-    if len(list) == 0:
+    if list is None or len(list) == 0:
         return "Zero result.", None
     results = config.Dict()
     setattr(results, 'resultList', list)
@@ -57,7 +57,7 @@ def debugreco(jpgfile, config):
 
 
 def main():
-    debugreco('../../samples/unreco.jpg',_loadTemplate("../../config/stripAGL3.json"))
+    debugreco('../../samples/unreco.jpg',_loadTemplate("../../config/stripAGL6.json"))
     return
     # todo 68bch
     i = 15
