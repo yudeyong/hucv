@@ -290,7 +290,8 @@ class StripTemplate:
         strips = [None] * self.config.TOTAL
         flag = False
 
-        y = 0  # +self.config.STRIP_INTERVAL*9
+        y = 0  # +self.config.STRIP_INTERVAL*8
+        #bottom = y+self.config.STRIP_INTERVAL
         while (y < bottom):
             # 便利查找header
             listP = utils.derivative(gray, (5, round(y + 3), HEADER_WIDTH, round(self.config.STRIP_INTERVAL + y - 3)),
@@ -299,7 +300,7 @@ class StripTemplate:
                 for line in listP:
                     for p in line[2]:
                         utils.drawDot(gray, (p[0],line[1]), 3)
-            index, winSize = utils.maxWind(listP, 5, 10, 1)
+            index, winSize = utils.maxWind(listP, 6, 10, 1)
             if index >= 0:
                 flag = True
 

@@ -102,7 +102,10 @@ class StripRegion:
             if i >= i1: break;
             win.append(src[:, i])
             i += 1
-        #utils.drawRectBy2P(src1, (x + testArea[0] - width - 1, y + testArea[1]+3), (x+ testArea[0] , y + testArea[3]-3))
+        if _DEBUG_STRIP:
+            # utils.drawRectBy2P(src, (x + testArea[0] - width - 1, y + testArea[1]+3), (x+ testArea[0] , y + testArea[3]-3))
+            # waitKey()
+            pass
         # print(round(minValue / (width * src.shape[0]),1) ," <? ",threshold)
         if minValue / (width * src.shape[0]) < threshold:
             return x + testArea[0] - width - 1
@@ -124,6 +127,12 @@ class StripRegion:
 
         # data[:,:] = 0
         right = self.fcX + self.config.STRIP_WIDTH - 3
+        # draw 监测区域
+        if _DEBUG_STRIP:
+            # utils.drawRectBy2P(src,(self.fcX + 2, marginTop), (right+1, marginBottom))
+            # imshow("fc", src)
+            # waitKey()
+            pass
         y0, y1 = StripRegion._getSampleY(src, (self.fcX + 3, marginTop, right, marginBottom), HEIGHT)
         if True:
             self.fcY1 = y1
@@ -138,14 +147,16 @@ class StripRegion:
         self.points[1] = (self.fcX, (y1 + y0) / 2)
         # 膜条的斜率
         self.slope, b = utils.getFitLine(self.points)
-        # utils.drawFullLine(src, 0, self.slope, b, -16)
 
-        self.sideSlope, b = StripRegion._findSlope(src, right, self.fcY0)
+        self.sideSlope, _ = StripRegion._findSlope(src, right, self.fcY0)
         if not self.sideSlope is None:
             # utils.drawFullLine(src, 0, self.sideSlope, self.fcY0 + b, -16)
             # print("set slope",self.sideSlope,self.setSlope)
             self.slope = (self.sideSlope + self.setSlope * 3) / 4
-            pass
+        if _DEBUG_STRIP:
+            # 画趋势线
+            utils.drawFullLine(src, 0, self.slope, b, -16)
+            waitKey()
         return
 
     @staticmethod
@@ -202,12 +213,13 @@ class StripRegion:
         oldValue = [0] * HEIGHT
         minValue = maxValue = 0
         minY = maxY = i = HEIGHT - 1
-        maxBorder = ((i1 + i) >> 1)
-        minBorder = maxBorder
+        maxBorder = ((i1 + i) >> 1)+3
+        minBorder = maxBorder+3*2
         maxBorder += 3
         oldValue[0] = win.total
         recordCursor = 0
         while recordCursor < HEIGHT:
+            #init win
             oldValue[recordCursor] = win.total
             recordCursor += 1
             i += 1
@@ -305,13 +317,18 @@ class StripRegion:
                     x0 = sx
                     x0 += StripRegion._narrowImg(gray[t:b, int(x0):int(x1)], STRIP_WIDTH - 4)
                     x1 = x0 + STRIP_WIDTH - 4
-                # utils.drawRectBy2P(gray, (round(x0), int(t)), (round(x1), int(b)))
-                # utils.drawDot(gray, (int((x0 + x1) / 2), int((y0 + y1 ) / 2)),  0)
+                if _DEBUG_STRIP:
+                    # utils.drawRectBy2P(gray, (round(x0), int(t)), (round(x1), int(b)))
+                    # utils.drawDot(gray, (int((x0 + x1) / 2), int((y0 + y1 ) / 2)),  0)
+                    # imshow("stripRegion", gray)
+                    # waitKey(10)
+                    pass
             # else:
 
             value = StripRegion._calculateValue(gray[t + 1:b - 1, int(x0 + 1):int(x1 - 1)])
             self.result.appendValue(value, _STAND)
-            utils.drawRectBy2P(gray, (round(x0), int(t)), (round(x1), int(b)))
+            if _DEBUG_STRIP:
+                utils.drawRectBy2P(gray, (round(x0), int(t)), (round(x1), int(b)))
             # utils.drawDot(gray, (int((x0 + x1) / 2), int((y0 + y1) / 2)), sx + 6)
             # print(",sx=",sx,x0,x1)
             i += 1

@@ -282,12 +282,12 @@ def derivative(img, rect, stripHeight):
     # cv2.waitKey()
 
     height = rect[3] - rect[1]
-    deltaH = (height >> 4)
+    deltaH = ((height-12) >> 4)
     if deltaH <= 0: deltaH = 1
     fY2 = rect[1] + height
     if fY2 > img.shape[0]: fY2 = img.shape[0]
     fLine = rect[1] + deltaH
-    DIFF = 80
+    DIFF = 72
     listP = []
     while fLine < fY2:
         x = rect[0]
