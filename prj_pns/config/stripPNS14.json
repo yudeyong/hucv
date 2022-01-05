@@ -1,0 +1,134 @@
+{
+  "name": "PNS14",
+  "lines": [
+    [
+      "header",
+      9
+    ],
+    [
+      "blank",
+      3
+    ],
+    [
+      "Functional Control",
+      2
+    ],
+    [
+      "blank",
+      10
+    ],
+    [
+      "GM1",
+      2
+    ],
+    [
+      "blank",
+      2
+    ],
+    [
+      "GM2",
+      2
+    ],
+    [
+      "blank",
+      2
+    ],
+    [
+      "GM3",
+      2
+    ],
+    [
+      "blank",
+      2
+    ],
+    [
+      "GM4",
+      2
+    ],
+    [
+      "blank",
+      2
+    ],
+    [
+      "GD1a",
+      2
+    ],
+    [
+      "blank",
+      2
+    ],
+    [
+      "GD1b",
+      2
+    ],
+    [
+      "blank",
+      2
+    ],
+    [
+      "GD2",
+      2
+    ],
+    [
+      "blank",
+      2
+    ],
+    [
+      "GD3",
+      2
+    ],
+    [
+      "blank",
+      2
+    ],
+    [
+      "GT1a",
+      2
+    ],
+    [
+      "blank",
+      2
+    ],
+    [
+      "GT1b",
+      2
+    ],
+    [
+      "blank",
+      2
+    ],
+    [
+      "GQ1b",
+      2
+    ]
+  ],
+  "RGB_GRAY": "r",
+  "THRESHOLD": 220,
+  "VALID_XY": [
+    2406,
+    2560,
+    3444,
+    3594
+  ],
+  "BOARD_AREA": [
+    190,
+    460,
+    400,
+    1840
+  ],
+  "STRIP_INTERVAL": 58.88,
+  "STRIP_AREA_WIDTH": 24,
+  "STRIP_WIDTH": 14,
+  "STRIP_HEIGHT": 22,
+  "STRIP_DECTCT_BUF": 28,
+  "STRIPS_AREA": [
+    126,
+    206,
+    620,
+    1200
+  ],
+  "TOTAL": 20,
+  "FUNC_LINE": [
+    270,
+    290  ]
+}
