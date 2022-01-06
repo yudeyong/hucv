@@ -26,43 +26,6 @@ def toGray(img, rgb_gray):
     # gray = r
     return gray
 
-def _mergeLines(lines):
-    if lines.shape[0]==1: return
-    result = np.zeros(4)
-    for line in lines:
-        result += line
-    l = lines.shape[0]
-    i = 4
-    while i>0:
-        i -= 1
-        result[i] = round(result[i]/l)
-    return result
-
-def mergeClosedLines(lines, distance=8):
-    l = lines[np.lexsort(lines[:,::-1].T)]
-    i = len(l) - 1
-    last = l[i]
-    lineGroup = [i]
-    removeLines = []
-    while i>0:
-        i -= 1
-        line = l[i]
-        flag = (i==0)
-        if last[0]-line[0]+last[2]-line[2]<=distance:
-            lineGroup.append(i)
-        else:
-            flag = True
-        if flag:
-            last = _mergeLines(l[lineGroup]) #临时用下last
-            if not last is None:
-                l[lineGroup[0]] = last
-                removeLines.extend(lineGroup[1:])
-
-            lineGroup = [i]
-        last = line
-    l = np.delete(l, removeLines, 0)
-    return l
-
 # param gaussian canny, 0 canny only, 3, 5
 def toCanny(bw, gaussian):
     if gaussian == 0:

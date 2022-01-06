@@ -227,6 +227,50 @@ class StripTemplate:
                 removeLines.append(i)
         return numpy.delete(lines,removeLines,0)
 
+    @staticmethod
+    def _mergeLines(lines):
+        if lines.shape[0] == 1: return
+        result = numpy.zeros(4)
+        min = 0x7fff
+        max = 0
+        for line in lines:
+            result[0] += line[0]
+            result[2] += line[2]
+            if min>line[3]:min = line[3]
+            if max<line[1]:max = line[1]
+        l = lines.shape[0]
+        result[0] = round(result[0] / l)
+        result[2] = round(result[2] / l)
+        result[3] = min
+        result[1] = max
+        return result
+
+    @staticmethod
+    def _mergeClosedLines(lines, distance=8):
+        l = lines[numpy.lexsort(lines[:, ::-1].T)]
+        i = len(l) - 1
+        last = l[i]
+        lineGroup = [i]
+        removeLines = []
+        while i > 0:
+            i -= 1
+            line = l[i]
+            flag = (i == 0)
+            if last[0] - line[0] + last[2] - line[2] <= distance:
+                lineGroup.append(i)
+            else:
+                flag = True
+            if flag:
+                last = StripTemplate._mergeLines(l[lineGroup])  # 临时用下last
+                if not last is None:
+                    l[lineGroup[0]] = last
+                    removeLines.extend(lineGroup[1:])
+
+                lineGroup = [i]
+            last = line
+        l = numpy.delete(l, removeLines, 0)
+        return l
+
     # 寻找最左顶点
     def _locateOrigin(self, img):
         src = self.img
@@ -247,7 +291,7 @@ class StripTemplate:
             lines = HoughLinesP(bw, rho, np_pi / 180, threshold, minLineLength=minL, maxLineGap=maxGap)
             lines = lines.reshape((lines.shape[0], lines.shape[2]))
             lines = StripTemplate._removeDecline(lines)
-            lines = utils.mergeClosedLines(lines)
+            lines = StripTemplate._mergeClosedLines(lines)
             if _DEBUG_DRAW_LOCATION and lines is not None:
                 debugBuf = img.copy()
                 utils.drawLines(debugBuf, lines)
