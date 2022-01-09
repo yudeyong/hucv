@@ -26,8 +26,9 @@ def recognization(file, dict):
     # imshow('origin', src)
     # waitKey()
     if err: return err, None
-    if template.locateArea(src) is None:
-        return "Recognize Failed" + file, None
+    err, src = template.locateArea(src)
+    if not err is None:
+        return "Recognize Failed " + err + file, None
     ###cut borad from image
     list, img = template.recognise()
 
@@ -63,7 +64,7 @@ def main():
     # return
     lotLenth = (4 + 0x30, 5 + 0x30, 3 + 0x30)
     lots = ('14/14-2105', '14/14-2102', '11/11-t')
-    lot = 1
+    lot = 0
     i = 1
     count = 12
     end = i = i + 0x30

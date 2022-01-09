@@ -243,14 +243,14 @@ def mergeRect(p1, p2):
             [(p1[3][0] + p2[3][0]) >> 1, (p1[3][1] + p2[3][1]) >> 1]]
 
 
-def getCross(hkb, vkb):
-    if vkb[0] == float("inf"):
-        if abs(hkb[0]) <= 0.1:
-            return (round(vkb[1]), round(hkb[1]))
-    elif abs(vkb[0] * hkb[0] + 1) < 0.3:
-        x = (hkb[1] - vkb[1]) / (vkb[0] - hkb[0])
-        return (round(x), round(vkb[0] * x + vkb[1]))
-    return None
+# def getCross(hkb, vkb):
+#     if vkb[0] == float("inf"):
+#         if abs(hkb[0]) <= 0.1:
+#             return (round(vkb[1]), round(hkb[1]))
+#     elif abs(vkb[0] * hkb[0] + 1) < 0.3:
+#         x = (hkb[1] - vkb[1]) / (vkb[0] - hkb[0])
+#         return (round(x), round(vkb[0] * x + vkb[1]))
+#     return None
 
 
 def drawDot(src, p, i=3):

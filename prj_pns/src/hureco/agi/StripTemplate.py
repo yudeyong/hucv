@@ -68,6 +68,7 @@ class StripTemplate:
         if not self._checkShape(src.shape):
             return "invalid size.", None
         self.src = src = numpy.flip(src)
+        # 识别区域
         src = src[src.shape[0] - self.config.BOARD_AREA[1] - self.config.BOARD_AREA[3]:src.shape[0] -
                                                                                        self.config.BOARD_AREA[1],
               self.config.BOARD_AREA[0]:self.config.BOARD_AREA[0] + self.config.BOARD_AREA[2]]
@@ -180,56 +181,39 @@ class StripTemplate:
         # print("len:",len(lines))
         return (hSlope, hMinBias)
 
-    # 映射到膜条区域左顶点
-    def _mapOrigin(self):
-        X_OFFSET = self.config.STRIPS_AREA[0]
-        Y_OFFSET = self.config.STRIPS_AREA[1]
-        x = self.origin[0]
-        y = self.origin[1]
-        if self.vkb[0] != float("inf"):
-            tg = (self.vkb[0])
-            sin = math.sqrt(abs(tg / (1 + tg)))
-            tg = abs(self.hkb[0])
-            cos = math.sqrt(1 / abs(1 + tg))
-            deltaX = X_OFFSET * cos
-            deltaY = Y_OFFSET * sin
-        else:
-            deltaX = X_OFFSET
-            deltaY = Y_OFFSET
-        self.origin = [x + deltaX, y + deltaY]
+    LEFT_BOARD = 16  # 左侧线边界, 小于边界的忽略
 
-    LEFT_BOARD = 10  # 左侧线边界, 小于边界的忽略
     @staticmethod
     def _findLeftestLine(lines):
-        #找最左线
+        # 找最左线
         min = 0x7ffff
         i = len(lines)
         left = 0
-        while i>0:
+        while i > 0:
             i -= 1
             line = lines[i]
-            #<10 太左边了, 忽略
-            if line[0]<StripTemplate.LEFT_BOARD and abs(line[0]-line[2])<10 and line[0]+line[2]<min:
-                min = line[0]+line[2]
+            # <10 太左边了, 忽略
+            if line[0] < StripTemplate.LEFT_BOARD and abs(line[0] - line[2]) < 10 and line[0] + line[2] < min:
+                min = line[0] + line[2]
                 left = i
         return left
 
     @staticmethod
-    def _removeDecline( lines):
-        #去掉斜率与最左侧线不一致的线,
-        #去掉太左边的线
+    def _removeDecline(lines):
+        # 去掉斜率与最左侧线不一致的线,
+        # 去掉太左边的线
         left = StripTemplate._findLeftestLine(lines)
         line = lines[left]
-        krLeft = (line[0]-line[2])/(line[1]-line[3]) #k的倒数
+        krLeft = (line[0] - line[2]) / (line[1] - line[3])  # k的倒数
         i = len(lines)
         removeLines = []
-        while i>0:
+        while i > 0:
             i -= 1
             line = lines[i]
-            kr = (line[0]-line[2])/(line[1]-line[3])
-            if (abs((kr-krLeft)/(1+kr*krLeft))>1/56) or line[0]<StripTemplate.LEFT_BOARD:
+            kr = (line[0] - line[2]) / (line[1] - line[3])
+            if (abs((kr - krLeft) / (1 + kr * krLeft)) > 1 / 56) or line[0] < StripTemplate.LEFT_BOARD:
                 removeLines.append(i)
-        return numpy.delete(lines,removeLines,0)
+        return numpy.delete(lines, removeLines, 0)
 
     @staticmethod
     def _mergeLines(lines):
@@ -240,8 +224,8 @@ class StripTemplate:
         for line in lines:
             result[0] += line[0]
             result[2] += line[2]
-            if min>line[3]:min = line[3]
-            if max<line[1]:max = line[1]
+            if min > line[3]: min = line[3]
+            if max < line[1]: max = line[1]
         l = lines.shape[0]
         result[0] = round(result[0] / l)
         result[2] = round(result[2] / l)
@@ -275,14 +259,20 @@ class StripTemplate:
         l = numpy.delete(l, removeLines, 0)
         return l
 
+    # 返回fc line
+    def _findLikelyLine(self, lines):
+        line = lines[0]
+        line[0] += self.config.FUNC_LINE[0]
+        line[2] += self.config.FUNC_LINE[0]
+        line[1] -= 1
+        line[3] -= 1
+        slope, bias = utils.getSlopeBias(line)
+        self.vSlope = slope
+        slope = -1 / slope  # 垂线斜率
+        self.hSlope = slope
+        line[0] += slope * self.config.FUNC_LINE[0]
+        return line
 
-    def _FindLikelyLine(self,lines):
-        if len(lines)<=1 : lines = lines.repeat(2,axis=0)
-        else: lines[1] = lines[0]
-        lines[1][0]+=self.config.FUNC_LINE[0]
-        lines[1][2]+=self.config.FUNC_LINE[0]
-
-        return lines[:2]
     # 寻找最左顶点
     def _locateOrigin(self, img):
         src = self.img
@@ -293,66 +283,57 @@ class StripTemplate:
             debugBuf = img.copy()
         if CANNY_GAUSS > 0:
             bw = utils.toCanny(bw, CANNY_GAUSS)
-        imshow('bw', bw)
-        # waitKey()
+        if _DEBUG_DRAW_LOCATION and not False:
+            imshow('bw', bw)
+            # waitKey()
         rho = 1
         threshold = 155
         minL = 600
         maxGap = 36
         # while True:
         lines = HoughLinesP(bw, rho, np_pi / 360, threshold, minLineLength=minL, maxLineGap=maxGap)
-            # if rho == 1: break # for debug
-        if lines is None:
-            return False
+        if lines is None: return "miss lines. "
         lines = lines.reshape((lines.shape[0], lines.shape[2]))
         lines = StripTemplate._removeDecline(lines)
         lines = StripTemplate._mergeClosedLines(lines)
-        lines = self._FindLikelyLine(lines)
-        if _DEBUG_DRAW_LOCATION:
-            utils.drawLines(debugBuf, lines)
+        lines = self._findLikelyLine(lines)  # lines [dims=1]
+        if _DEBUG_DRAW_LOCATION and not False:
+            utils.drawLines(debugBuf, (lines,))
             imshow('lines', debugBuf)
-            waitKey()
-            # return False
-        h, v = StripTemplate._filterLines(self.img, lines)
-        return False
-        if v[0] != 0:
-            self.hkb = h
-            self.vkb = v
-        else:
-            return False
-        self.origin = utils.getCross(self.hkb, self.vkb)
-        if self.origin is None:
-            return False
-        if _DEBUG_DRAW_LOCATION: utils.drawDot(src, self.origin, 3)
-        self._mapOrigin()
-        x = int(self.origin[0])
-        y = int(self.origin[1] - self.config.STRIP_DECTCT_BUF / PRE_Y_TIMES)
-        bw = bw[y:y + int(self.config.STRIP_INTERVAL * 2 / PRE_Y_TIMES),
-             x:x + int(self.config.STRIPS_AREA[2] / PRE_Y_TIMES)]
-        lines = HoughLinesP(bw, 1, np_pi / 180, 58, minLineLength=173, maxLineGap=10)
-        imshow('bw1', bw)
-        waitKey()
-        h = StripTemplate._findTopLine(self.img, lines)
-        self.origin[1] = y + round(h[0] * self.origin[0] + h[1])
-        if _DEBUG_DRAW_LOCATION:
-            utils.drawDot(src, self.origin, 5)
-            # origin = self.origin
-            # i = 20 * self.config.STRIP_INTERVAL
-            # while (i>=0):
-            #     utils.drawDot(src, (origin[0],origin[1]+round(i)), 5)
-            #     i -= self.config.STRIP_INTERVAL
-
-        if _DEBUG_DRAW_LOCATION:
-            # imshow('canny', src)
             # waitKey()
-            pass
-        return True
+            # return False
+        # if lines[0][1] < self.config.ORIGIN_Y[0] or lines[0][1] > self.config.ORIGIN_Y[1]:
+        print(lines[1])
+        if lines[1] < self.config.ORIGIN_Y[0] or lines[1] > self.config.ORIGIN_Y[1]:
+            waitKey()
+            return "miss point. "
+        # h, v = StripTemplate._filterLines(self.img, lines)
+        # if v[0] != 0:
+        #     self.hkb = h
+        #     self.vkb = v
+        # else:
+        self.origin = (lines[0], lines[1])  # utils.getCross(self.hkb, self.vkb)
+        i = self.config.TOTAL
+        x1 = lines[0] + 200
+        x0 = lines[0] - 60
+        y0 = 0.0+lines[1]
+        y1 = 0.0 + lines[1] + 260* self.hSlope
+        while i > 0:
+            i -= 1
+            utils.drawLines(debugBuf, ((x0, round(y0),x1,round( y1)),))
+            y0 -= self.config.STRIP_INTERVAL
+            y1 -= self.config.STRIP_INTERVAL
+        utils.drawLines(debugBuf, ((x0, round(y0), x1, round(y1)),))
+        imshow('lines', debugBuf)
+        waitKey()
+
+        return 'None'
 
     # 定位膜条区域
     def locateArea(self, src):
         self.img = utils.toGray(src, self.config.RGB_GRAY)
-        if not self._locateOrigin(src):
-            return
+        r = self._locateOrigin(src)
+        if not r is None: return r, None
 
         x = int(self.config.BOARD_AREA[0] + PRE_X_TIMES * self.origin[0])
         y = int(self.config.BOARD_AREA[1] + PRE_Y_TIMES * self.origin[1])
@@ -367,7 +348,7 @@ class StripTemplate:
             self.gray = utils.toGray(src, 'r')
         # 更新膜条区域
         self.src = src
-        return src
+        return None, src
 
     def _checkHeaders(self):
         HEADER_WIDTH = 160
