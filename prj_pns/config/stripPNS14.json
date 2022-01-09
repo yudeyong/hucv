@@ -116,18 +116,13 @@
     400,
     1680
   ],
-  "STRIP_INTERVAL": 35.46,
+  "STRIP_INTERVAL": 35.44,
   "STRIP_AREA_WIDTH": 20,
   "STRIP_WIDTH": 14,
   "STRIP_HEIGHT": 18,
   "STRIP_DECTCT_BUF": 22,
-  "STRIPS_AREA": [
-    126,
-    206,
-    620,
-    1200
-  ],
   "TOTAL": 24,
+  "STRIPS_WIDTH": 620,
   "ORIGIN_Y": [755,799],
   "FUNC_LINE": [
     64 ]
