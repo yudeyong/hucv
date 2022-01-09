@@ -13,7 +13,7 @@ _DEBUG_DRAW_LOCATION = not False and _DEBUG
 # RGB_GRAY = 0x10000
 _DEBUG_HEADER = not False and _DEBUG
 # None 不使用canny, 0, 5效果比较好
-CANNY_GAUSS = 3
+CANNY_GAUSS = 7
 
 ZOOMOUT_FIRST = True
 
@@ -198,6 +198,7 @@ class StripTemplate:
             deltaY = Y_OFFSET
         self.origin = [x + deltaX, y + deltaY]
 
+    LEFT_BOARD = 10  # 左侧线边界, 小于边界的忽略
     @staticmethod
     def _findLeftestLine(lines):
         #找最左线
@@ -207,13 +208,16 @@ class StripTemplate:
         while i>0:
             i -= 1
             line = lines[i]
-            if abs(line[0]-line[2])<10 and line[0]+line[2]<min:
+            #<10 太左边了, 忽略
+            if line[0]<StripTemplate.LEFT_BOARD and abs(line[0]-line[2])<10 and line[0]+line[2]<min:
                 min = line[0]+line[2]
                 left = i
         return left
 
     @staticmethod
     def _removeDecline( lines):
+        #去掉斜率与最左侧线不一致的线,
+        #去掉太左边的线
         left = StripTemplate._findLeftestLine(lines)
         line = lines[left]
         krLeft = (line[0]-line[2])/(line[1]-line[3]) #k的倒数
@@ -223,7 +227,7 @@ class StripTemplate:
             i -= 1
             line = lines[i]
             kr = (line[0]-line[2])/(line[1]-line[3])
-            if (abs((kr-krLeft)/(1+kr*krLeft))>1/56):
+            if (abs((kr-krLeft)/(1+kr*krLeft))>1/56) or line[0]<StripTemplate.LEFT_BOARD:
                 removeLines.append(i)
         return numpy.delete(lines,removeLines,0)
 
@@ -271,6 +275,14 @@ class StripTemplate:
         l = numpy.delete(l, removeLines, 0)
         return l
 
+
+    def _FindLikelyLine(self,lines):
+        if len(lines)<=1 : lines = lines.repeat(2,axis=0)
+        else: lines[1] = lines[0]
+        lines[1][0]+=self.config.FUNC_LINE[0]
+        lines[1][2]+=self.config.FUNC_LINE[0]
+
+        return lines[:2]
     # 寻找最左顶点
     def _locateOrigin(self, img):
         src = self.img
@@ -286,21 +298,16 @@ class StripTemplate:
         rho = 1
         threshold = 155
         minL = 600
-        maxGap = 35
-        while True:
-            lines = HoughLinesP(bw, rho, np_pi / 180, threshold, minLineLength=minL, maxLineGap=maxGap)
-            lines = lines.reshape((lines.shape[0], lines.shape[2]))
-            lines = StripTemplate._removeDecline(lines)
-            lines = StripTemplate._mergeClosedLines(lines)
-            if _DEBUG_DRAW_LOCATION and lines is not None:
-                debugBuf = img.copy()
-                utils.drawLines(debugBuf, lines)
-                imshow('lines', debugBuf)
-                waitKey()
-            if rho == 1: break
+        maxGap = 36
+        # while True:
+        lines = HoughLinesP(bw, rho, np_pi / 360, threshold, minLineLength=minL, maxLineGap=maxGap)
+            # if rho == 1: break # for debug
         if lines is None:
             return False
-        # lines = lines.reshape((lines.shape[0], lines.shape[2]))
+        lines = lines.reshape((lines.shape[0], lines.shape[2]))
+        lines = StripTemplate._removeDecline(lines)
+        lines = StripTemplate._mergeClosedLines(lines)
+        lines = self._FindLikelyLine(lines)
         if _DEBUG_DRAW_LOCATION:
             utils.drawLines(debugBuf, lines)
             imshow('lines', debugBuf)

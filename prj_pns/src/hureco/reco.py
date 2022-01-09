@@ -1,12 +1,15 @@
 from hureco import config
 from hureco import utils
 
+
 #############
 def _loadTemplate(category):
     return config.getDictFromFile(category)
 
+
 def shink(img, w, h):
     utils.shrink(img, w, h)
+
 
 def recognization(file, dict):
     '''
@@ -22,10 +25,9 @@ def recognization(file, dict):
     err, src = template.getImg(file)
     # imshow('origin', src)
     # waitKey()
-    if err:
-        return err, None
+    if err: return err, None
     if template.locateArea(src) is None:
-        return "Recognize Failed"+file, None
+        return "Recognize Failed" + file, None
     ###cut borad from image
     list, img = template.recognise()
 
@@ -45,7 +47,6 @@ def recognization(file, dict):
     return None, results
 
 
-
 def debugreco(jpgfile, config):
     msg, results = recognization(jpgfile,
                                  config)
@@ -56,12 +57,13 @@ def debugreco(jpgfile, config):
             print(r.index, r.results, r.values)
             pass
 
+
 def main():
     # debugreco('../samples/14/14-2102.jpg',_loadTemplate("../../config/stripAGL6.json"))
     # return
-    lotLenth = (4+0x30, 5+0x30,3+0x30)
-    lots = ('14/14-2105', '14/14-2102','11/11-t')
-    lot = 0
+    lotLenth = (4 + 0x30, 5 + 0x30, 3 + 0x30)
+    lots = ('14/14-2105', '14/14-2102', '11/11-t')
+    lot = 1
     i = 1
     count = 12
     end = i = i + 0x30
@@ -69,12 +71,12 @@ def main():
     config = "PNS14"
     config_json = _loadTemplate("../../config/strip" + config + ".json")
     print("File *********", chr(i), config)
-    while i < end: #HEX
+    while i < end:  # HEX
         if i == 0x3A:
             i = 0x41
             end += 7
 
-        debugreco(('../samples/'+lots[lot]+'-') + chr(i) + '.jpg', config_json)
+        debugreco(('../samples/' + lots[lot] + '-') + chr(i) + '.jpg', config_json)
         i += 1
         if i > lotLenth[lot]:
             i -= lotLenth[lot]
@@ -83,6 +85,7 @@ def main():
             lot += 1
             if lot >= len(lots): break
     # waitKey(0)
+
 
 if __name__ == '__main__':
     main()
