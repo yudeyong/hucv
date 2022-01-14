@@ -102,7 +102,7 @@
       2
     ]
   ],
-  "RGB_GRAY": "r",
+  "RGB_GRAY": "g",
   "THRESHOLD": 220,
   "VALID_XY": [
     2406,

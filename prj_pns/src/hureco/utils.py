@@ -1,18 +1,17 @@
 import math
 
-from cv2 import split, COLOR_BGR2GRAY, COLOR_BGR2BGRA, cvtColor, Canny, GaussianBlur, fitLine, DIST_L2, line as cvline, \
-    imshow, waitKey
+import cv2 #import split, COLOR_BGR2GRAY, COLOR_BGR2BGRA, cvtColor, Canny, GaussianBlur, fitLine, DIST_L2, line as cvline, imshow, waitKey
 import numpy as np
 
 ## rgb to gray value: None or R,G,B to gray value: 0x1 r, 0x100 b, 0x10000 g
 #   RGB_GRAY = 0x10000
 def toGray(img, rgb_gray):
     if not rgb_gray:
-        gray = cvtColor(img, COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     else:
-        gray = cvtColor(img, COLOR_BGR2BGRA)
-        b, g, r, _ = split(gray)
-        if False:
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2BGRA)
+        b, g, r, _ = cv2.split(gray)
+        if  False:
             cv2.imshow('1-r', r)
             cv2.imshow('2-g', g)
             cv2.imshow('3-b', b)
@@ -29,11 +28,11 @@ def toGray(img, rgb_gray):
 # param gaussian canny, 0 canny only, 3, 5
 def toCanny(bw, gaussian):
     if gaussian == 0:
-        canny = Canny(bw, 200, 230, 3)
+        canny = cv2.Canny(bw, 200, 230, 3)
         return canny
     else:
-        img1 = GaussianBlur(bw, (gaussian, gaussian), 0)
-        cannyGaus = Canny(img1, 10, 30, 453)
+        img1 = cv2.GaussianBlur(bw, (gaussian, gaussian), 0)
+        cannyGaus = cv2.Canny(img1, 10, 30, 453)
         return cannyGaus
 
 
@@ -41,7 +40,7 @@ def drawLines(src, lines):
     color = ((255, 0, 0), (0, 255, 0), (0, 0, 255),(255, 255, 0), (0, 255, 255), (255, 0, 255))
     i = 0
     for line in lines:
-        cvline(src, (line[0], line[1]), (line[2], line[3]), color[i], 2)
+        cv2.cvline(src, (line[0], line[1]), (line[2], line[3]), color[i], 2)
         i += 1
         if i >= len(color): i = 0
 
@@ -172,10 +171,10 @@ def drawRectBy2P(src, p0, p1):
 
 
 def drawRectBy4P(src, p):
-    cvline(src, (p[0][0], p[0][1]), (p[1][0], p[1][1]), (0, 0, 0), 1)
-    cvline(src, (p[2][0], p[2][1]), (p[3][0], p[3][1]), (0, 0, 0), 1)
-    cvline(src, (p[0][0], p[0][1]), (p[2][0], p[2][1]), (0, 0, 0), 1)
-    cvline(src, (p[1][0], p[1][1]), (p[3][0], p[3][1]), (0, 0, 0), 1)
+    cv2.cvline(src, (p[0][0], p[0][1]), (p[1][0], p[1][1]), (0, 0, 0), 1)
+    cv2.cvline(src, (p[2][0], p[2][1]), (p[3][0], p[3][1]), (0, 0, 0), 1)
+    cv2.cvline(src, (p[0][0], p[0][1]), (p[2][0], p[2][1]), (0, 0, 0), 1)
+    cv2.cvline(src, (p[1][0], p[1][1]), (p[3][0], p[3][1]), (0, 0, 0), 1)
 
 
 def drawMidLineBy2P(src, p, i):
@@ -221,7 +220,7 @@ def drawFullLine(src, x0, k, b, i):
     else:
         c = (0xff, 0, 0xff * (i & 1))
 
-    cvline(src, (x1, y1), (x2, y2), c, 2 - (i < 0) * 1)
+    cv2.cvline(src, (x1, y1), (x2, y2), c, 2 - (i < 0) * 1)
 
 
 def drawMidLineBy4P(src, p, i):
@@ -263,16 +262,16 @@ def drawDot(src, p, i=3):
     p1 = (round(p[0] + f), round(p[1] + f))
     p2 = (round(p[0]) - f, round(p[1] - f))
     if (i > 0):
-        cvline(src, p1, p2, 0, 1)
-        cvline(src, (p1[0], p2[1]), (p2[0], p1[1]), 0, 1)
+        cv2.cvline(src, p1, p2, 0, 1)
+        cv2.cvline(src, (p1[0], p2[1]), (p2[0], p1[1]), 0, 1)
     else:
         drawRectBy2P(src, p1, p2)
 
 
 def showDebug(name, img):
     a = shrink(img, 2, 2)
-    imshow(name, a)
-    waitKey()
+    cv2.imshow(name, a)
+    cv2.waitKey()
 
 
 def derivative(img, rect, stripHeight):
@@ -379,7 +378,7 @@ def maxWind(array, size, threshold, faultTolerant):
 
 def getFitLine(points):
     p = np.asanyarray(points)
-    out = fitLine(p, DIST_L2, 0, 0.01, 0.01)
+    out = cv2.fitLine(p, cv2.DIST_L2, 0, 0.01, 0.01)
     k = out[1] / out[0]
     b = out[3] - k * out[2]
     # self.midHeader[0][0] = round((self.midHeader[0][1] - b[0] )/k[0])

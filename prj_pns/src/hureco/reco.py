@@ -38,7 +38,7 @@ def recognization(file, dict):
     # imshow('src', src)
     # imshow('result', gray)
     # waitKey()
-    if len(list) == 0:
+    if list is None or len(list) == 0:
         return "Zero result.", None
     results = config.Dict()
     setattr(results, 'resultList', list)
