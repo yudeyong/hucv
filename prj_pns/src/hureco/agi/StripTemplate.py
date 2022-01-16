@@ -134,7 +134,9 @@ class StripTemplate:
             result[0+vertical] += line[0+vertical]
             result[2+vertical] += line[2+vertical]
             if min > line[3-vertical]: min = line[3-vertical]
+            if min > line[1-vertical]: min = line[1-vertical]
             if max < line[1-vertical]: max = line[1-vertical]
+            if max < line[3-vertical]: max = line[3-vertical]
         l = lines.shape[0]
         result[0+vertical] = round(result[0+vertical] / l)
         result[2+vertical] = round(result[2+vertical] / l)
@@ -144,7 +146,7 @@ class StripTemplate:
 
     @staticmethod
     def _mergeClosedLines(lines, distance=8, vertical=0):
-        l = lines[numpy.lexsort(lines[:, ::-1].T)] if vertical==0 else lines[numpy.lexsort(lines[:, :-1:].T)]
+        l = lines[numpy.lexsort(lines[:, ::-1].T)] if vertical==0 else lines[numpy.lexsort(lines[:, :2].T)]
         i = len(l) - 1
         last = l[i]
         lineGroup = [i]
@@ -153,7 +155,7 @@ class StripTemplate:
             i -= 1
             line = l[i]
             flag = (i == 0)
-            if last[0] - line[0+vertical] + last[2] - line[2+vertical] <= distance:
+            if last[0+vertical] - line[0+vertical] + last[2+vertical] - line[2+vertical] <= distance:
                 lineGroup.append(i)
             else:
                 flag = True
