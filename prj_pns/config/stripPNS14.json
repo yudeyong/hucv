@@ -104,6 +104,7 @@
   ],
   "RGB_GRAY": "g",
   "THRESHOLD": 220,
+  "THRESHOLD_VALID": 220,
   "VALID_XY": [
     2406,
     2560,
@@ -111,19 +112,18 @@
     3594
   ],
   "BOARD_AREA": [
-    190,
+    240,
     510,
-    400,
-    1680
+    130,
+    1380
   ],
+  "VALID_BOARD_AREA":[1220,1280,0,400],
   "STRIP_INTERVAL": 35.44,
   "STRIP_AREA_WIDTH": 20,
   "STRIP_WIDTH": 14,
   "STRIP_HEIGHT": 18,
-  "STRIP_DECTCT_BUF": 22,
   "TOTAL": 24,
   "STRIPS_WIDTH": 620,
-  "ORIGIN_Y": [755,799],
-  "FUNC_LINE": [
-    64 ]
+  "ORIGIN_Y": [605,649],
+  "FUNC_LINE": [ 64 ]
 }

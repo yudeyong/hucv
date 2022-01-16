@@ -40,7 +40,7 @@ def drawLines(src, lines):
     color = ((255, 0, 0), (0, 255, 0), (0, 0, 255),(255, 255, 0), (0, 255, 255), (255, 0, 255))
     i = 0
     for line in lines:
-        cv2.cvline(src, (line[0], line[1]), (line[2], line[3]), color[i], 2)
+        cv2.line(src, (line[0], line[1]), (line[2], line[3]), color[i], 2)
         i += 1
         if i >= len(color): i = 0
 
@@ -171,10 +171,10 @@ def drawRectBy2P(src, p0, p1):
 
 
 def drawRectBy4P(src, p):
-    cv2.cvline(src, (p[0][0], p[0][1]), (p[1][0], p[1][1]), (0, 0, 0), 1)
-    cv2.cvline(src, (p[2][0], p[2][1]), (p[3][0], p[3][1]), (0, 0, 0), 1)
-    cv2.cvline(src, (p[0][0], p[0][1]), (p[2][0], p[2][1]), (0, 0, 0), 1)
-    cv2.cvline(src, (p[1][0], p[1][1]), (p[3][0], p[3][1]), (0, 0, 0), 1)
+    cv2.line(src, (p[0][0], p[0][1]), (p[1][0], p[1][1]), (0, 0, 0), 1)
+    cv2.line(src, (p[2][0], p[2][1]), (p[3][0], p[3][1]), (0, 0, 0), 1)
+    cv2.line(src, (p[0][0], p[0][1]), (p[2][0], p[2][1]), (0, 0, 0), 1)
+    cv2.line(src, (p[1][0], p[1][1]), (p[3][0], p[3][1]), (0, 0, 0), 1)
 
 
 def drawMidLineBy2P(src, p, i):
@@ -220,7 +220,7 @@ def drawFullLine(src, x0, k, b, i):
     else:
         c = (0xff, 0, 0xff * (i & 1))
 
-    cv2.cvline(src, (x1, y1), (x2, y2), c, 2 - (i < 0) * 1)
+    cv2.line(src, (x1, y1), (x2, y2), c, 2 - (i < 0) * 1)
 
 
 def drawMidLineBy4P(src, p, i):
@@ -262,8 +262,8 @@ def drawDot(src, p, i=3):
     p1 = (round(p[0] + f), round(p[1] + f))
     p2 = (round(p[0]) - f, round(p[1] - f))
     if (i > 0):
-        cv2.cvline(src, p1, p2, 0, 1)
-        cv2.cvline(src, (p1[0], p2[1]), (p2[0], p1[1]), 0, 1)
+        cv2.line(src, p1, p2, 0, 1)
+        cv2.line(src, (p1[0], p2[1]), (p2[0], p1[1]), 0, 1)
     else:
         drawRectBy2P(src, p1, p2)
 

@@ -69,7 +69,8 @@ class StripTemplate:
             return "invalid size.", None
         self.src = src = numpy.flip(src)
         # 识别区域
-        src = src[src.shape[0] - self.config.BOARD_AREA[1] - self.config.BOARD_AREA[3]:src.shape[0] - self.config.BOARD_AREA[1],
+        src = src[src.shape[0] - self.config.BOARD_AREA[1] - self.config.BOARD_AREA[3]:src.shape[0] -
+                                                                                       self.config.BOARD_AREA[1],
               self.config.BOARD_AREA[0]:self.config.BOARD_AREA[0] + self.config.BOARD_AREA[2]]
         if ZOOMOUT_FIRST:
             src = utils.shrink3(src, PRE_X_TIMES, PRE_Y_TIMES)
@@ -93,6 +94,20 @@ class StripTemplate:
         return left
 
     @staticmethod
+    def _removeVertical(lines):
+        # 去掉竖线
+        i = len(lines)
+        removeLines = []
+        while i > 0:
+            i -= 1
+            line = lines[i]
+            horizontal = abs(line[0] - line[2])
+
+            if (horizontal >> 2) < abs(line[1] - line[3]):
+                removeLines.append(i)
+        return numpy.delete(lines, removeLines, 0)
+
+    @staticmethod
     def _removeDecline(lines):
         # 去掉斜率与最左侧线不一致的线,
         # 去掉太左边的线
@@ -110,26 +125,26 @@ class StripTemplate:
         return numpy.delete(lines, removeLines, 0)
 
     @staticmethod
-    def _mergeLines(lines):
+    def _mergeLines(lines, vertical=0):
         if lines.shape[0] == 1: return
         result = numpy.zeros(4)
         min = 0x7fff
         max = 0
         for line in lines:
-            result[0] += line[0]
-            result[2] += line[2]
-            if min > line[3]: min = line[3]
-            if max < line[1]: max = line[1]
+            result[0+vertical] += line[0+vertical]
+            result[2+vertical] += line[2+vertical]
+            if min > line[3-vertical]: min = line[3-vertical]
+            if max < line[1-vertical]: max = line[1-vertical]
         l = lines.shape[0]
-        result[0] = round(result[0] / l)
-        result[2] = round(result[2] / l)
-        result[3] = min
-        result[1] = max
+        result[0+vertical] = round(result[0+vertical] / l)
+        result[2+vertical] = round(result[2+vertical] / l)
+        result[3-vertical] = min
+        result[1-vertical] = max
         return result
 
     @staticmethod
-    def _mergeClosedLines(lines, distance=8):
-        l = lines[numpy.lexsort(lines[:, ::-1].T)]
+    def _mergeClosedLines(lines, distance=8, vertical=0):
+        l = lines[numpy.lexsort(lines[:, ::-1].T)] if vertical==0 else lines[numpy.lexsort(lines[:, :-1:].T)]
         i = len(l) - 1
         last = l[i]
         lineGroup = [i]
@@ -138,12 +153,12 @@ class StripTemplate:
             i -= 1
             line = l[i]
             flag = (i == 0)
-            if last[0] - line[0] + last[2] - line[2] <= distance:
+            if last[0] - line[0+vertical] + last[2] - line[2+vertical] <= distance:
                 lineGroup.append(i)
             else:
                 flag = True
             if flag:
-                last = StripTemplate._mergeLines(l[lineGroup])  # 临时用下last
+                last = StripTemplate._mergeLines(l[lineGroup], vertical)  # 临时用下last
                 if not last is None:
                     l[lineGroup[0]] = last
                     removeLines.extend(lineGroup[1:])
@@ -169,16 +184,16 @@ class StripTemplate:
         return line
 
     # 寻找最左顶点
-    def _locateOrigin(self, img):
+    def _locateOrigin(self, colorImg):
         src = self.img
         _, bw = cvthreshold(src, self.config.THRESHOLD, 255.0, THRESH_BINARY)
         # imshow('bw', bw)
         # waitKey()
         if _DEBUG_DRAW_LOCATION:
-            debugBuf = img.copy()
+            debugBuf = colorImg.copy()
         if CANNY_GAUSS > 0:
             bw = utils.toCanny(bw, CANNY_GAUSS)
-        if _DEBUG_DRAW_LOCATION and False:
+        if False and _DEBUG_DRAW_LOCATION:
             imshow('bw', bw)
             # waitKey()
         rho = 1
@@ -190,29 +205,30 @@ class StripTemplate:
         if lines is None: return "miss lines. "
         lines = lines.reshape((lines.shape[0], lines.shape[2]))
         lines = StripTemplate._removeDecline(lines)
+        if  False and _DEBUG_DRAW_LOCATION:
+            utils.drawLines(debugBuf, (lines))
+            imshow('lines', debugBuf)
+            waitKey()
         lines = StripTemplate._mergeClosedLines(lines)
         lines = self._findLikelyLine(lines)  # lines [dims=1]
-        if False and _DEBUG_DRAW_LOCATION :
+        print(lines)
+        if False and _DEBUG_DRAW_LOCATION:
             utils.drawLines(debugBuf, (lines,))
             imshow('lines', debugBuf)
-            # waitKey()
+            waitKey()
             # return False
         # if lines[0][1] < self.config.ORIGIN_Y[0] or lines[0][1] > self.config.ORIGIN_Y[1]:
-        # print(lines[1])
-        if lines[1] < self.config.ORIGIN_Y[0] or lines[1] > self.config.ORIGIN_Y[1]:
-            if _DEBUG_DRAW_LOCATION : waitKey()
-            return "miss point. "
 
         self.origin = lines  # utils.getCross(self.hkb, self.vkb)
-        if False and _DEBUG_DRAW_LOCATION: # 调试间距
+        if  False and _DEBUG_DRAW_LOCATION:  # 调试间距
             i = self.config.TOTAL
             x1 = lines[0] + 200
             x0 = lines[0] - 60
-            y0 = 0.0+lines[1]
-            y1 = 0.0 + lines[1] + 260* self.hSlope
+            y0 = 0.0 + lines[1]
+            y1 = 0.0 + lines[1] + 260 * self.hSlope
             while i > 0:
                 i -= 1
-                utils.drawLines(debugBuf, ((x0, round(y0),x1,round( y1)),))
+                utils.drawLines(debugBuf, ((x0, round(y0), x1, round(y1)),))
                 y0 -= self.config.STRIP_INTERVAL
                 y1 -= self.config.STRIP_INTERVAL
             utils.drawLines(debugBuf, ((x0, round(y0), x1, round(y1)),))
@@ -221,23 +237,71 @@ class StripTemplate:
 
         return None
 
+    countline = 0
+
+    # 校验调整原点
+    def _valideLocation(self):
+
+        src = self.src[
+              self.src.shape[0] - self.config.BOARD_AREA[1] - self.config.BOARD_AREA[3] + self.config.VALID_BOARD_AREA[
+                  0]
+              :self.src.shape[0] - self.config.BOARD_AREA[1] - self.config.BOARD_AREA[3] + self.config.VALID_BOARD_AREA[
+                  1],
+              self.config.BOARD_AREA[0] + self.origin[0] - self.config.FUNC_LINE[0]
+              :self.config.BOARD_AREA[0] + self.origin[0] - self.config.FUNC_LINE[0] + self.config.VALID_BOARD_AREA[3]]
+        _, bw = cvthreshold(src, self.config.THRESHOLD_VALID, 255.0, THRESH_BINARY)
+        imshow('bw', src)
+        # waitKey()
+        if _DEBUG_DRAW_LOCATION:
+            debugBuf = src.copy()
+        CANNY_GAUSS = 1
+        if CANNY_GAUSS > 0:
+            bw = utils.toCanny(bw, CANNY_GAUSS)
+        if not False and _DEBUG_DRAW_LOCATION:
+            imshow('bw', bw)
+            # waitKey()
+        rho = 1
+        threshold = 60
+        minL = 75
+        maxGap = 10
+        # while True:
+        lines = HoughLinesP(bw, rho, np_pi / 360, threshold, minLineLength=minL, maxLineGap=maxGap)
+        if lines is None: return "miss lines. "
+        lines = lines.reshape((lines.shape[0], lines.shape[2]))
+        lines = StripTemplate._removeVertical(lines)
+        print(len(lines))
+        lines = StripTemplate._mergeClosedLines(lines, vertical=1)
+        StripTemplate.countline += len(lines)
+        print(len(lines), StripTemplate.countline)
+        if not False and _DEBUG_DRAW_LOCATION:
+            utils.drawLines(debugBuf, (lines))
+            imshow('lines', debugBuf)
+            waitKey()
+        return "debug"
+        # print(lines[1])
+        if lines[1] < self.config.ORIGIN_Y[0] or lines[1] > self.config.ORIGIN_Y[1]:
+            if _DEBUG_DRAW_LOCATION: waitKey()
+            return "miss point. "
+
     # 定位膜条区域
     def locateArea(self, src):
         self.img = utils.toGray(src, self.config.RGB_GRAY)
         r = self._locateOrigin(src)
         if not r is None: return r, None
-
+        r = self._valideLocation()
+        if not r is None: return r, None
         src = self.src
-        x = int(self.config.BOARD_AREA[0] + PRE_X_TIMES * min(self.origin[0],self.origin[2]))
+        x = int(self.config.BOARD_AREA[0] + PRE_X_TIMES * min(self.origin[0], self.origin[2]))
         y = int(src.shape[0] - self.config.BOARD_AREA[1] - self.config.BOARD_AREA[3] + PRE_Y_TIMES * self.origin[1])
-        src = self.src[y-PRE_Y_TIMES*round(self.config.STRIP_INTERVAL+0.5)*self.config.TOTAL:y, x:x + self.config.STRIPS_WIDTH]
-        if False and _DEBUG_DRAW_LOCATION :
+        src = self.src[y - PRE_Y_TIMES * round(self.config.STRIP_INTERVAL + 0.5) * self.config.TOTAL:y,
+              x:x + self.config.STRIPS_WIDTH]
+        if False and _DEBUG_DRAW_LOCATION:
             # i = 2 + self.config.TOTAL * self.config.STRIP_INTERVAL
             # while (i >= 0):
             #     utils.drawDot(src, (8, round(i)), 5)
             #     i -= self.config.STRIP_INTERVAL
             self.gray = utils.toGray(src, 'r')
-            img = utils.shrink(self.gray , PRE_X_TIMES, PRE_Y_TIMES)
+            img = utils.shrink(self.gray, PRE_X_TIMES, PRE_Y_TIMES)
             imshow('canny', img)
             waitKey()
             return "debg", None
