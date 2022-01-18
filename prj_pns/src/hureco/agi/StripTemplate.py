@@ -94,6 +94,25 @@ class StripTemplate:
         return left
 
     @staticmethod
+    def _findLeftestPointLine(lines):
+        # 找最左端点线
+        min = 0x7ffff
+        i = len(lines)
+        left = 0
+        while i > 0:
+            i -= 1
+            line = lines[i]
+            # <10 太左边了, 忽略
+            if line[2] < line[0]:
+                p = line[2]
+                line[2] = line[0]
+                line[0] = p
+            if line[0] < min:
+                min = line[0]
+                left = i
+        return lines[left]
+
+    @staticmethod
     def _removeVertical(lines):
         # 去掉竖线
         i = len(lines)
@@ -252,14 +271,14 @@ class StripTemplate:
               self.config.BOARD_AREA[0] + self.origin[0] - self.config.FUNC_LINE[0]
               :self.config.BOARD_AREA[0] + self.origin[0] - self.config.FUNC_LINE[0] + self.config.VALID_BOARD_AREA[3]]
         _, bw = cvthreshold(src, self.config.THRESHOLD_VALID, 255.0, THRESH_BINARY)
-        imshow('bw', src)
+        # imshow('bw', src)
         # waitKey()
         if _DEBUG_DRAW_LOCATION:
             debugBuf = src.copy()
         CANNY_GAUSS = 1
         if CANNY_GAUSS > 0:
             bw = utils.toCanny(bw, CANNY_GAUSS)
-        if not False and _DEBUG_DRAW_LOCATION:
+        if False and _DEBUG_DRAW_LOCATION:
             imshow('bw', bw)
             # waitKey()
         rho = 1
@@ -274,16 +293,15 @@ class StripTemplate:
         print(len(lines))
         lines = StripTemplate._mergeClosedLines(lines, vertical=1)
         StripTemplate.countline += len(lines)
-        print(len(lines), StripTemplate.countline)
+        # print(len(lines), StripTemplate.countline)
+        lines = StripTemplate._findLeftestPointLine(lines)
         if not False and _DEBUG_DRAW_LOCATION:
-            utils.drawLines(debugBuf, (lines))
+            utils.drawLines(debugBuf, (lines,))
             imshow('lines', debugBuf)
             waitKey()
+        # todo 校验最左边是否合理
+        print(lines)
         return "debug"
-        # print(lines[1])
-        if lines[1] < self.config.ORIGIN_Y[0] or lines[1] > self.config.ORIGIN_Y[1]:
-            if _DEBUG_DRAW_LOCATION: waitKey()
-            return "miss point. "
 
     # 定位膜条区域
     def locateArea(self, src):
