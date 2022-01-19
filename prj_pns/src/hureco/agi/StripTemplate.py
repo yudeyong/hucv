@@ -69,8 +69,8 @@ class StripTemplate:
             return "invalid size.", None
         self.src = src = numpy.flip(src)
         # 识别区域
-        src = src[src.shape[0] - self.config.BOARD_AREA[1] - self.config.BOARD_AREA[3]:src.shape[0] -
-                                                                                       self.config.BOARD_AREA[1],
+        src = src[src.shape[0] - self.config.BOARD_AREA[1] - self.config.BOARD_AREA[3]
+                  :src.shape[0] - self.config.BOARD_AREA[1],
               self.config.BOARD_AREA[0]:self.config.BOARD_AREA[0] + self.config.BOARD_AREA[2]]
         if ZOOMOUT_FIRST:
             src = utils.shrink3(src, PRE_X_TIMES, PRE_Y_TIMES)
@@ -166,6 +166,8 @@ class StripTemplate:
     @staticmethod
     def _mergeClosedLines(lines, distance=8, vertical=0):
         l = lines[numpy.lexsort(lines[:, ::-1].T)] if vertical==0 else lines[numpy.lexsort(lines[:, :2].T)]
+        if len(l)<1:
+            return l
         i = len(l) - 1
         last = l[i]
         lineGroup = [i]
@@ -232,7 +234,7 @@ class StripTemplate:
             waitKey()
         lines = StripTemplate._mergeClosedLines(lines)
         lines = self._findLikelyLine(lines)  # lines [dims=1]
-        print(lines)
+        # print(lines)
         if False and _DEBUG_DRAW_LOCATION:
             utils.drawLines(debugBuf, (lines,))
             imshow('lines', debugBuf)
@@ -241,6 +243,8 @@ class StripTemplate:
         # if lines[0][1] < self.config.ORIGIN_Y[0] or lines[0][1] > self.config.ORIGIN_Y[1]:
 
         self.origin = lines  # utils.getCross(self.hkb, self.vkb)
+        # imshow('origin', self.src[2600:self.src.shape[0] - self.config.BOARD_AREA[1] - self.config.BOARD_AREA[3]+lines[1]*2+22,self.config.BOARD_AREA[0] + (self.origin[0] - self.config.FUNC_LINE[0])*2-10:500])
+        # waitKey()
         if  False and _DEBUG_DRAW_LOCATION:  # 调试间距
             i = self.config.TOTAL
             x1 = lines[0] + 200
@@ -262,14 +266,16 @@ class StripTemplate:
 
     # 校验调整原点
     def _valideLocation(self):
-
+        self.origin[0] *= PRE_X_TIMES
+        # self.origin[2] *= PRE_X_TIMES
+        # self.origin[1] *= PRE_Y_TIMES
+        # self.origin[3] *= PRE_Y_TIMES
+        # self.src.shape[0] - self.config.BOARD_AREA[1] - self.config.BOARD_AREA[3] +
         src = self.src[
-              self.src.shape[0] - self.config.BOARD_AREA[1] - self.config.BOARD_AREA[3] + self.config.VALID_BOARD_AREA[
-                  0]
-              :self.src.shape[0] - self.config.BOARD_AREA[1] - self.config.BOARD_AREA[3] + self.config.VALID_BOARD_AREA[
-                  1],
-              self.config.BOARD_AREA[0] + self.origin[0] - self.config.FUNC_LINE[0]
-              :self.config.BOARD_AREA[0] + self.origin[0] - self.config.FUNC_LINE[0] + self.config.VALID_BOARD_AREA[3]]
+            self.src.shape[0] - self.config.BOARD_AREA[1] - self.config.BOARD_AREA[3] + self.config.VALID_BOARD_AREA[0]
+            :self.src.shape[0] - self.config.BOARD_AREA[1] - self.config.BOARD_AREA[3] + self.config.VALID_BOARD_AREA[1],
+              self.config.BOARD_AREA[0] + self.origin[0] - self.config.FUNC_LINE[0]*PRE_X_TIMES-self.config.STRIP_HEIGHT
+              :self.config.BOARD_AREA[0] + self.origin[0] + self.config.VALID_BOARD_AREA[3]]
         _, bw = cvthreshold(src, self.config.THRESHOLD_VALID, 255.0, THRESH_BINARY)
         # imshow('bw', src)
         # waitKey()
@@ -290,8 +296,9 @@ class StripTemplate:
         if lines is None: return "miss lines. "
         lines = lines.reshape((lines.shape[0], lines.shape[2]))
         lines = StripTemplate._removeVertical(lines)
-        print(len(lines))
+        # print(len(lines))
         lines = StripTemplate._mergeClosedLines(lines, vertical=1)
+        if lines is None : return 'missed horizontal line'
         StripTemplate.countline += len(lines)
         # print(len(lines), StripTemplate.countline)
         lines = StripTemplate._findLeftestPointLine(lines)
@@ -300,7 +307,8 @@ class StripTemplate:
             imshow('lines', debugBuf)
             waitKey()
         # todo 校验最左边是否合理
-        print(lines)
+        # print(lines,self.origin )
+
         return "debug"
 
     # 定位膜条区域
@@ -327,6 +335,7 @@ class StripTemplate:
             return "debg", None
         # 更新膜条区域
         self.src = src
+        # imshow('canny', src)
         return None, src
 
     def _checkHeaders(self):

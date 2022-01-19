@@ -123,6 +123,7 @@
   "STRIP_WIDTH": 14,
   "STRIP_HEIGHT": 18,
   "TOTAL": 24,
+
   "STRIPS_WIDTH": 620,
   "ORIGIN_Y": [605,649],
   "FUNC_LINE": [ 64 ]
