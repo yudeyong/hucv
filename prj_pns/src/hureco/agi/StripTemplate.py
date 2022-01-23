@@ -240,8 +240,8 @@ class StripTemplate:
             imshow('lines', debugBuf)
             waitKey()
             # return False
-        # if lines[0][1] < self.config.ORIGIN_Y[0] or lines[0][1] > self.config.ORIGIN_Y[1]:
-
+        if lines[1] < self.config.ORIGIN_Y_X[0] or lines[1] > self.config.ORIGIN_Y_X[1]: return "Y cross border"
+        # print(lines[ 1])
         self.origin = lines  # utils.getCross(self.hkb, self.vkb)
         # imshow('origin', self.src[2600:self.src.shape[0] - self.config.BOARD_AREA[1] - self.config.BOARD_AREA[3]+lines[1]*2+22,self.config.BOARD_AREA[0] + (self.origin[0] - self.config.FUNC_LINE[0])*2-10:500])
         # waitKey()
@@ -305,11 +305,11 @@ class StripTemplate:
         if not False and _DEBUG_DRAW_LOCATION:
             utils.drawLines(debugBuf, (lines,))
             imshow('lines', debugBuf)
-            waitKey()
-        # todo 校验最左边是否合理
+            # waitKey()
         # print(lines,self.origin )
-
-        return "debug"
+        if lines[0] < self.config.ORIGIN_Y_X[2] or lines[0] > self.config.ORIGIN_Y_X[3]: return "X cross border"
+        self.origin[1] = self.config.VALID_BOARD_AREA[0] + lines[1]
+        return None
 
     # 定位膜条区域
     def locateArea(self, src):
@@ -320,10 +320,10 @@ class StripTemplate:
         if not r is None: return r, None
         src = self.src
         x = int(self.config.BOARD_AREA[0] + PRE_X_TIMES * min(self.origin[0], self.origin[2]))
-        y = int(src.shape[0] - self.config.BOARD_AREA[1] - self.config.BOARD_AREA[3] + PRE_Y_TIMES * self.origin[1])
+        y = int(src.shape[0] - self.config.BOARD_AREA[1] - self.config.BOARD_AREA[3] + self.origin[1])
         src = self.src[y - PRE_Y_TIMES * round(self.config.STRIP_INTERVAL + 0.5) * self.config.TOTAL:y,
               x:x + self.config.STRIPS_WIDTH]
-        if False and _DEBUG_DRAW_LOCATION:
+        if not False and _DEBUG_DRAW_LOCATION:
             # i = 2 + self.config.TOTAL * self.config.STRIP_INTERVAL
             # while (i >= 0):
             #     utils.drawDot(src, (8, round(i)), 5)
