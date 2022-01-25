@@ -302,7 +302,7 @@ class StripTemplate:
         StripTemplate.countline += len(lines)
         # print(len(lines), StripTemplate.countline)
         lines = StripTemplate._findLeftestPointLine(lines)
-        if not False and _DEBUG_DRAW_LOCATION:
+        if False and _DEBUG_DRAW_LOCATION:
             utils.drawLines(debugBuf, (lines,))
             imshow('lines', debugBuf)
             # waitKey()
@@ -323,7 +323,7 @@ class StripTemplate:
         y = int(src.shape[0] - self.config.BOARD_AREA[1] - self.config.BOARD_AREA[3] + self.origin[1])
         src = self.src[y - PRE_Y_TIMES * round(self.config.STRIP_INTERVAL + 0.5) * self.config.TOTAL:y,
               x:x + self.config.STRIPS_WIDTH]
-        if not False and _DEBUG_DRAW_LOCATION:
+        if False and _DEBUG_DRAW_LOCATION:
             # i = 2 + self.config.TOTAL * self.config.STRIP_INTERVAL
             # while (i >= 0):
             #     utils.drawDot(src, (8, round(i)), 5)
@@ -350,7 +350,7 @@ class StripTemplate:
             # self.config.STRIP_WIDTH >>= 1
             # HEADER_WIDTH >>= 1
             # self.config.FUNC_LINE[0] >>= 1
-        imshow('1-gray', gray)
+            imshow('1-gray', gray)
         # _, bw = cvthreshold(gray, self.config.THRESHOLD, 255.0, THRESH_BINARY)
         # height = self.hkb[0] * HEADER_WIDTH
         bottom = gray.shape[0]
@@ -365,7 +365,7 @@ class StripTemplate:
             y -= self.config.STRIP_INTERVAL
             imshow('1-strip', gray[round(y):round(bottom), :])
             waitKey()
-            fcX = sr.StripRegion.checkFunctionLineX(gray, y, self.config.FUNC_LINE, self.config.STRIP_WIDTH)
+            fcX = sr.StripRegion.checkFunctionLineX(gray, y, 0, self.config.STRIP_WIDTH/PRE_Y_TIMES)
             if fcX >= 0:
                 # assert( fcX<self.config.FUNC_LINE[0] or fcX>self.config.FUNC_LINE[2])#找到func line
                 strips[i] = sr.StripRegion(listP, i, index, winSize, self.hkb[0], fcX, y, self.references,

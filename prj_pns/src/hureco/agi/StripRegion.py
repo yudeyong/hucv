@@ -49,12 +49,12 @@ class StripRegion:
         self.result.area = (x0, x1, round(y + 6), round(y + config.STRIP_INTERVAL))
 
     @staticmethod
-    def checkFunctionLineX(src, y, testArea, STRIP_WIDTH, threshold=_FC_THRESHOLD):
+    def checkFunctionLineX(src, y, delta, STRIP_WIDTH, threshold=_FC_THRESHOLD):
         y = int(y)
         width = STRIP_WIDTH - (STRIP_WIDTH >> 2)
-        return -1
+
         # utils.drawRectBy2P(src, (testArea[0], y+testArea[1], testArea[2], y+testArea[3]))
-        src = src[y + testArea[1]:y + testArea[3], testArea[0]:testArea[2]]
+        src = src[y :y + width, delta:STRIP_WIDTH]
 
         minValue = width * src.shape[0] * 255
         win = sw.SlidingWindow(width)
