@@ -350,7 +350,7 @@ class StripTemplate:
             # self.config.STRIP_WIDTH >>= 1
             # HEADER_WIDTH >>= 1
             # self.config.FUNC_LINE[0] >>= 1
-            imshow('1-gray', gray)
+            # imshow('1-gray', gray)
         # _, bw = cvthreshold(gray, self.config.THRESHOLD, 255.0, THRESH_BINARY)
         # height = self.hkb[0] * HEADER_WIDTH
         bottom = gray.shape[0]
@@ -362,10 +362,12 @@ class StripTemplate:
         top = bottom - self.config.TOTAL * self.config.STRIP_INTERVAL
         y = bottom  # +self.config.STRIP_INTERVAL*9
         while (y > top):
+            bottom = y
             y -= self.config.STRIP_INTERVAL
             imshow('1-strip', gray[round(y):round(bottom), :])
-            waitKey()
-            fcX = sr.StripRegion.checkFunctionLineX(gray, y, 0, self.config.STRIP_WIDTH/PRE_Y_TIMES)
+            # waitKey()
+            fcX = sr.StripRegion.checkFunctionLineX(gray, y, 0, self.config.STRIP_INTERVAL)
+            continue;
             if fcX >= 0:
                 # assert( fcX<self.config.FUNC_LINE[0] or fcX>self.config.FUNC_LINE[2])#找到func line
                 strips[i] = sr.StripRegion(listP, i, index, winSize, self.hkb[0], fcX, y, self.references,
@@ -384,7 +386,6 @@ class StripTemplate:
             # print('.')
             # print("line:",i, winSize)
             i += 1
-            bottom -= self.config.STRIP_INTERVAL
             # print(i, '# # # # # #i.')
 
         if False:

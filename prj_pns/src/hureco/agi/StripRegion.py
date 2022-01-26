@@ -1,4 +1,4 @@
-from cv2 import HoughLinesP, threshold as cvthreshold, THRESH_BINARY
+import cv2
 from numpy import pi as np_pi, sum as np_sum, sort as np_sort, \
     average as np_average, array as np_array, delete as np_delete, bincount as np_bincount, \
     argmax as np_argmax, arange as np_arange
@@ -50,11 +50,17 @@ class StripRegion:
 
     @staticmethod
     def checkFunctionLineX(src, y, delta, STRIP_WIDTH, threshold=_FC_THRESHOLD):
-        y = int(y)
-        width = STRIP_WIDTH - (STRIP_WIDTH >> 2)
+        width = STRIP_WIDTH-(round(STRIP_WIDTH)>>4)
+        y += (STRIP_WIDTH-width)/2
+        y = round(y)
+        width = round(width)
+        STRIP_WIDTH = round(STRIP_WIDTH)
+        cv2.imshow('canny1', src)
 
         # utils.drawRectBy2P(src, (testArea[0], y+testArea[1], testArea[2], y+testArea[3]))
         src = src[y :y + width, delta:STRIP_WIDTH]
+        cv2.imshow('canny2', src)
+        cv2.waitKey()
 
         minValue = width * src.shape[0] * 255
         win = sw.SlidingWindow(width)
@@ -72,7 +78,7 @@ class StripRegion:
             i += 1
 
         if minValue / (width * src.shape[0]) < threshold:
-            return x + testArea[0] - width - 1
+            return x + delta - width - 1
         else:
             return -1
         # print(minValue/(width*src.shape[0]))
@@ -125,11 +131,11 @@ class StripRegion:
         :return: 边缘斜率, 边缘截距(截距没用)
         '''
         src = src[y - 10:y + 13, x:x + 230]
-        _, bw = cvthreshold(src, 220, 255.0, THRESH_BINARY)
+        _, bw = cv2.threshold(src, 220, 255.0, cv2.THRESH_BINARY)
         # imshow('bw',bw)
 
         bw = utils.toCanny(bw, 3)
-        lines = HoughLinesP(bw, 1, np_pi / 270, 100, minLineLength=160, maxLineGap=40)
+        lines = cv2.HoughLinesP(bw, 1, np_pi / 270, 100, minLineLength=160, maxLineGap=40)
 
         # imshow('canny', bw)
         # waitKey()
