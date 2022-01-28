@@ -1,4 +1,4 @@
-from cv2 import HoughLinesP, threshold as cvthreshold, THRESH_BINARY, imshow, waitKey
+from cv2 import HoughLinesP, threshold as cvthreshold, THRESH_BINARY, imshow, waitKey,imshow,waitKey
 from numpy import pi as np_pi, sum as np_sum, sort as np_sort, \
     average as np_average, array as np_array, delete as np_delete, bincount as np_bincount, \
     argmax as np_argmax, arange as np_arange
@@ -86,7 +86,10 @@ class StripRegion:
         width = STRIP_WIDTH - ((STRIP_WIDTH+6) >> 2)
         #src1 = src
         #utils.drawRectBy2P(src, (testArea[0], y+testArea[1]), (testArea[2], y+testArea[3]))
+        # imshow('canny1', src)
         src = src[y + testArea[1]:y + testArea[3], testArea[0]:testArea[2]]
+        imshow('canny2', src)
+        waitKey()
 
         minValue = width * src.shape[0] * 255
         win = sw.SlidingWindow(width)

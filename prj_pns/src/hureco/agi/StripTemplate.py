@@ -274,7 +274,7 @@ class StripTemplate:
         src = self.src[
             self.src.shape[0] - self.config.BOARD_AREA[1] - self.config.BOARD_AREA[3] + self.config.VALID_BOARD_AREA[0]
             :self.src.shape[0] - self.config.BOARD_AREA[1] - self.config.BOARD_AREA[3] + self.config.VALID_BOARD_AREA[1],
-              self.config.BOARD_AREA[0] + self.origin[0] - self.config.FUNC_LINE[0]*PRE_X_TIMES-self.config.STRIP_HEIGHT
+              self.config.BOARD_AREA[0] + self.origin[0] - self.config.FUNC_LINE[0]*PRE_X_TIMES-self.config.STRIP_WIDTH
               :self.config.BOARD_AREA[0] + self.origin[0] + self.config.VALID_BOARD_AREA[3]]
         _, bw = cvthreshold(src, self.config.THRESHOLD_VALID, 255.0, THRESH_BINARY)
         # imshow('bw', src)
@@ -366,7 +366,7 @@ class StripTemplate:
             y -= self.config.STRIP_INTERVAL
             imshow('1-strip', gray[round(y):round(bottom), :])
             # waitKey()
-            fcX = sr.StripRegion.checkFunctionLineX(gray, y, 0, self.config.STRIP_INTERVAL)
+            fcX = sr.StripRegion.checkFunctionLineX(gray, y, 0, self.config.STRIP_WIDTH,self.config.STRIP_INTERVAL)
             continue;
             if fcX >= 0:
                 # assert( fcX<self.config.FUNC_LINE[0] or fcX>self.config.FUNC_LINE[2])#找到func line

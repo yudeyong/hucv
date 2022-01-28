@@ -49,20 +49,23 @@ class StripRegion:
         self.result.area = (x0, x1, round(y + 6), round(y + config.STRIP_INTERVAL))
 
     @staticmethod
-    def checkFunctionLineX(src, y, delta, STRIP_WIDTH, threshold=_FC_THRESHOLD):
+    def checkFunctionLineX(src, y, delta, STRIP_WIDTH, STRIP_INTERVAL, threshold=_FC_THRESHOLD):
         width = STRIP_WIDTH-(round(STRIP_WIDTH)>>4)
         y += (STRIP_WIDTH-width)/2
         y = round(y)
+        y1 = y + round(STRIP_INTERVAL - ((STRIP_INTERVAL)//16))
         width = round(width)
         STRIP_WIDTH = round(STRIP_WIDTH)
-        cv2.imshow('canny1', src)
+        # cv2.imshow('canny1', src)
 
         # utils.drawRectBy2P(src, (testArea[0], y+testArea[1], testArea[2], y+testArea[3]))
-        src = src[y :y + width, delta:STRIP_WIDTH]
+        src = src[y :y1, delta:delta+(STRIP_WIDTH<<2)]
         cv2.imshow('canny2', src)
         cv2.waitKey()
 
         minValue = width * src.shape[0] * 255
+
+        width >>= 1
         win = sw.SlidingWindow(width)
 
         win.initData(src, True)
@@ -78,6 +81,7 @@ class StripRegion:
             i += 1
 
         if minValue / (width * src.shape[0]) < threshold:
+            # todo 缩小范围, 精确FCLine位置
             return x + delta - width - 1
         else:
             return -1
