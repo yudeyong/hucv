@@ -1,7 +1,5 @@
 import cv2
-from numpy import pi as np_pi, sum as np_sum, sort as np_sort, \
-    average as np_average, array as np_array, delete as np_delete, bincount as np_bincount, \
-    argmax as np_argmax, arange as np_arange
+import numpy
 
 from hureco import SlidingWindow as sw, utils, result
 
@@ -59,9 +57,9 @@ class StripRegion:
         # cv2.imshow('canny1', src)
 
         # utils.drawRectBy2P(src, (testArea[0], y+testArea[1], testArea[2], y+testArea[3]))
-        src = src[y :y1, delta:delta+(STRIP_WIDTH<<2)]
+        src = src[y+1 :y1-1, delta:delta+(STRIP_WIDTH<<2)]
         cv2.imshow('canny2', src)
-        cv2.waitKey()
+        # cv2.waitKey()
 
         minValue = width * src.shape[0] * 255
 
@@ -81,10 +79,27 @@ class StripRegion:
             i += 1
 
         if minValue / (width * src.shape[0]) < threshold:
+            print(minValue / (width * src.shape[0]) )
+            print(numpy.median(src))
             # todo 缩小范围, 精确FCLine位置
-            return x + delta - width - 1
-        else:
-            return -1
+            # 确定当前x区间
+            src = src[:, x - width:x]
+            buf = src[:,0]
+            i = (numpy.average(buf)>=threshold)*1
+            buf = src[:,-1]
+            # 剪裁x区间白边
+            i1 = (numpy.average(buf)>=threshold)*1
+            if i+i1>0: src = src[:,i:src.shape[1]-i1]
+            if numpy.median(src)< threshold:
+                cv2.imshow('canny3', src)
+                cv2.waitKey()
+                return x + delta - width - 1
+
+        # print(numpy.median(src))
+        # src[:,:]=0
+        # cv2.imshow('canny3', src)
+        # cv2.waitKey()
+        return -1
         # print(minValue/(width*src.shape[0]))
         return x
 
@@ -139,7 +154,7 @@ class StripRegion:
         # imshow('bw',bw)
 
         bw = utils.toCanny(bw, 3)
-        lines = cv2.HoughLinesP(bw, 1, np_pi / 270, 100, minLineLength=160, maxLineGap=40)
+        lines = cv2.HoughLinesP(bw, 1, numpy.pi / 270, 100, minLineLength=160, maxLineGap=40)
 
         # imshow('canny', bw)
         # waitKey()
@@ -295,15 +310,15 @@ class StripRegion:
         w = src.shape[1]
         l = 0
         r = w - 1
-        suml = np_sum(src[:, l])
-        sumr = np_sum(src[:, r])
+        suml = numpy.sum(src[:, l])
+        sumr = numpy.sum(src[:, r])
         while w > width:
             if suml <= sumr:
                 r -= 1
-                sumr = np_sum(src[:, r])
+                sumr = numpy.sum(src[:, r])
             else:
                 l += 1
-                suml = np_sum(src[:, l])
+                suml = numpy.sum(src[:, l])
             w -= 1
         return l
 
@@ -324,12 +339,12 @@ class StripRegion:
             i -= 1
         count = data.size
         # print(count, '=', s-count,round((s-count)*100/s),"%")
-        data = np_sort(data)
+        data = numpy.sort(data)
         value = (count >> 3) + 1
         i1 = (count >> 1)
         i0 = i1 - value if i1 > value else 0
 
-        value = np_average(data[i0:i1])
+        value = numpy.average(data[i0:i1])
         # value += 0xff - bgColor
 
         # print("val:",value)
@@ -341,11 +356,11 @@ class StripRegion:
             list[i] = listP[i + offset][2][0][0]
 
         midy = (listP[size - 1 + offset][1] + listP[offset][1]) >> 1
-        src = np_array(list)
+        src = numpy.array(list)
         left = StripRegion._filteringAnomaly(src, StripRegion._modeCheck)
 
         src = StripRegion._filteringAnomaly(left, StripRegion._two_sigma)
-        midx = np_average(src)
+        midx = numpy.average(src)
         self.points = [()] * 2
         self.points[0] = (midx, midy)
 
@@ -359,16 +374,16 @@ class StripRegion:
         '''
         if data.max() - data.min() <= 2: return data
         index = func(data)
-        data = np_delete(data, index)
+        data = numpy.delete(data, index)
         return data
 
     @staticmethod
     def _modeCheck(Ser1):
-        c = np_bincount(Ser1)
+        c = numpy.bincount(Ser1)
         # 返回众数
-        i = np_argmax(c)
+        i = numpy.argmax(c)
         rule = (i - 2 > Ser1) | (i + 2 < Ser1)
-        index = np_arange(Ser1.shape[0])[rule]
+        index = numpy.arange(Ser1.shape[0])[rule]
         return index
 
     # 定义3σ法则(实际使用的更严格的2σ,也许多次3σ更好,需要试)识别异常值函数
@@ -378,5 +393,5 @@ class StripRegion:
         Ser1：表示传入DataFrame的某一列。
         '''
         rule = (Ser1.mean() - 2 * Ser1.std() > Ser1) | (Ser1.mean() + 2 * Ser1.std() < Ser1)
-        index = np_arange(Ser1.shape[0])[rule]
+        index = numpy.arange(Ser1.shape[0])[rule]
         return index
