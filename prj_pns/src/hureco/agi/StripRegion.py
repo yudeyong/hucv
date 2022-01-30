@@ -52,12 +52,13 @@ class StripRegion:
         y += (STRIP_WIDTH-width)/2
         y = round(y)
         y1 = y + round(STRIP_INTERVAL - ((STRIP_INTERVAL)//16))
+        y += 1
         width = round(width)
         STRIP_WIDTH = round(STRIP_WIDTH)
         # cv2.imshow('canny1', src)
 
         # utils.drawRectBy2P(src, (testArea[0], y+testArea[1], testArea[2], y+testArea[3]))
-        src = src[y+1 :y1-1, delta:delta+(STRIP_WIDTH<<2)]
+        src = src[y:y1-1, delta:delta+(STRIP_WIDTH<<2)]
         cv2.imshow('canny2', src)
         # cv2.waitKey()
 
@@ -79,8 +80,8 @@ class StripRegion:
             i += 1
 
         if minValue / (width * src.shape[0]) < threshold:
-            print(minValue / (width * src.shape[0]) )
-            print(numpy.median(src))
+            # print(minValue / (width * src.shape[0]) )
+            # print(numpy.median(src))
             # todo 缩小范围, 精确FCLine位置
             # 确定当前x区间
             src = src[:, x - width:x]
@@ -91,9 +92,13 @@ class StripRegion:
             i1 = (numpy.average(buf)>=threshold)*1
             if i+i1>0: src = src[:,i:src.shape[1]-i1]
             if numpy.median(src)< threshold:
-                cv2.imshow('canny3', src)
-                cv2.waitKey()
-                return x + delta - width - 1
+                list0, result0 = utils.derivative(src, src.shape[0]>>1,0, -1, 1)
+                list1, result1 = utils.derivative(src, src.shape[0]>>1,0, 1, 1)
+                i = result1 - result0
+                print(result0,result1, i)
+                i = result0+i>>1
+                # cv2.imshow('canny3', src)
+                return y+i
 
         # print(numpy.median(src))
         # src[:,:]=0

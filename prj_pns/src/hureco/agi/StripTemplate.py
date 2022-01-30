@@ -364,9 +364,15 @@ class StripTemplate:
         while (y > top):
             bottom = y
             y -= self.config.STRIP_INTERVAL
-            imshow('1-strip', gray[round(y):round(bottom), :])
             # waitKey()
             fcX = sr.StripRegion.checkFunctionLineX(gray, y, 0, self.config.STRIP_WIDTH,self.config.STRIP_INTERVAL)
+            if fcX==-1: break
+            gray[fcX:fcX+1, :] = 255
+            gray[fcX-1:fcX, :] = 0
+            imshow('1-strip', gray[round(y):round(bottom), :])
+            imshow('canny1', gray)
+            waitKey()
+
             continue;
             if fcX >= 0:
                 # assert( fcX<self.config.FUNC_LINE[0] or fcX>self.config.FUNC_LINE[2])#找到func line

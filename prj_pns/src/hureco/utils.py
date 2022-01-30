@@ -1,7 +1,9 @@
 import math
 
-import cv2 #import split, COLOR_BGR2GRAY, COLOR_BGR2BGRA, cvtColor, Canny, GaussianBlur, fitLine, DIST_L2, line as cvline, imshow, waitKey
+import \
+    cv2  # import split, COLOR_BGR2GRAY, COLOR_BGR2BGRA, cvtColor, Canny, GaussianBlur, fitLine, DIST_L2, line as cvline, imshow, waitKey
 import numpy as np
+
 
 ## rgb to gray value: None or R,G,B to gray value: 0x1 r, 0x100 b, 0x10000 g
 #   RGB_GRAY = 0x10000
@@ -11,7 +13,7 @@ def toGray(img, rgb_gray):
     else:
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2BGRA)
         b, g, r, _ = cv2.split(gray)
-        if  False:
+        if False:
             cv2.imshow('1-r', r)
             cv2.imshow('2-g', g)
             cv2.imshow('3-b', b)
@@ -25,6 +27,7 @@ def toGray(img, rgb_gray):
     # gray = r
     return gray
 
+
 # param gaussian canny, 0 canny only, 3, 5
 def toCanny(bw, gaussian):
     if gaussian == 0:
@@ -37,7 +40,7 @@ def toCanny(bw, gaussian):
 
 
 def drawLines(src, lines):
-    color = ((255, 0, 0), (0, 255, 0), (0, 0, 255),(255, 255, 0), (0, 255, 255), (255, 0, 255))
+    color = ((255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (0, 255, 255), (255, 0, 255))
     i = 0
     for line in lines:
         cv2.line(src, (line[0], line[1]), (line[2], line[3]), color[i], 2)
@@ -274,51 +277,37 @@ def showDebug(name, img):
     cv2.waitKey()
 
 
-def derivative(img, rect, stripHeight):
-    '''
+def derivative(img, posi, axis, axis_dirt, deri_dirt):
+    """
     针对区域'求导', 确定采样线边界
-    :param rect: 监测区域
+    :param posi: 坐标
+    :param axis: 0:x方向, 1:y方向
+    :param axis_dirt: 坐标方向 1增量, -1减量
+    :param deri_dirt: 求导方向 1正增量, -1负赠量
     :return: 有效区域数组, 数组中有效线
-    '''
-    stripHeight = int(stripHeight)
-    x2 = rect[2]
-    # clip 处理区域
-    # img = img[:, rect[0]:x2]
-
-    # x2-= rect[0]
-    # # _, bw = cv2.threshold(img, self.bgColor, 255.0, cv2.THRESH_BINARY)
-    # # canny = utils.toCanny(bw, 5)
-    # cv2.imshow("bg", img)
-    # cv2.waitKey()
-
-    height = rect[3] - rect[1]
-    deltaH = (height >> 4)
-    if deltaH <= 0: deltaH = 1
-    fY2 = rect[1] + height
-    if fY2 > img.shape[0]: fY2 = img.shape[0]
-    fLine = rect[1] + deltaH
-    DIFF = 80
-    listP = []
-    while fLine < fY2:
-        x = rect[0]
-        fY = fLine
-        lastPxl = img[int(fY), x]
-        # lastX = x
-        area = img[fY, :]
-        line = []
-        while x < x2:
-            if abs(int(img[fY, x]) - lastPxl) > DIFF:
-                line.append([x, int(img[fY, x]) - lastPxl])  # x,y,deltaValue
-                # lastX = x
-                lastPxl = img[int(fY), x]
-            x += 1
-            # fY+=slope slope足够小, 忽略
-        listP.append((len(line), fY, line))
-        fLine += deltaH
-
-    return listP
-
-
+    """
+    if img.shape[axis] <= 2: return [],()
+    i = posi
+    if axis_dirt == 1:
+        i1 = img.shape[axis] - 1
+    else:
+        i1 = 0
+    if axis == 1: img = img.T
+    value0 = np.sum(img[i])
+    list = []
+    top = 0
+    x = i
+    while True:
+        i += axis_dirt
+        if (i == i1): break
+        value1 = np.sum(img[i])
+        delta = int(value1) - value0
+        if (top-delta)*deri_dirt<0:
+            x = i
+            top = delta
+        value0 = value1
+        list.append(delta)
+    return list, x
 def maxWind(array, size, threshold, faultTolerant):
     '''
     查找array[0]中是否存在>=threshold宽度为size的窗口,允许出现faultTolerant个不满足值, 边界值不算
