@@ -25,7 +25,7 @@ Y_TIMES = 1 if ZOOMOUT_FIRST else PRE_Y_TIMES
 
 
 class StripTemplate:
-
+    counter = 0
     def __init__(self, config):
         # self.name = jsonDic['name']
         self.references = []
@@ -358,6 +358,8 @@ class StripTemplate:
         i = 0
         strips = [None] * self.config.TOTAL
         flag = False
+        imshow('canny1', gray)
+        # waitKey()
 
         top = bottom - self.config.TOTAL * self.config.STRIP_INTERVAL
         y = bottom  # +self.config.STRIP_INTERVAL*9
@@ -365,13 +367,18 @@ class StripTemplate:
             bottom = y
             y -= self.config.STRIP_INTERVAL
             # waitKey()
+            imshow('1-strip', gray[round(y):round(bottom), :])
             fcX = sr.StripRegion.checkFunctionLineX(gray, y, 0, self.config.STRIP_WIDTH,self.config.STRIP_INTERVAL)
             if fcX==-1: break
-            gray[fcX:fcX+1, :] = 255
-            gray[fcX-1:fcX, :] = 0
+            utils.drawFullLine(gray, 0, self.hSlope, fcX, 7)
+            utils.drawFullLine(gray, 0, self.hSlope, fcX + 2, 0)
+            # gray[fcX:fcX+1, :] = 255
+            # gray[fcX-1:fcX, :] = 0
             imshow('1-strip', gray[round(y):round(bottom), :])
-            imshow('canny1', gray)
-            waitKey()
+            StripTemplate.counter += 1
+            print(StripTemplate.counter, self.hSlope)
+            if StripTemplate.counter>=1:
+                waitKey()
 
             continue;
             if fcX >= 0:

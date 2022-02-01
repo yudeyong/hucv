@@ -88,16 +88,34 @@ class StripRegion:
             buf = src[:,0]
             i = (numpy.average(buf)>=threshold)*1
             buf = src[:,-1]
+            cv2.imshow('canny3', src)
             # 剪裁x区间白边
             i1 = (numpy.average(buf)>=threshold)*1
             if i+i1>0: src = src[:,i:src.shape[1]-i1]
             if numpy.median(src)< threshold:
-                list0, result0 = utils.derivative(src, src.shape[0]>>1,0, -1, 1)
-                list1, result1 = utils.derivative(src, src.shape[0]>>1,0, 1, 1)
+                list0, result0, top0 = utils.derivative(src, src.shape[0]>>1,0, -1, 1)
+                list1, result1, top1 = utils.derivative(src, src.shape[0]>>1,0, 1, 1)
                 i = result1 - result0
-                print(result0,result1, i)
-                i = result0+i>>1
-                # cv2.imshow('canny3', src)
+                print(top0,top1,i,numpy.average(src[-1]),result0,result1)
+                if (top0<300 or top1<300) and i<=20: #fc line 直到边界
+                    if top1<300 : #下边界
+                        x = (numpy.average(src[-1]) + numpy.median(src[-1])*3)*0.25
+                        if x < 136:
+                            if src.shape[0]-result0<30:
+                                result1 = src.shape[0]-1
+                                i = result1 - result0
+                        else:
+                            print("miss fc line border in y axis" )
+                    # src[ result0+(i>>1)-1: result0+(i>>1)+ 1, :] = 255
+                    # cv2.imshow('canny3', src)
+                    # cv2.waitKey()
+                # else:
+                src[ result0+(i>>1)-1: result0+(i>>1)+ 1, :] = 255
+                cv2.imshow('canny3', src)
+
+                src[result0 + (i >> 1) - 1: result0 + (i >> 1) + 1, :] = 255
+                # print(result0,result1, i)
+                i = result0+((i+1)>>1)
                 return y+i
 
         # print(numpy.median(src))
@@ -164,7 +182,7 @@ class StripRegion:
         # imshow('canny', bw)
         # waitKey()
         if lines is None:
-            print(lines)
+            # print(lines)
             return None, None
         x0 = x1 = y0 = y1 = 0
         for l in lines:

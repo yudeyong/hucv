@@ -199,7 +199,7 @@ def drawFullLine(src, x0, k, b, i):
     '''
 
     :param src:
-    :param p: 点
+    :param x0: 点x
     :param k: 斜率
     :param b: 截距
     :param i: 颜色参数
@@ -292,6 +292,7 @@ def derivative(img, posi, axis, axis_dirt, deri_dirt):
         i1 = img.shape[axis] - 1
     else:
         i1 = 0
+    i1 += axis_dirt
     if axis == 1: img = img.T
     value0 = np.sum(img[i])
     list = []
@@ -307,7 +308,7 @@ def derivative(img, posi, axis, axis_dirt, deri_dirt):
             top = delta
         value0 = value1
         list.append(delta)
-    return list, x
+    return list, x, top
 def maxWind(array, size, threshold, faultTolerant):
     '''
     查找array[0]中是否存在>=threshold宽度为size的窗口,允许出现faultTolerant个不满足值, 边界值不算
