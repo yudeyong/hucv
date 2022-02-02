@@ -26,6 +26,7 @@ Y_TIMES = 1 if ZOOMOUT_FIRST else PRE_Y_TIMES
 
 class StripTemplate:
     counter = 0
+
     def __init__(self, config):
         # self.name = jsonDic['name']
         self.references = []
@@ -150,23 +151,23 @@ class StripTemplate:
         min = 0x7fff
         max = 0
         for line in lines:
-            result[0+vertical] += line[0+vertical]
-            result[2+vertical] += line[2+vertical]
-            if min > line[3-vertical]: min = line[3-vertical]
-            if min > line[1-vertical]: min = line[1-vertical]
-            if max < line[1-vertical]: max = line[1-vertical]
-            if max < line[3-vertical]: max = line[3-vertical]
+            result[0 + vertical] += line[0 + vertical]
+            result[2 + vertical] += line[2 + vertical]
+            if min > line[3 - vertical]: min = line[3 - vertical]
+            if min > line[1 - vertical]: min = line[1 - vertical]
+            if max < line[1 - vertical]: max = line[1 - vertical]
+            if max < line[3 - vertical]: max = line[3 - vertical]
         l = lines.shape[0]
-        result[0+vertical] = round(result[0+vertical] / l)
-        result[2+vertical] = round(result[2+vertical] / l)
-        result[3-vertical] = min
-        result[1-vertical] = max
+        result[0 + vertical] = round(result[0 + vertical] / l)
+        result[2 + vertical] = round(result[2 + vertical] / l)
+        result[3 - vertical] = min
+        result[1 - vertical] = max
         return result
 
     @staticmethod
     def _mergeClosedLines(lines, distance=8, vertical=0):
-        l = lines[numpy.lexsort(lines[:, ::-1].T)] if vertical==0 else lines[numpy.lexsort(lines[:, :2].T)]
-        if len(l)<1:
+        l = lines[numpy.lexsort(lines[:, ::-1].T)] if vertical == 0 else lines[numpy.lexsort(lines[:, :2].T)]
+        if len(l) < 1:
             return l
         i = len(l) - 1
         last = l[i]
@@ -176,7 +177,7 @@ class StripTemplate:
             i -= 1
             line = l[i]
             flag = (i == 0)
-            if last[0+vertical] - line[0+vertical] + last[2+vertical] - line[2+vertical] <= distance:
+            if last[0 + vertical] - line[0 + vertical] + last[2 + vertical] - line[2 + vertical] <= distance:
                 lineGroup.append(i)
             else:
                 flag = True
@@ -228,7 +229,7 @@ class StripTemplate:
         if lines is None: return "miss lines. "
         lines = lines.reshape((lines.shape[0], lines.shape[2]))
         lines = StripTemplate._removeDecline(lines)
-        if  False and _DEBUG_DRAW_LOCATION:
+        if False and _DEBUG_DRAW_LOCATION:
             utils.drawLines(debugBuf, (lines))
             imshow('lines', debugBuf)
             waitKey()
@@ -245,7 +246,7 @@ class StripTemplate:
         self.origin = lines  # utils.getCross(self.hkb, self.vkb)
         # imshow('origin', self.src[2600:self.src.shape[0] - self.config.BOARD_AREA[1] - self.config.BOARD_AREA[3]+lines[1]*2+22,self.config.BOARD_AREA[0] + (self.origin[0] - self.config.FUNC_LINE[0])*2-10:500])
         # waitKey()
-        if  False and _DEBUG_DRAW_LOCATION:  # 调试间距
+        if False and _DEBUG_DRAW_LOCATION:  # 调试间距
             i = self.config.TOTAL
             x1 = lines[0] + 200
             x0 = lines[0] - 60
@@ -272,9 +273,12 @@ class StripTemplate:
         # self.origin[3] *= PRE_Y_TIMES
         # self.src.shape[0] - self.config.BOARD_AREA[1] - self.config.BOARD_AREA[3] +
         src = self.src[
-            self.src.shape[0] - self.config.BOARD_AREA[1] - self.config.BOARD_AREA[3] + self.config.VALID_BOARD_AREA[0]
-            :self.src.shape[0] - self.config.BOARD_AREA[1] - self.config.BOARD_AREA[3] + self.config.VALID_BOARD_AREA[1],
-              self.config.BOARD_AREA[0] + self.origin[0] - self.config.FUNC_LINE[0]*PRE_X_TIMES-self.config.STRIP_WIDTH
+              self.src.shape[0] - self.config.BOARD_AREA[1] - self.config.BOARD_AREA[3] + self.config.VALID_BOARD_AREA[
+                  0]
+              :self.src.shape[0] - self.config.BOARD_AREA[1] - self.config.BOARD_AREA[3] + self.config.VALID_BOARD_AREA[
+                  1],
+              self.config.BOARD_AREA[0] + self.origin[0] - self.config.FUNC_LINE[
+                  0] * PRE_X_TIMES - self.config.STRIP_WIDTH
               :self.config.BOARD_AREA[0] + self.origin[0] + self.config.VALID_BOARD_AREA[3]]
         _, bw = cvthreshold(src, self.config.THRESHOLD_VALID, 255.0, THRESH_BINARY)
         # imshow('bw', src)
@@ -298,7 +302,7 @@ class StripTemplate:
         lines = StripTemplate._removeVertical(lines)
         # print(len(lines))
         lines = StripTemplate._mergeClosedLines(lines, vertical=1)
-        if lines is None : return 'missed horizontal line'
+        if lines is None: return 'missed horizontal line'
         StripTemplate.countline += len(lines)
         # print(len(lines), StripTemplate.countline)
         lines = StripTemplate._findLeftestPointLine(lines)
@@ -343,9 +347,9 @@ class StripTemplate:
 
         src = self.src
 
-        gray = utils.toGray(src, self.config.RGB_GRAY)
-        if not False:  # 缩一半,方便调试
-            gray = utils.shrink(gray, PRE_X_TIMES, PRE_Y_TIMES)
+        src = utils.toGray(src, self.config.RGB_GRAY)
+        if True:  # 缩一半,方便调试
+            gray = utils.shrink(src, PRE_X_TIMES, PRE_Y_TIMES)
             # self.config.STRIP_INTERVAL /= PRE_X_TIMES
             # self.config.STRIP_WIDTH >>= 1
             # HEADER_WIDTH >>= 1
@@ -355,7 +359,6 @@ class StripTemplate:
         # height = self.hkb[0] * HEADER_WIDTH
         bottom = gray.shape[0]
         # dH = height if height>0 else 0
-        i = 0
         strips = [None] * self.config.TOTAL
         flag = False
         imshow('canny1', gray)
@@ -367,20 +370,38 @@ class StripTemplate:
             bottom = y
             y -= self.config.STRIP_INTERVAL
             # waitKey()
-            imshow('1-strip', gray[round(y):round(bottom), :])
-            fcX = sr.StripRegion.checkFunctionLineX(gray, y, 0, self.config.STRIP_WIDTH,self.config.STRIP_INTERVAL)
-            if fcX==-1: break
-            utils.drawFullLine(gray, 0, self.hSlope, fcX, 7)
-            utils.drawFullLine(gray, 0, self.hSlope, fcX + 2, 0)
+            # imshow('1-strip', src[round(2*y):round(2*bottom), :])#gray[round(y):round(bottom), :])
+            fcX, fcY = sr.StripRegion.checkFunctionLineX(gray, y, 0, self.config.STRIP_WIDTH,
+                                                         self.config.STRIP_INTERVAL)
+            if fcX == -1: break
+            fcY *= 2
+            fcX *= 2
+            # utils.drawFullLine(src, 0, self.hSlope, fcY, 7)
+            # utils.drawFullLine(src, 0, self.hSlope, fcY + 2, 0)
             # gray[fcX:fcX+1, :] = 255
             # gray[fcX-1:fcX, :] = 0
-            imshow('1-strip', gray[round(y):round(bottom), :])
+
+            if not False:
+                x = fcX
+                utils.drawDot(src, (x, fcY), 10)
+                i = 2
+                while i < len(self.config.lines)-1:
+                    x1 = self.config.lines[i][1]
+                    x += x1
+                    i += 1
+                    x2 = self.config.lines[i][1]
+                    fcY += (x2 + x1) * self.hSlope
+                    x1 = x + x2
+                    utils.drawDot(src, (x+6, fcY), 3)
+                    x = x1
+                    i += 1
+            imshow('1-strip', src[round(2 * y):round(2 * bottom), :])  # gray[round(y):round(bottom), :])
             StripTemplate.counter += 1
-            print(StripTemplate.counter, self.hSlope)
-            if StripTemplate.counter>=1:
+            # print(StripTemplate.counter, self.hSlope)
+            if StripTemplate.counter >= 1:
                 waitKey()
 
-            continue;
+            continue
             if fcX >= 0:
                 # assert( fcX<self.config.FUNC_LINE[0] or fcX>self.config.FUNC_LINE[2])#找到func line
                 strips[i] = sr.StripRegion(listP, i, index, winSize, self.hkb[0], fcX, y, self.references,
