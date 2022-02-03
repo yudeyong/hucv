@@ -47,7 +47,19 @@ class StripRegion:
         self.result.area = (x0, x1, round(y + 6), round(y + config.STRIP_INTERVAL))
 
     @staticmethod
-    def checkFunctionLineX(src, y, delta, STRIP_WIDTH, STRIP_INTERVAL, threshold=_FC_THRESHOLD):
+    def validateFunctionLineX(src, x, y, STRIP_WIDTH):
+        #x 位置优化
+        OFFSETX = 2
+        x += OFFSETX
+        grey = src[y-STRIP_WIDTH:y+STRIP_WIDTH, x - STRIP_WIDTH:x]
+
+
+        list0, result0, top0 = utils.derivative(grey, grey.shape[1] >> 1, 0, 1, 1)
+        print(  result0, top0, x-OFFSETX, x-STRIP_WIDTH+result0+OFFSETX-1)
+        return x-STRIP_WIDTH+result0+OFFSETX-1
+
+    @staticmethod
+    def checkFunctionLine(src, y, delta, STRIP_WIDTH, STRIP_INTERVAL, threshold=_FC_THRESHOLD):
         width = STRIP_WIDTH-(round(STRIP_WIDTH)>>4)
         y += (STRIP_WIDTH-width)/2
         y = round(y)
@@ -88,13 +100,13 @@ class StripRegion:
             buf = src[:,0]
             i = (numpy.average(buf)>=threshold)*1
             buf = src[:,-1]
-            # cv2.imshow('canny3', src)
+            cv2.imshow('canny3', src)
             # 剪裁x区间白边
             i1 = (numpy.average(buf)>=threshold)*1
             if i+i1>0: src = src[:,i:src.shape[1]-i1]
             if numpy.median(src)< threshold:
-                list0, result0, top0 = utils.derivative(src, src.shape[0]>>1,0, -1, 1)
-                list1, result1, top1 = utils.derivative(src, src.shape[0]>>1,0, 1, 1)
+                list0, result0, top0 = utils.derivative(src, src.shape[0]>>1,1, -1, 1)
+                list1, result1, top1 = utils.derivative(src, src.shape[0]>>1,1, 1, 1)
                 i = result1 - result0
                 # print(top0,top1,i,numpy.average(src[-1]),result0,result1)
                 if (top0<300 or top1<300) and i<=20: #fc line 直到边界

@@ -286,7 +286,8 @@ def derivative(img, posi, axis, axis_dirt, deri_dirt):
     :param deri_dirt: 求导方向 1正增量, -1负赠量
     :return: 有效区域数组, 数组中有效线
     """
-    if img.shape[axis] <= 2: return [],()
+    axis = 1 - axis
+    if img.shape[axis] <= 2: return [], ()
     i = posi
     if axis_dirt == 1:
         i1 = img.shape[axis] - 1
@@ -303,12 +304,14 @@ def derivative(img, posi, axis, axis_dirt, deri_dirt):
         if (i == i1): break
         value1 = np.sum(img[i])
         delta = int(value1) - value0
-        if (top-delta)*deri_dirt<0:
+        if (top - delta) * deri_dirt < 0:
             x = i
             top = delta
         value0 = value1
         list.append(delta)
     return list, x, top
+
+
 def maxWind(array, size, threshold, faultTolerant):
     '''
     查找array[0]中是否存在>=threshold宽度为size的窗口,允许出现faultTolerant个不满足值, 边界值不算

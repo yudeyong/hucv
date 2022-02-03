@@ -39,7 +39,7 @@ def recognization(file, dict):
     # imshow('result', gray)
     # waitKey()
     if list is None or len(list) == 0:
-        return "Zero result.", None
+        return "Zero result."+ file, None
     results = config.Dict()
     setattr(results, 'resultList', list)
     setattr(results, 'stripOffset', template.origin)
@@ -49,6 +49,7 @@ def recognization(file, dict):
 
 
 def debugreco(jpgfile, config):
+    print(jpgfile)
     msg, results = recognization(jpgfile,
                                  config)
     if msg:
@@ -66,10 +67,10 @@ def main():
     lots = ('14/14-2105', '14/14-2102', '11/11-t')
     lot = 0
     i = 1
-    count = 12
+    count = 9
     end = i = i + 0x30
     end += count
-    config = "PNS14"
+    config = "PNS"+lots[lot][:2]
     config_json = _loadTemplate("../../config/strip" + config + ".json")
     print("File *********", chr(i), config)
     while i < end:  # HEX
@@ -85,6 +86,8 @@ def main():
             i += 0x30
             lot += 1
             if lot >= len(lots): break
+            config = "PNS"+lots[lot][:2]
+            config_json = _loadTemplate("../../config/strip" + config + ".json")
     # waitKey(0)
 
 
