@@ -356,7 +356,7 @@ class StripTemplate:
             # self.config.FUNC_LINE[0] >>= 1
             # imshow('1-gray', gray)
         if not False:
-            skips = set([2,3,4,6,8,10,11,15,16,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,42,43,44
+            skips = set([2,3,4,6,8,10,11,15,16,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,43,44
                             ,45,47,48,49,50,51,52,53,54,55,56,57,58,59,60,62,93,94,95,96,97,98,99,100,101,102,103,104,105
                             ,106,107,108,109,110,111,112,113,114,117,120,121,128,129,130,131,132,134,135,136,137,138])
         # _, bw = cvthreshold(gray, self.config.THRESHOLD, 255.0, THRESH_BINARY)
@@ -373,8 +373,8 @@ class StripTemplate:
         while (y > top):
             bottom = y
             y -= self.config.STRIP_INTERVAL
+            imshow('1-strip', src[round(2*y):round(2*bottom), :])#gray[round(y):round(bottom), :])
             # waitKey()
-            # imshow('1-strip', src[round(2*y):round(2*bottom), :])#gray[round(y):round(bottom), :])
             fcX, fcY = sr.StripRegion.checkFunctionLine(gray, y, 0, self.config.STRIP_WIDTH,
                                                          self.config.STRIP_INTERVAL)
             if fcX == -1: break

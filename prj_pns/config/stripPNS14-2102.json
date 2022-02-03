@@ -1,0 +1,150 @@
+{
+  "name": "PNS14",
+  "lines": [
+    [
+      "header",
+      64
+    ],
+    [
+      "Functional Control",
+      11.8
+    ],
+    [
+      "blank",
+      147
+    ],
+    [
+      "Titin(MGT30)",
+      11.8
+    ],
+    [
+      "blank",
+      11.8
+    ],
+    [
+      "Recoverin",
+      11.8
+    ],
+    [
+      "blank",
+      11.8
+    ],
+    [
+      "PKCY",
+      11.8
+    ],
+    [
+      "blank",
+      11.8
+    ],
+    [
+      "GAD65",
+      11.8
+    ],
+    [
+      "blank",
+      11.8
+    ],
+    [
+      "Zic4",
+      11.8
+    ],
+    [
+      "blank",
+      11.8
+    ],
+    [
+      "Tr(DNER)",
+      11.8
+    ],
+    [
+      "blank",
+      11.8
+    ],
+    [
+      "SOX1",
+      11.8
+    ],
+    [
+      "blank",
+      11.8
+    ],
+    [
+      "Ma2",
+      11.8
+    ],
+    [
+      "blank",
+      11.8
+    ],
+    [
+      "Ma1",
+      11.8
+    ],
+    [
+      "blank",
+      11.8
+    ],
+    [
+      "Amphiphysin",
+      11.8
+    ],
+    [
+      "blank",
+      11.8
+    ],
+    [
+      "CV2(CRMP5)",
+      11.8
+    ],
+    [
+      "blank",
+      11.8
+    ],
+    [
+      "Ri",
+      11.8
+    ],
+    [
+      "blank",
+      11.8
+    ],
+    [
+      "Yo",
+      11.8
+    ],
+    [
+      "blank",
+      11.8
+    ],
+    [
+      "HuD",
+      11.8
+    ]
+  ],
+  "RGB_GRAY": "g",
+  "THRESHOLD": 220,
+  "THRESHOLD_VALID": 220,
+  "VALID_XY": [
+    2406,
+    2560,
+    3444,
+    3594
+  ],
+  "BOARD_AREA": [
+    240,
+    510,
+    130,
+    1380
+  ],
+  "VALID_BOARD_AREA":[1220,1280,0,400],
+  "STRIP_INTERVAL": 35.44,
+  "STRIP_AREA_WIDTH": 20,
+  "STRIP_WIDTH": 14,
+  "STRIP_HEIGHT": 32,
+  "TOTAL": 24,
+
+  "STRIPS_WIDTH": 620,
+  "ORIGIN_Y_X": [606,649, 4, 23],
+  "FUNC_LINE": [ 64 ]
+}

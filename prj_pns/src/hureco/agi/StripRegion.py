@@ -100,7 +100,7 @@ class StripRegion:
             buf = src[:,0]
             i = (numpy.average(buf)>=threshold)*1
             buf = src[:,-1]
-            cv2.imshow('canny3', src)
+            # cv2.imshow('canny3', src)
             # 剪裁x区间白边
             i1 = (numpy.average(buf)>=threshold)*1
             if i+i1>0: src = src[:,i:src.shape[1]-i1]

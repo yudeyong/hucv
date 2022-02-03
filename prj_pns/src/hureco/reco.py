@@ -65,12 +65,13 @@ def main():
     # return
     lotLenth = (4 + 0x30, 5 + 0x30, 3 + 0x30)
     lots = ('14/14-2105', '14/14-2102', '11/11-t')
-    lot = 0
+    lot = 1
     i = 1
     count = 9
     end = i = i + 0x30
     end += count
-    config = "PNS"+lots[lot][:2]
+    config = lots[lot][:2]
+    config = "PNS" + config + (lots[lot][-5:] if config=='14' else  '')
     config_json = _loadTemplate("../../config/strip" + config + ".json")
     print("File *********", chr(i), config)
     while i < end:  # HEX
@@ -86,7 +87,7 @@ def main():
             i += 0x30
             lot += 1
             if lot >= len(lots): break
-            config = "PNS"+lots[lot][:2]
+            config = "PNS"+lots[lot][:2]+lots[lot][-5:]
             config_json = _loadTemplate("../../config/strip" + config + ".json")
     # waitKey(0)
 
