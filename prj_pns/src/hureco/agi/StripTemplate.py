@@ -370,6 +370,7 @@ class StripTemplate:
 
         top = bottom - self.config.TOTAL * self.config.STRIP_INTERVAL
         y = bottom  # +self.config.STRIP_INTERVAL*9
+        i = 0
         while (y > top):
             bottom = y
             y -= self.config.STRIP_INTERVAL
@@ -385,41 +386,39 @@ class StripTemplate:
             # gray[fcX:fcX+1, :] = 255
             # gray[fcX-1:fcX, :] = 0
 
-            if not False:
+            if not False and _DEBUG_HEADER:
+                # draw all recognize region
                 x = fcX
-                utils.drawDot(src, (x, fcY), 10)
-                i = 2
-                while i < len(self.config.lines)-1:
-                    x1 = self.config.lines[i][1]
+                debug_y = fcY
+                utils.drawDot(src, (x, debug_y), 10)
+                j = 2
+                while j < len(self.config.lines)-1:
+                    x1 = self.config.lines[j][1]
                     x += x1
-                    i += 1
-                    x2 = self.config.lines[i][1]
-                    fcY += (x2 + x1) * self.hSlope
+                    j += 1
+                    x2 = self.config.lines[j][1]
+                    debug_y += (x2 + x1) * self.hSlope
                     x1 = x + x2
-                    utils.drawDot(src, (x+6, fcY), 3)
-                    utils.drawRectBy2P(src, (round(x), round(fcY)-14), (round(x) + 6, round(fcY)+14))
+                    utils.drawDot(src, (x+6, debug_y), 3)
+                    utils.drawRectBy2P(src, (round(x), round(debug_y)-14), (round(x) + 6, round(debug_y)+14))
                     x = x1
-                    i += 1
-            imshow('1-strip', src[round(2 * y):round(2 * bottom), :])  # gray[round(y):round(bottom), :])
-            StripTemplate.counter += 1
-            print(StripTemplate.counter, self.hSlope)
-            if not StripTemplate.counter in skips:
-                waitKey()
+                    j += 1
+                imshow('1-strip', src[round(2 * y):round(2 * bottom), :])  # gray[round(y):round(bottom), :])
+            if not False: # count strip region
+                StripTemplate.counter += 1
+                print(StripTemplate.counter, self.hSlope)
+                if not StripTemplate.counter in skips:
+                    waitKey()
+                else: continue
 
-            continue
-            if fcX >= 0:
-                # assert( fcX<self.config.FUNC_LINE[0] or fcX>self.config.FUNC_LINE[2])#找到func line
-                strips[i] = sr.StripRegion(listP, i, index, winSize, self.hkb[0], fcX, y, self.references,
-                                           self.config)
-                strips[i].getHeaderMid(listP, index, winSize)
-                strips[i].getFunctionLineY(gray)
-                strips[i].recognise(gray)
-                # break
-                if False:
-                    ty = strips[i].midY
-                    tx = strips[i].midX[0]
-                    cvline(gray, (tx, ty), (gray.shape[0], int((gray.shape[0] - tx) * self.hkb[0]) + ty), 128, 1)
-                # print("true ", end='')
+            strips[i] = sr.StripRegion( i, self.hSlope, fcX, fcY, self.config)
+            strips[i].recognise(gray)
+            # break
+            if False:
+                ty = strips[i].midY
+                tx = strips[i].midX[0]
+                cvline(gray, (tx, ty), (gray.shape[0], int((gray.shape[0] - tx) * self.hkb[0]) + ty), 128, 1)
+            # print("true ", end='')
             # for line in listP:
             #     print(",", line[0], end='')
             # print('.')

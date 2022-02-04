@@ -19,32 +19,15 @@ class StripRegion:
     # samplys
     SAMPLY_THRESHOLD = 239
 
-    def __init__(self, listP, i, index, size, slope, fcX, y, lines, config):
+    def __init__(self, index, slope, fcX, fcY, config):
         # 找中点
-        index = index + (size >> 1)
-        if size & 1 == 0:
-            # 下标大的
-            self.midX = listP[index][2][0] if listP[index][1] >= listP[index + 1][1] else listP[index + 1][2][0]
-            # 均值
-            self.midY = (listP[index][1] + listP[index + 1][1]) >> 1
-        else:
-            self.midX = listP[index][2][0]
-            self.midY = listP[index][1]
         # 整个模板的斜率
         self.setSlope = slope
         self.fcX = fcX
-        self.refX = fcX
-        self.top = fcX * slope + y
+        self.fcY = fcY
         self.config = config
-        self.lines = lines
+        self.index = index
         self.samples = []
-        self.result = result.Result(i)
-        x0 = round(self.fcX - config.fcHeader) - 150
-        if x0 < 0: x0 = 0
-        x1 = round(self.fcX + lines[-1][1]) + 110
-        if x1 >= config.STRIPS_AREA[2]:
-            x1 = config.STRIPS_AREA[2] - 1
-        self.result.area = (x0, x1, round(y + 6), round(y + config.STRIP_INTERVAL))
 
     @staticmethod
     def validateFunctionLineX(src, x, y, STRIP_WIDTH):
@@ -137,43 +120,6 @@ class StripRegion:
         # cv2.waitKey()
         return -1,0
         # print(minValue/(width*src.shape[0]))
-
-    def getFunctionLineY(self, src):
-
-        # 开始处理Y
-        # 检测窗口高度
-        HEIGHT = 9
-        marginTop = int(self.top) - HEIGHT
-        if marginTop < 0: marginTop = 0
-
-        marginBottom = int(self.top + self.config.STRIP_INTERVAL) + HEIGHT
-        if marginBottom >= src.shape[0]: marginBottom = src.shape[0]
-
-        # data[:,:] = 0
-        right = self.fcX + self.config.STRIP_WIDTH - 3
-        y0, y1 = StripRegion._getSampleY(src, (self.fcX + 3, marginTop, right, marginBottom), HEIGHT)
-        if True:
-            self.fcY1 = y1
-            self.fcY0 = y0
-            self.refHeight = (self.fcY1 - self.fcY0)
-            self.refY = self.fcY0
-        else:
-            self.fcY0 = marginTop
-            self.fcY1 = y + FUNC_LINE[3] + HEIGHT
-        # src[self.fcY0:self.fcY1, self.fcX:self.fcX+STRIP_WIDTH]=0
-
-        self.points[1] = (self.fcX, (y1 + y0) / 2)
-        # 膜条的斜率
-        self.slope, b = utils.getFitLine(self.points)
-        # utils.drawFullLine(src, 0, self.slope, b, -16)
-
-        self.sideSlope, b = StripRegion._findSlope(src, right, self.fcY0)
-        if not self.sideSlope is None:
-            # utils.drawFullLine(src, 0, self.sideSlope, self.fcY0 + b, -16)
-            # print("set slope",self.sideSlope,self.setSlope)
-            self.slope = (self.sideSlope + self.setSlope * 3) / 4
-            pass
-        return
 
     @staticmethod
     def _findSlope(src, x, y):
@@ -384,20 +330,6 @@ class StripRegion:
 
         # print("val:",value)
         return value
-
-    def getHeaderMid(self, listP, offset, size):
-        list = [0] * size
-        for i in range(0, size):
-            list[i] = listP[i + offset][2][0][0]
-
-        midy = (listP[size - 1 + offset][1] + listP[offset][1]) >> 1
-        src = numpy.array(list)
-        left = StripRegion._filteringAnomaly(src, StripRegion._modeCheck)
-
-        src = StripRegion._filteringAnomaly(left, StripRegion._two_sigma)
-        midx = numpy.average(src)
-        self.points = [()] * 2
-        self.points[0] = (midx, midy)
 
     @staticmethod
     def _filteringAnomaly(data, func):
