@@ -20,9 +20,7 @@ class StripRegion:
     SAMPLY_THRESHOLD = 239
 
     def __init__(self, index, slope, fcX, fcY, config):
-        # 找中点
-        # 整个模板的斜率
-        self.setSlope = slope
+        self.slope = slope
         self.fcX = fcX
         self.fcY = fcY
         self.config = config
@@ -31,29 +29,28 @@ class StripRegion:
 
     @staticmethod
     def validateFunctionLineX(src, x, y, STRIP_WIDTH):
-        #x 位置优化
+        # x 位置优化
         OFFSETX = 2
         x += OFFSETX
-        grey = src[y-STRIP_WIDTH:y+STRIP_WIDTH, x - STRIP_WIDTH:x]
-
+        grey = src[y - STRIP_WIDTH:y + STRIP_WIDTH, x - STRIP_WIDTH:x]
 
         list0, result0, top0 = utils.derivative(grey, grey.shape[1] >> 1, 0, 1, 1)
-        print(  result0, top0, x-OFFSETX, x-STRIP_WIDTH+result0+OFFSETX-1)
-        return x-STRIP_WIDTH+result0+OFFSETX-1
+        # print(  result0, top0, x-OFFSETX, x-STRIP_WIDTH+result0+OFFSETX-1)
+        return x - STRIP_WIDTH + result0 + OFFSETX - 1
 
     @staticmethod
     def checkFunctionLine(src, y, delta, STRIP_WIDTH, STRIP_INTERVAL, threshold=_FC_THRESHOLD):
-        width = STRIP_WIDTH-(round(STRIP_WIDTH)>>4)
-        y += (STRIP_WIDTH-width)/2
+        width = STRIP_WIDTH - (round(STRIP_WIDTH) >> 4)
+        y += (STRIP_WIDTH - width) / 2
         y = round(y)
-        y1 = y + round(STRIP_INTERVAL - ((STRIP_INTERVAL)//16))
+        y1 = y + round(STRIP_INTERVAL - ((STRIP_INTERVAL) // 16))
         y += 1
         width = round(width)
         STRIP_WIDTH = round(STRIP_WIDTH)
         # cv2.imshow('canny1', src)
 
         # utils.drawRectBy2P(src, (testArea[0], y+testArea[1], testArea[2], y+testArea[3]))
-        src = src[y:y1-1, delta:delta+(STRIP_WIDTH<<2)]
+        src = src[y:y1 - 1, delta:delta + (STRIP_WIDTH << 2)]
         # cv2.imshow('canny2', src)
         # cv2.waitKey()
 
@@ -80,45 +77,45 @@ class StripRegion:
             # todo 缩小范围, 精确FCLine位置
             # 确定当前x区间
             src = src[:, x - width:x]
-            buf = src[:,0]
-            i = (numpy.average(buf)>=threshold)*1
-            buf = src[:,-1]
+            buf = src[:, 0]
+            i = (numpy.average(buf) >= threshold) * 1
+            buf = src[:, -1]
             # cv2.imshow('canny3', src)
             # 剪裁x区间白边
-            i1 = (numpy.average(buf)>=threshold)*1
-            if i+i1>0: src = src[:,i:src.shape[1]-i1]
-            if numpy.median(src)< threshold:
-                list0, result0, top0 = utils.derivative(src, src.shape[0]>>1,1, -1, 1)
-                list1, result1, top1 = utils.derivative(src, src.shape[0]>>1,1, 1, 1)
+            i1 = (numpy.average(buf) >= threshold) * 1
+            if i + i1 > 0: src = src[:, i:src.shape[1] - i1]
+            if numpy.median(src) < threshold:
+                list0, result0, top0 = utils.derivative(src, src.shape[0] >> 1, 1, -1, 1)
+                list1, result1, top1 = utils.derivative(src, src.shape[0] >> 1, 1, 1, 1)
                 i = result1 - result0
                 # print(top0,top1,i,numpy.average(src[-1]),result0,result1)
-                if (top0<300 or top1<300) and i<=20: #fc line 直到边界
-                    if top1<300 : #下边界
-                        #3倍中位数+1倍平均数 再平均
-                        if (numpy.average(src[-1]) + numpy.median(src[-1])*3)*0.25 < 136:
-                            if src.shape[0]-result0<30:
-                                result1 = src.shape[0]-1
+                if (top0 < 300 or top1 < 300) and i <= 20:  # fc line 直到边界
+                    if top1 < 300:  # 下边界
+                        # 3倍中位数+1倍平均数 再平均
+                        if (numpy.average(src[-1]) + numpy.median(src[-1]) * 3) * 0.25 < 136:
+                            if src.shape[0] - result0 < 30:
+                                result1 = src.shape[0] - 1
                                 i = result1 - result0
                         else:
-                            print("miss fc line border in y axis" )
+                            print("miss fc line border in y axis")
                     # else: top0<300 todo
                     # src[ result0+(i>>1)-1: result0+(i>>1)+ 1, :] = 255
                     # cv2.imshow('canny3', src)
                     # cv2.waitKey()
                 # else:
-                src[ result0+(i>>1)-1: result0+(i>>1)+ 1, :] = 255
+                src[result0 + (i >> 1) - 1: result0 + (i >> 1) + 1, :] = 255
                 # cv2.imshow('canny3', src)
 
                 src[result0 + (i >> 1) - 1: result0 + (i >> 1) + 1, :] = 255
                 # print(result0,result1, i)
-                i = result0+((i+1)>>1)
-                return x, y+i
+                i = result0 + ((i + 1) >> 1)
+                return x, y + i
 
         # print(numpy.median(src))
         # src[:,:]=0
         # cv2.imshow('canny3', src)
         # cv2.waitKey()
-        return -1,0
+        return -1, 0
         # print(minValue/(width*src.shape[0]))
 
     @staticmethod
@@ -223,12 +220,62 @@ class StripRegion:
     def _getMidHalfBy2P(l, r, minWidth):
         return StripRegion._getMidHalfByPW(l, r - l, minWidth)
 
-    def recognise(self, gray):
+    skip = 8
+
+    def recognise(self, src):
+        StripRegion.skip -= 1
+        if StripRegion.skip > 0: return
         i = 0
         STRIP_WIDTH = self.config.STRIP_WIDTH
         HALF_WIDTH = STRIP_WIDTH / 2
-        # 收窄边界
-        baseY0, baseY1 = StripRegion._getMidHalfByPW(self.refY, self.refHeight, 8)
+        STRIP_HEIGHT = self.config.STRIP_HEIGHT
+        debug_y = self.fcY
+        x = self.fcX
+        j = 2
+        while j < len(self.config.lines) - 1:
+            x1 = self.config.lines[j][1]
+            x += x1
+            j += 1
+            x2 = self.config.lines[j][1]
+            debug_y += (x2 + x1) * self.slope
+            x1 = x + x2
+            left = round(x) - 4
+            right = round(x) + 10
+            top = round(debug_y) - 9
+            bottom = round(debug_y) + 9
+            grey = src[top: bottom, left: right]
+            list0, result0, top0 = utils.derivative(grey, grey.shape[1] >> 1, 0, -1, 1)
+            list1, result1, top1 = utils.derivative(grey, grey.shape[1] >> 1, 0, 1, 1)
+            median = int(255 - numpy.median(grey))
+            print(result0, top0, result1, top1, median)
+
+            # utils.drawDot(src, (x + 6, debug_y), 3)
+            # utils.drawRectBy2P(src, (left, top), (right, bottom))
+            if not ((top0 > 200 and top0 > (median << 2)) or (top0 > 120 and top0 > (median << 3))):
+                result0 = 0
+            delta_right = left + result1 - right
+            if not ((top1 > 200 and top1 > (median << 2)) or (top1 > 120 and top1 > (median << 3))):
+                delta_right = 0
+            if result0 * delta_right != 0 and result1 - result0 < 6:  # 左右调整都不为0 且距离过近, 提高约束条件
+                if top0 < top1:
+                    if (top0 < 300 or top0 < (median << 3)):
+                        result0 = 0
+                else:
+                    if (top1 < 300 or top1 < (median << 3)):
+                        delta_right = 0
+
+            left += result0
+
+            right += delta_right
+
+            utils.drawRectBy2P(src, (left, top), (right, bottom))
+            cv2.imshow('1-strip', src[round(self.fcY - STRIP_HEIGHT // 2):round(self.fcY + STRIP_HEIGHT // 2), :])
+            # gray[round(y):round(bottom), :])
+
+            cv2.waitKey()
+            x = x1
+            j += 1
+        return
         for line in self.lines:
             # if i<10 :
             #     i += 1

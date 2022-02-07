@@ -374,10 +374,9 @@ class StripTemplate:
         while (y > top):
             bottom = y
             y -= self.config.STRIP_INTERVAL
-            imshow('1-strip', src[round(2*y):round(2*bottom), :])#gray[round(y):round(bottom), :])
+            # imshow('1-strip', src[round(2*y):round(2*bottom), :])#gray[round(y):round(bottom), :])
             # waitKey()
-            fcX, fcY = sr.StripRegion.checkFunctionLine(gray, y, 0, self.config.STRIP_WIDTH,
-                                                         self.config.STRIP_INTERVAL)
+            fcX, fcY = sr.StripRegion.checkFunctionLine(gray, y, 0, self.config.STRIP_WIDTH, self.config.STRIP_INTERVAL)
             if fcX == -1: break
             fcY *= 2
             fcX = sr.StripRegion.validateFunctionLineX(src, fcX*2, fcY, self.config.STRIP_WIDTH)
@@ -386,7 +385,7 @@ class StripTemplate:
             # gray[fcX:fcX+1, :] = 255
             # gray[fcX-1:fcX, :] = 0
 
-            if not False and _DEBUG_HEADER:
+            if False and _DEBUG_HEADER:
                 # draw all recognize region
                 x = fcX
                 debug_y = fcY
@@ -404,7 +403,7 @@ class StripTemplate:
                     x = x1
                     j += 1
                 imshow('1-strip', src[round(2 * y):round(2 * bottom), :])  # gray[round(y):round(bottom), :])
-            if not False: # count strip region
+            if False: # count strip region
                 StripTemplate.counter += 1
                 print(StripTemplate.counter, self.hSlope)
                 if not StripTemplate.counter in skips:
@@ -412,7 +411,13 @@ class StripTemplate:
                 else: continue
 
             strips[i] = sr.StripRegion( i, self.hSlope, fcX, fcY, self.config)
-            strips[i].recognise(gray)
+            strips[i].recognise(src)
+            if False: # count strip region
+                StripTemplate.counter += 1
+                print(StripTemplate.counter, self.hSlope)
+                if not StripTemplate.counter in skips:
+                    waitKey()
+                else: continue
             # break
             if False:
                 ty = strips[i].midY

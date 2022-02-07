@@ -65,8 +65,8 @@ def main():
     # return
     lotLenth = (4 + 0x30, 5 + 0x30, 3 + 0x30)
     lots = ('14/14-2105', '14/14-2102', '11/11-t')
-    lot = 1
-    i = 1
+    lot = 0
+    i = 3
     count = 9
     end = i = i + 0x30
     end += count
