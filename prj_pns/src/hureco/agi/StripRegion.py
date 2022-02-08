@@ -118,120 +118,20 @@ class StripRegion:
         return -1, 0
         # print(minValue/(width*src.shape[0]))
 
-    @staticmethod
-    def _findSlope(src, x, y):
-        '''
-        通过膜条边缘获取膜条角度
-        :param src:
-        :param x:
-        :param y:
-        :return: 边缘斜率, 边缘截距(截距没用)
-        '''
-        src = src[y - 10:y + 13, x:x + 230]
-        _, bw = cv2.threshold(src, 220, 255.0, cv2.THRESH_BINARY)
-        # imshow('bw',bw)
-
-        bw = utils.toCanny(bw, 3)
-        lines = cv2.HoughLinesP(bw, 1, numpy.pi / 270, 100, minLineLength=160, maxLineGap=40)
-
-        # imshow('canny', bw)
-        # waitKey()
-        if lines is None:
-            # print(lines)
-            return None, None
-        x0 = x1 = y0 = y1 = 0
-        for l in lines:
-            line = l[0]
-            x0 += line[0]
-            x1 += line[2]
-            y0 += line[1]
-            y1 += line[3]
-        slope, b = utils.getSlopeBias((x0, y0, x1, y1))
-        return slope, b
-
-    @staticmethod
-    def _getSampleY(src, rect, HEIGHT):
-        '''
-
-        :param data: srcImg
-        :param rect: dectect area
-        :param HEIGHT: window size
-        :return:
-        '''
-
-        data = src[rect[1]:rect[3], rect[0]:rect[2]]
-        # assert data.shape[0]>HEIGHT
-        win = sw.SlidingWindow(HEIGHT)
-
-        win.initData(data, False)
-
-        i1 = data.shape[0]
-        oldValue = [0] * HEIGHT
-        minValue = maxValue = 0
-        minY = maxY = i = HEIGHT - 1
-        maxBorder = ((i1 + i) >> 1)
-        minBorder = maxBorder
-        maxBorder += 3
-        oldValue[0] = win.total
-        recordCursor = 0
-        while recordCursor < HEIGHT:
-            oldValue[recordCursor] = win.total
-            recordCursor += 1
-            i += 1
-            win.append(data[i])
-        recordCursor = 0
-        while True:
-            delta = win.total - oldValue[recordCursor]
-            if i < minBorder and minValue > delta:
-                minValue = delta
-                minY = i
-            if i > maxBorder and maxValue < delta:
-                maxValue = delta
-                maxY = i
-            i += 1
-            if i >= i1: break;
-            oldValue[recordCursor] = win.total
-            recordCursor += 1
-            if recordCursor >= HEIGHT:
-                recordCursor = 0
-            win.append(data[i])
-        return minY + rect[1] - HEIGHT, maxY + rect[1] - HEIGHT
-
-    @staticmethod
-    def _getMidHalfByPW(l, w, minWidth):
-        '''
-        根据点, 宽度得到缩小的中心范围
-        :param l:
-        :param w:
-        :param minWidth:
-        :return:
-        '''
-        delta = w * 0.75
-        # 最小宽度
-        if delta < minWidth: delta = minWidth
-
-        # assert w>delta
-        # margin
-        w = (w - delta) / 2
-        l += w
-        return l, l + delta
-
-    @staticmethod
-    def _getMidHalfBy2P(l, r, minWidth):
-        return StripRegion._getMidHalfByPW(l, r - l, minWidth)
-
-    skip = 8
+    skip = 5
 
     def recognise(self, src):
         StripRegion.skip -= 1
         if StripRegion.skip > 0: return
         i = 0
-        STRIP_WIDTH = self.config.STRIP_WIDTH
-        HALF_WIDTH = STRIP_WIDTH / 2
         STRIP_HEIGHT = self.config.STRIP_HEIGHT
         debug_y = self.fcY
         x = self.fcX
+        x1 = round(self.config.lines[2][1]//4)
+        backgroud = StripRegion._calculateValue(src[debug_y-2:debug_y+2, x+x1:x+3*x1],True)
+        self.result = []
         j = 2
+        # print('b', backgroud)
         while j < len(self.config.lines) - 1:
             x1 = self.config.lines[j][1]
             x += x1
@@ -244,13 +144,13 @@ class StripRegion:
             top = round(debug_y) - 9
             bottom = round(debug_y) + 9
             grey = src[top: bottom, left: right]
-            list0, result0, top0 = utils.derivative(grey, grey.shape[1] >> 1, 0, -1, 1)
-            list1, result1, top1 = utils.derivative(grey, grey.shape[1] >> 1, 0, 1, 1)
+            list0, result0, top0 = utils.derivative(grey, 2+grey.shape[1] >> 1, 0, -1, 1)
+            list1, result1, top1 = utils.derivative(grey, -2+grey.shape[1] >> 1, 0, 1, 1)
             median = int(255 - numpy.median(grey))
-            print(result0, top0, result1, top1, median)
+            # print(result0, top0, result1, top1, median)
 
             # utils.drawDot(src, (x + 6, debug_y), 3)
-            # utils.drawRectBy2P(src, (left, top), (right, bottom))
+            # utils.drawRectBy2P(src, (left, top), (right, bottom)) # 此处画框 影响判读值
             if not ((top0 > 200 and top0 > (median << 2)) or (top0 > 120 and top0 > (median << 3))):
                 result0 = 0
             delta_right = left + result1 - right
@@ -265,96 +165,34 @@ class StripRegion:
                         delta_right = 0
 
             left += result0
-
             right += delta_right
+            while right-left>8:
+                right -= 1
+                left += 1
+            top += 2
+            bottom -= 2
+            value = StripRegion._calculateValue(src[top:bottom, left:right])
+            value = value-backgroud if value>=backgroud else 0
 
-            utils.drawRectBy2P(src, (left, top), (right, bottom))
-            cv2.imshow('1-strip', src[round(self.fcY - STRIP_HEIGHT // 2):round(self.fcY + STRIP_HEIGHT // 2), :])
+            # print('v', round(value,2), round(value/38,2))
+            if not False or _DEBUG_STRIP:
+                utils.drawRectBy2P(src, (left, top), (right, bottom))
+                cv2.imshow('1-strip', src[round(self.fcY - STRIP_HEIGHT // 2):round(self.fcY + STRIP_HEIGHT // 2), :])
             # gray[round(y):round(bottom), :])
 
-            cv2.waitKey()
+                # cv2.waitKey()
             x = x1
             j += 1
-        return
-        for line in self.lines:
-            # if i<10 :
-            #     i += 1
-            #     continue
-            x0, x1 = StripRegion._getMidHalfBy2P(self.fcX + line[0], self.fcX + line[1], 5)
-            # print("L01",line[0],line[1],"x0,1=",x0,x1, end='')
-            slope = self.slope
-            deltaY = (x0 - self.refX) * slope * 2
-            y0 = int(round(baseY0 + deltaY))
-            y1 = int(round(baseY1 + deltaY))
-            value = StripRegion._calculateValue(gray[y0:y1, int(x0):int(x1)])
-            sx = -3
-            if value < StripRegion.SAMPLY_THRESHOLD:
-                if _DEBUG_STRIP:
-                    # print("##", i, value)
-                    pass
-                l = int(x0 - HALF_WIDTH)
-                t = int(y0 - STRIP_WIDTH)
-                if t < 0: t = 0
-                r = int(x1 + HALF_WIDTH)
-                b = int(y1 + STRIP_WIDTH)
-                sx = StripRegion.checkFunctionLineX(gray, 0,
-                                                    (l, t, r, b)
-                                                    , STRIP_WIDTH - 4, StripRegion.SAMPLY_THRESHOLD)
-                # t = y0
-                # b = y1
-                # if self.sideSlope is None:
-                #     # if sx>0:
-                #     #     t, b = StripRegion._getSampleY(gray, (l,t,r,b), 8)
-                #     #     height = b-t-self.config.STRIP_HEIGHT
-                #     #     if height>=-5 and height<=6:
-                #     #         pass#todo 暂时不用校正, 后续如果需要, 首先可以优化header中点精度, 再不行再在这里优化
-                #     #         # print("h:", height)
-                #     #         t = y0
-                #     #         b = y1
-                #     #     else:
-                #     #         t = y0
-                #     #         b = y1
-                #     # else:
-            t = y0
-            b = y1
-            if sx > 0:
-                if sx < x0:
-                    x0 = sx
-                    x0 += StripRegion._narrowImg(gray[t:b, int(x0):int(x1)], STRIP_WIDTH - 4)
-                    x1 = x0 + STRIP_WIDTH - 4
-                # utils.drawRectBy2P(gray, (round(x0), int(t)), (round(x1), int(b)))
-                # utils.drawDot(gray, (int((x0 + x1) / 2), int((y0 + y1 ) / 2)),  0)
-            # else:
-
-            value = StripRegion._calculateValue(gray[t + 1:b - 1, int(x0 + 1):int(x1 - 1)])
-            self.result.appendValue(value, _STAND)
-            utils.drawRectBy2P(gray, (round(x0), int(t)), (round(x1), int(b)))
-            # utils.drawDot(gray, (int((x0 + x1) / 2), int((y0 + y1) / 2)), sx + 6)
-            # print(",sx=",sx,x0,x1)
+            self.result.append((left, top, right, bottom, i, value))
             i += 1
+        return
 
     @staticmethod
-    def _narrowImg(src, width):
-        w = src.shape[1]
-        l = 0
-        r = w - 1
-        suml = numpy.sum(src[:, l])
-        sumr = numpy.sum(src[:, r])
-        while w > width:
-            if suml <= sumr:
-                r -= 1
-                sumr = numpy.sum(src[:, r])
-            else:
-                l += 1
-                suml = numpy.sum(src[:, l])
-            w -= 1
-        return l
-
-    @staticmethod
-    def _calculateValue(data):
+    def _calculateValue(data, order=False):
         '''
-        取排名75%-87.5%的像素区间求均值
+        取排名50%-62.5%的像素区间求均值
         :param data:
+        :param order: false 偏黑区, true 偏白区
         :return:
         '''
         data = data.flatten()
@@ -363,17 +201,19 @@ class StripRegion:
         # print( "dsize=",s, "-",end='')
         i = 3
         while data.size > 80 and i > 0:
-            data = StripRegion._filteringAnomaly(data, StripRegion._two_sigma)
+            data = StripRegion._filteringAnomaly(data, StripRegion.
+                                                 _two_sigma)
             i -= 1
         count = data.size
         # print(count, '=', s-count,round((s-count)*100/s),"%")
+        if order : data = 255-data
         data = numpy.sort(data)
         value = (count >> 3) + 1
         i1 = (count >> 1)
         i0 = i1 - value if i1 > value else 0
 
         value = numpy.average(data[i0:i1])
-        # value += 0xff - bgColor
+        if not order: value = 255 - value
 
         # print("val:",value)
         return value

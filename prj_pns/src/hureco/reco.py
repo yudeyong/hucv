@@ -64,9 +64,9 @@ def main():
     # debugreco('../samples/14/14-2102.jpg',_loadTemplate("../../config/stripAGL6.json"))
     # return
     lotLenth = (4 + 0x30, 5 + 0x30, 3 + 0x30)
-    lots = ('14/14-2105', '14/14-2102', '11/11-t')
+    lots = ('14/14-2105', '14/14-2102', '11/11-2103')
     lot = 0
-    i = 3
+    i = 1
     count = 9
     end = i = i + 0x30
     end += count

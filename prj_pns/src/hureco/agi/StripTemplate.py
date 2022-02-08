@@ -195,16 +195,16 @@ class StripTemplate:
     # 返回fc line
     def _findLikelyLine(self, lines):
         line = lines[0]
-        # 固定间隔 FUNC_LINE[0]
-        line[0] += self.config.FUNC_LINE[0]
-        line[2] += self.config.FUNC_LINE[0]
+        # 固定间隔 FUNC_LINE
+        line[0] += self.config.FUNC_LINE
+        line[2] += self.config.FUNC_LINE
         line[1] -= PRE_Y_TIMES
         line[3] -= PRE_Y_TIMES
         slope, bias = utils.getSlopeBias(line)
         self.vSlope = slope
         slope = -1 / slope  # 垂线斜率
         self.hSlope = slope
-        line[0] += slope * self.config.FUNC_LINE[0]
+        line[0] += slope * self.config.FUNC_LINE
         return line
 
     # 寻找最左顶点
@@ -244,7 +244,7 @@ class StripTemplate:
         if lines[1] < self.config.ORIGIN_Y_X[0] or lines[1] > self.config.ORIGIN_Y_X[1]: return "Y cross border"
         # print(lines[ 1])
         self.origin = lines  # utils.getCross(self.hkb, self.vkb)
-        # imshow('origin', self.src[2600:self.src.shape[0] - self.config.BOARD_AREA[1] - self.config.BOARD_AREA[3]+lines[1]*2+22,self.config.BOARD_AREA[0] + (self.origin[0] - self.config.FUNC_LINE[0])*2-10:500])
+        # imshow('origin', self.src[2600:self.src.shape[0] - self.config.BOARD_AREA[1] - self.config.BOARD_AREA[3]+lines[1]*2+22,self.config.BOARD_AREA[0] + (self.origin[0] - self.config.FUNC_LINE)*2-10:500])
         # waitKey()
         if False and _DEBUG_DRAW_LOCATION:  # 调试间距
             i = self.config.TOTAL
@@ -277,8 +277,7 @@ class StripTemplate:
                   0]
               :self.src.shape[0] - self.config.BOARD_AREA[1] - self.config.BOARD_AREA[3] + self.config.VALID_BOARD_AREA[
                   1],
-              self.config.BOARD_AREA[0] + self.origin[0] - self.config.FUNC_LINE[
-                  0] * PRE_X_TIMES - self.config.STRIP_WIDTH
+              self.config.BOARD_AREA[0] + self.origin[0] - self.config.FUNC_LINE * PRE_X_TIMES - self.config.STRIP_WIDTH
               :self.config.BOARD_AREA[0] + self.origin[0] + self.config.VALID_BOARD_AREA[3]]
         _, bw = cvthreshold(src, self.config.THRESHOLD_VALID, 255.0, THRESH_BINARY)
         # imshow('bw', src)
@@ -353,7 +352,7 @@ class StripTemplate:
             # self.config.STRIP_INTERVAL /= PRE_X_TIMES
             # self.config.STRIP_WIDTH >>= 1
             # HEADER_WIDTH >>= 1
-            # self.config.FUNC_LINE[0] >>= 1
+            # self.config.FUNC_LINE >>= 1
             # imshow('1-gray', gray)
         if not False:
             skips = set([2,3,4,6,8,10,11,15,16,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,43,44
