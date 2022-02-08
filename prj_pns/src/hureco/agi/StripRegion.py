@@ -32,9 +32,9 @@ class StripRegion:
         # x 位置优化
         OFFSETX = 2
         x += OFFSETX
-        grey = src[y - STRIP_WIDTH:y + STRIP_WIDTH, x - STRIP_WIDTH:x]
+        gray = src[y - STRIP_WIDTH:y + STRIP_WIDTH, x - STRIP_WIDTH:x]
 
-        list0, result0, top0 = utils.derivative(grey, grey.shape[1] >> 1, 0, 1, 1)
+        list0, result0, top0 = utils.derivative(gray, gray.shape[1] >> 1, 0, 1, 1)
         # print(  result0, top0, x-OFFSETX, x-STRIP_WIDTH+result0+OFFSETX-1)
         return x - STRIP_WIDTH + result0 + OFFSETX - 1
 
@@ -120,16 +120,15 @@ class StripRegion:
 
     skip = 5
 
-    def recognise(self, src):
+    def recognise(self, src, i):
         StripRegion.skip -= 1
         if StripRegion.skip > 0: return
-        i = 0
-        STRIP_HEIGHT = self.config.STRIP_HEIGHT
+        HALF_HEIGHT = self.config.STRIP_HEIGHT / 2
         debug_y = self.fcY
         x = self.fcX
-        x1 = round(self.config.lines[2][1]//4)
-        backgroud = StripRegion._calculateValue(src[debug_y-2:debug_y+2, x+x1:x+3*x1],True)
-        self.result = []
+        x1 = round(self.config.lines[2][1] // 4)
+        backgroud = StripRegion._calculateValue(src[debug_y - 2:debug_y + 2, x + x1:x + 3 * x1], True)
+        self.result = result.Result(i)
         j = 2
         # print('b', backgroud)
         while j < len(self.config.lines) - 1:
@@ -143,10 +142,10 @@ class StripRegion:
             right = round(x) + 10
             top = round(debug_y) - 9
             bottom = round(debug_y) + 9
-            grey = src[top: bottom, left: right]
-            list0, result0, top0 = utils.derivative(grey, 2+grey.shape[1] >> 1, 0, -1, 1)
-            list1, result1, top1 = utils.derivative(grey, -2+grey.shape[1] >> 1, 0, 1, 1)
-            median = int(255 - numpy.median(grey))
+            gray = src[top: bottom, left: right]
+            list0, result0, top0 = utils.derivative(gray, 2 + gray.shape[1] >> 1, 0, -1, 1)
+            list1, result1, top1 = utils.derivative(gray, -2 + gray.shape[1] >> 1, 0, 1, 1)
+            median = int(255 - numpy.median(gray))
             # print(result0, top0, result1, top1, median)
 
             # utils.drawDot(src, (x + 6, debug_y), 3)
@@ -166,26 +165,28 @@ class StripRegion:
 
             left += result0
             right += delta_right
-            while right-left>8:
+            while right - left > 8:
                 right -= 1
                 left += 1
             top += 2
             bottom -= 2
             value = StripRegion._calculateValue(src[top:bottom, left:right])
-            value = value-backgroud if value>=backgroud else 0
+            value = value - backgroud if value >= backgroud else 0
 
             # print('v', round(value,2), round(value/38,2))
             if not False or _DEBUG_STRIP:
                 utils.drawRectBy2P(src, (left, top), (right, bottom))
-                cv2.imshow('1-strip', src[round(self.fcY - STRIP_HEIGHT // 2):round(self.fcY + STRIP_HEIGHT // 2), :])
+                cv2.imshow('1-strip', src[round(self.fcY - HALF_HEIGHT):round(self.fcY + HALF_HEIGHT), :])
             # gray[round(y):round(bottom), :])
 
-                # cv2.waitKey()
+            # cv2.waitKey()
             x = x1
             j += 1
-            self.result.append((left, top, right, bottom, i, value))
-            i += 1
+            self.result.append((left, top, right, bottom, value))
         return
+
+    def _addResult(self, stripRegion, detetiveRegion, value ):
+        self.result.append( result.Result(stripRegion, detetiveRegion, value, len(self.result)))
 
     @staticmethod
     def _calculateValue(data, order=False):
@@ -206,7 +207,7 @@ class StripRegion:
             i -= 1
         count = data.size
         # print(count, '=', s-count,round((s-count)*100/s),"%")
-        if order : data = 255-data
+        if order: data = 255 - data
         data = numpy.sort(data)
         value = (count >> 3) + 1
         i1 = (count >> 1)

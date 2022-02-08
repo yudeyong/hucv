@@ -1,6 +1,6 @@
 class Result:
 
-    def __init__(self, index):
+    def __init__(self, stripRegion, detetiveRegion, value, index, strpRegion):
         '''
 
         :param index: 下标
@@ -9,11 +9,15 @@ class Result:
         self.index = index
         self.results = []
         self.values = []
+        self.stripRegion = strpRegion
+        self.detectiveRegion = []
 
-    def appendValue(self, value, stand):
-        v = (255 - value) / stand
+    STAND = 38
+    def appendValue(self, value, detectiveRegion):
+        v = value / Result.STAND
         self.values.append(v)
         self.results.append(Result._setQualitative(v))
+        self.detectiveRegion.append(detectiveRegion)
         # print(" ,v=",round(v,2) ,end='')
 
     @staticmethod
@@ -29,7 +33,7 @@ class Result:
         else:
             if v < 0.4: return ''
             if v < 0.8: return '-'
-            if v < 1.15: return 'o'
-            if v < 2.5: return '+'
-            if v < 4: return '++'
+            if v < 1.0: return 'o'
+            if v < 1.9: return '+'
+            if v < 2.99: return '++'
             return '+++'

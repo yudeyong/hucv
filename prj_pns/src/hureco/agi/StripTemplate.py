@@ -324,6 +324,8 @@ class StripTemplate:
         src = self.src
         x = int(self.config.BOARD_AREA[0] + PRE_X_TIMES * min(self.origin[0], self.origin[2]))
         y = int(src.shape[0] - self.config.BOARD_AREA[1] - self.config.BOARD_AREA[3] + self.origin[1])
+        self.left = x
+        self.bottom = y
         src = self.src[y - PRE_Y_TIMES * round(self.config.STRIP_INTERVAL + 0.5) * self.config.TOTAL:y,
               x:x + self.config.STRIPS_WIDTH]
         if False and _DEBUG_DRAW_LOCATION:
@@ -410,7 +412,7 @@ class StripTemplate:
                 else: continue
 
             strips[i] = sr.StripRegion( i, self.hSlope, fcX, fcY, self.config)
-            strips[i].recognise(src)
+            strips[i].recognise(src, i)
             if False: # count strip region
                 StripTemplate.counter += 1
                 print(StripTemplate.counter, self.hSlope)
