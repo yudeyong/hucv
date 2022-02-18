@@ -118,17 +118,17 @@ class StripRegion:
         return -1, 0
         # print(minValue/(width*src.shape[0]))
 
-    skip = 5
+    # skip = 0
 
     def recognise(self, src, i):
-        StripRegion.skip -= 1
-        if StripRegion.skip > 0: return
+        # StripRegion.skip -= 1
+        # if StripRegion.skip > 0: return
         HALF_HEIGHT = self.config.STRIP_HEIGHT / 2
         debug_y = self.fcY
         x = self.fcX
         x1 = round(self.config.lines[2][1] // 4)
         backgroud = StripRegion._calculateValue(src[debug_y - 2:debug_y + 2, x + x1:x + 3 * x1], True)
-        self.result = result.Result(i)
+        self.result = result.Result(i, (round(self.fcY - HALF_HEIGHT), round(self.fcY + HALF_HEIGHT)))
         j = 2
         # print('b', backgroud)
         while j < len(self.config.lines) - 1:
@@ -174,7 +174,7 @@ class StripRegion:
             value = value - backgroud if value >= backgroud else 0
 
             # print('v', round(value,2), round(value/38,2))
-            if not False or _DEBUG_STRIP:
+            if False or _DEBUG_STRIP:
                 utils.drawRectBy2P(src, (left, top), (right, bottom))
                 cv2.imshow('1-strip', src[round(self.fcY - HALF_HEIGHT):round(self.fcY + HALF_HEIGHT), :])
             # gray[round(y):round(bottom), :])
@@ -182,11 +182,10 @@ class StripRegion:
             # cv2.waitKey()
             x = x1
             j += 1
-            self.result.append((left, top, right, bottom, value))
-        return
+            self.result.appendValue(value, (left, top, right, bottom))
 
-    def _addResult(self, stripRegion, detetiveRegion, value ):
-        self.result.append( result.Result(stripRegion, detetiveRegion, value, len(self.result)))
+    def _addResult(self, stripRegion, detetiveRegion, value):
+        self.result.append(result.Result(stripRegion, detetiveRegion, value, len(self.result)))
 
     @staticmethod
     def _calculateValue(data, order=False):

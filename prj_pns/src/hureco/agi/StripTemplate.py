@@ -343,7 +343,7 @@ class StripTemplate:
         # imshow('canny', src)
         return None, src
 
-    def _checkHeaders(self):
+    def _detect(self):
         HEADER_WIDTH = 160
 
         src = self.src
@@ -356,7 +356,7 @@ class StripTemplate:
             # HEADER_WIDTH >>= 1
             # self.config.FUNC_LINE >>= 1
             # imshow('1-gray', gray)
-        if not False:
+        if  False:
             skips = set([2,3,4,6,8,10,11,15,16,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,43,44
                             ,45,47,48,49,50,51,52,53,54,55,56,57,58,59,60,62,93,94,95,96,97,98,99,100,101,102,103,104,105
                             ,106,107,108,109,110,111,112,113,114,117,120,121,128,129,130,131,132,134,135,136,137,138])
@@ -365,8 +365,8 @@ class StripTemplate:
         bottom = gray.shape[0]
         # dH = height if height>0 else 0
         strips = [None] * self.config.TOTAL
-        flag = False
-        imshow('canny1', gray)
+
+        # imshow('canny1', gray)
         # waitKey()
 
         top = bottom - self.config.TOTAL * self.config.STRIP_INTERVAL
@@ -441,19 +441,24 @@ class StripTemplate:
         if _DEBUG_HEADER and False:
             imshow("bg", gray)
             waitKey()
-        return (strips, gray) if flag else (None, None)
+        # waitKey()
+        return strips, src # if flag else (None, None)
 
     # check header, locate
     def recognise(self):
-        strips, img = self._checkHeaders()
+        strips,src = self._detect()
 
         if strips is None: return None, None
         list = []
         for strip in strips:
             if not strip is None:
+                for points in strip.result.detectiveRegion:
+                    utils.drawRectBy2P(src, (points[0], points[1]), (points[2], points[3]))
+                imshow('0-strip', src[strip.result.stripRegion[0]:strip.result.stripRegion[1], :])
+                waitKey()
                 list.append(strip.result)
         # for strip in strips:
         #     if not strip is None:
         #         strip.recognise()
 
-        return list, img
+        return list, None

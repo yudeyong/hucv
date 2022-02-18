@@ -20,7 +20,7 @@ def recognization(file, dict):
     '''
     # imshow('src', src)
     if dict is None:
-        return "Miss config file.", None
+        return "Miss config file."+file, None
     template = config.getConfigFromDict(dict)
     err, src = template.getImg(file)
     # imshow('origin', src)

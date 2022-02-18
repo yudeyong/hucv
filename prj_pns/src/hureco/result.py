@@ -1,16 +1,16 @@
 class Result:
 
-    def __init__(self, stripRegion, detetiveRegion, value, index, strpRegion):
+    def __init__(self, index, stripRegion):
         '''
 
         :param index: 下标
         : param stand: 标准值
         '''
-        self.index = index
-        self.results = []
-        self.values = []
-        self.stripRegion = strpRegion
-        self.detectiveRegion = []
+        self.index = index #下标
+        self.results = [] # 阳性, 加号
+        self.values = [] # 检测值/标准值
+        self.stripRegion = stripRegion # 膜条区域
+        self.detectiveRegion = [] # 监测区域
 
     STAND = 38
     def appendValue(self, value, detectiveRegion):
