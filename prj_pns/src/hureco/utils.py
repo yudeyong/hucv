@@ -169,11 +169,15 @@ def enlarge(img, xTimes, yTimes):
 
 
 def drawRectBy2P(src, p0, p1):
-    p = ((p0[0], p0[1]), (p1[0], p0[1]), (p0[0], p1[1]), (p1[0], p1[1]))
-    drawRectBy4P(src, p)
+    cv2.rectangle(src, p0,p1,(0,0,0),1)
+    # return
+    # p = ((p0[0], p0[1]), (p1[0], p0[1]), (p0[0], p1[1]), (p1[0], p1[1]))
+    # drawRectBy4P(src, p)
 
 
-def drawRectBy4P(src, p):
+def drawPolygonBy4P(src, p):
+    # cv2.rectangle(src, p[0],p[3],(0,0,0),1)
+    # return
     cv2.line(src, (p[0][0], p[0][1]), (p[1][0], p[1][1]), (0, 0, 0), 1)
     cv2.line(src, (p[2][0], p[2][1]), (p[3][0], p[3][1]), (0, 0, 0), 1)
     cv2.line(src, (p[0][0], p[0][1]), (p[2][0], p[2][1]), (0, 0, 0), 1)

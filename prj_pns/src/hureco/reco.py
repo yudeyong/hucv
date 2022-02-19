@@ -1,5 +1,6 @@
 from hureco import config
 from hureco import utils
+import cv2
 
 
 #############
@@ -20,7 +21,7 @@ def recognization(file, dict):
     '''
     # imshow('src', src)
     if dict is None:
-        return "Miss config file."+file, None
+        return "Miss config file." + file, None
     template = config.getConfigFromDict(dict)
     err, src = template.getImg(file)
     # imshow('origin', src)
@@ -30,22 +31,46 @@ def recognization(file, dict):
     if not err is None:
         return "Recognize Failed " + err + file, None
     ###cut borad from image
-    list, img = template.recognise()
+    list, _ = template.recognise()
 
     # sr.StripRegion.recognise(gray, strips)
 
-    # imshow('bw',bw)
-    # imshow('src', src)
+    # cv2.imshow('src', src)
     # imshow('result', gray)
-    # waitKey()
+    # cv2.waitKey()
+    debugImg(file, list, template)
     if list is None or len(list) == 0:
-        return "Zero result."+ file, None
+        return "None result." + file, None
     results = config.Dict()
     setattr(results, 'resultList', list)
     setattr(results, 'stripOffset', template.origin)
-    setattr(results, 'stripImg', img)
+    # setattr(results, 'stripImg', img)
 
     return None, results
+
+
+import cv2
+import numpy
+
+
+def debugImg(file, list, tmpl):
+    src = cv2.imdecode(numpy.fromfile(file, dtype=numpy.uint8), -1)
+    if src is None: return "file not found " + file, None
+    # imshow('ori',src)
+    # 识别区域
+    # cv2.imshow('img', src)
+    for result in list:
+        # todo 膜条换算完成, 样本换算to be continue
+        img = src[tmpl.top -  result.stripRegion[1] :tmpl.top -  result.stripRegion[0],
+              tmpl.right:tmpl.left]
+        cv2.imshow( 'o-strip',img)
+        cv2.waitKey()
+    # img = src[src.shape[0] - config.BOARD_AREA[1] - config.BOARD_AREA[3]
+    #           :src.shape[0] - config.BOARD_AREA[1],
+    #       config.BOARD_AREA[0]:config.BOARD_AREA[0] + config.BOARD_AREA[2]]
+    # if ZOOMOUT_FIRST:
+    #     src = utils.shrink3(src, PRE_X_TIMES, PRE_Y_TIMES)
+    return None, src
 
 
 def debugreco(jpgfile, config):
@@ -71,7 +96,7 @@ def main():
     end = i = i + 0x30
     end += count
     config = lots[lot][:2]
-    config = "PNS" + config + (lots[lot][-5:] if config=='14' else  '')
+    config = "PNS" + config + (lots[lot][-5:] if config == '14' else '')
     config_json = _loadTemplate("../../config/strip" + config + ".json")
     print("File *********", chr(i), config)
     while i < end:  # HEX
@@ -87,7 +112,7 @@ def main():
             i += 0x30
             lot += 1
             if lot >= len(lots): break
-            config = "PNS"+lots[lot][:2]+lots[lot][-5:]
+            config = "PNS" + lots[lot][:2] + lots[lot][-5:]
             config_json = _loadTemplate("../../config/strip" + config + ".json")
     # waitKey(0)
 

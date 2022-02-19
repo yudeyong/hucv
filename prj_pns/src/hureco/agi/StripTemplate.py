@@ -1,4 +1,5 @@
-import math
+from typing import Any, Union
+
 import numpy
 from cv2 import imdecode, imread, line as cvline, imshow, waitKey, HoughLinesP, threshold as cvthreshold, THRESH_BINARY
 from numpy import fromfile, uint8 as npuint8, pi as np_pi
@@ -25,6 +26,7 @@ Y_TIMES = 1 if ZOOMOUT_FIRST else PRE_Y_TIMES
 
 
 class StripTemplate:
+    top: Union[int, Any]
     counter = 0
 
     def __init__(self, config):
@@ -69,10 +71,12 @@ class StripTemplate:
         if not self._checkShape(src.shape):
             return "invalid size.", None
         self.src = src = numpy.flip(src)
+        # imshow('ori',src)
         # 识别区域
         src = src[src.shape[0] - self.config.BOARD_AREA[1] - self.config.BOARD_AREA[3]
                   :src.shape[0] - self.config.BOARD_AREA[1],
               self.config.BOARD_AREA[0]:self.config.BOARD_AREA[0] + self.config.BOARD_AREA[2]]
+        # imshow('flp',src)
         if ZOOMOUT_FIRST:
             src = utils.shrink3(src, PRE_X_TIMES, PRE_Y_TIMES)
         return None, src
@@ -324,8 +328,10 @@ class StripTemplate:
         src = self.src
         x = int(self.config.BOARD_AREA[0] + PRE_X_TIMES * min(self.origin[0], self.origin[2]))
         y = int(src.shape[0] - self.config.BOARD_AREA[1] - self.config.BOARD_AREA[3] + self.origin[1])
-        self.left = x
-        self.bottom = y
+        self.right = self.src.shape[1]-(x + self.config.STRIPS_WIDTH)
+        self.left = self.src.shape[1]-x
+        self.top = self.src.shape[0]-(y - PRE_Y_TIMES * round(self.config.STRIP_INTERVAL + 0.5) * self.config.TOTAL)
+        # self.bottom = y
         src = self.src[y - PRE_Y_TIMES * round(self.config.STRIP_INTERVAL + 0.5) * self.config.TOTAL:y,
               x:x + self.config.STRIPS_WIDTH]
         if False and _DEBUG_DRAW_LOCATION:
@@ -455,10 +461,6 @@ class StripTemplate:
                 for points in strip.result.detectiveRegion:
                     utils.drawRectBy2P(src, (points[0], points[1]), (points[2], points[3]))
                 imshow('0-strip', src[strip.result.stripRegion[0]:strip.result.stripRegion[1], :])
-                waitKey()
+                # waitKey()
                 list.append(strip.result)
-        # for strip in strips:
-        #     if not strip is None:
-        #         strip.recognise()
-
         return list, None
