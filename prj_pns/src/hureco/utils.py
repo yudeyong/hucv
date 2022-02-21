@@ -178,10 +178,10 @@ def drawRectBy2P(src, p0, p1):
 def drawPolygonBy4P(src, p):
     # cv2.rectangle(src, p[0],p[3],(0,0,0),1)
     # return
-    cv2.line(src, (p[0][0], p[0][1]), (p[1][0], p[1][1]), (0, 0, 0), 1)
-    cv2.line(src, (p[2][0], p[2][1]), (p[3][0], p[3][1]), (0, 0, 0), 1)
-    cv2.line(src, (p[0][0], p[0][1]), (p[2][0], p[2][1]), (0, 0, 0), 1)
-    cv2.line(src, (p[1][0], p[1][1]), (p[3][0], p[3][1]), (0, 0, 0), 1)
+    cv2.line(src, (p[0], p[1]), (p[2], p[1]), (0, 0, 255), 3)
+    cv2.line(src, (p[2], p[1]), (p[2], p[3]), (0, 0, 255), 3)
+    cv2.line(src, (p[0], p[1]), (p[0], p[3]), (0, 255, 0), 3)
+    cv2.line(src, (p[0], p[3]), (p[2], p[3]), (0, 255, 0), 3)
 
 
 def drawMidLineBy2P(src, p, i):

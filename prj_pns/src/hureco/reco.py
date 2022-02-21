@@ -61,10 +61,24 @@ def debugImg(file, list, tmpl):
     # cv2.imshow('img', src)
     for result in list:
         # todo 膜条换算完成, 样本换算to be continue
-        img = src[tmpl.top -  result.stripRegion[1] :tmpl.top -  result.stripRegion[0],
+        img = src[tmpl.top - result.stripRegion[1]:tmpl.top - result.stripRegion[0],
               tmpl.right:tmpl.left]
-        cv2.imshow( 'o-strip',img)
-        cv2.waitKey()
+        cv2.imshow('1-strip', img)
+        # cv2.waitKey()
+
+        region = [None] * 4
+        for r in result.detectiveRegion:
+            region[0] = tmpl.right + r[0]
+            region[2] = tmpl.right + r[2]
+            region[1] = src.shape[1]-r[3]
+            region[3] = src.shape[1]-r[1]
+            print(region)
+            utils.drawPolygonBy4P(src, region)
+            break
+        # cv2.imshow( 'o-strip',img)
+        # cv2.waitKey()
+    cv2.imshow('o-strip', src)
+    cv2.waitKey()
     # img = src[src.shape[0] - config.BOARD_AREA[1] - config.BOARD_AREA[3]
     #           :src.shape[0] - config.BOARD_AREA[1],
     #       config.BOARD_AREA[0]:config.BOARD_AREA[0] + config.BOARD_AREA[2]]

@@ -460,7 +460,7 @@ class StripTemplate:
             if not strip is None:
                 for points in strip.result.detectiveRegion:
                     utils.drawRectBy2P(src, (points[0], points[1]), (points[2], points[3]))
-                imshow('0-strip', src[strip.result.stripRegion[0]:strip.result.stripRegion[1], :])
+                # imshow('0-strip', src[strip.result.stripRegion[0]:strip.result.stripRegion[1], :])
                 # waitKey()
                 list.append(strip.result)
         return list, None
