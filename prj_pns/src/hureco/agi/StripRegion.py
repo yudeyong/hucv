@@ -174,7 +174,7 @@ class StripRegion:
             value = value - backgroud if value >= backgroud else 0
 
             # print('v', round(value,2), round(value/38,2))
-            if False or _DEBUG_STRIP:
+            if False and _DEBUG_STRIP:
                 utils.drawRectBy2P(src, (left, top), (right, bottom))
                 cv2.imshow('1-strip', src[round(self.fcY - HALF_HEIGHT):round(self.fcY + HALF_HEIGHT), :])
             # gray[round(y):round(bottom), :])

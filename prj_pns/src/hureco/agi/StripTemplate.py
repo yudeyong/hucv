@@ -456,11 +456,13 @@ class StripTemplate:
 
         if strips is None: return None, None
         list = []
+        # imshow("src", src)
         for strip in strips:
             if not strip is None:
-                for points in strip.result.detectiveRegion:
-                    utils.drawRectBy2P(src, (points[0], points[1]), (points[2], points[3]))
-                # imshow('0-strip', src[strip.result.stripRegion[0]:strip.result.stripRegion[1], :])
-                # waitKey()
+                if _DEBUG_HEADER and False:
+                    for points in strip.result.detectiveRegion:
+                        utils.drawRectBy2P(src, (points[0], points[1]), (points[2], points[3]))
+                    imshow('recognise', src[strip.result.stripRegion[0]:strip.result.stripRegion[1], :])
+                    # waitKey()
                 list.append(strip.result)
         return list, None
