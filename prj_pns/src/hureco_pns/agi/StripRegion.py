@@ -1,7 +1,7 @@
 import cv2
 import numpy
 
-from hureco import SlidingWindow as sw, utils, result
+from hureco_pns import SlidingWindow as sw, utils, result
 
 _DEBUG_SR = False
 _DEBUG_LINE = not False

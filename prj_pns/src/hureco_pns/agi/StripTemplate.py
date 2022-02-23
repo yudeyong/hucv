@@ -4,8 +4,8 @@ import numpy
 from cv2 import imdecode, imread, line as cvline, imshow, waitKey, HoughLinesP, threshold as cvthreshold, THRESH_BINARY
 from numpy import fromfile, uint8 as npuint8, pi as np_pi
 
-from hureco import utils
-from hureco.agi import StripRegion as sr
+from hureco_pns import utils
+from hureco_pns.agi import StripRegion as sr
 
 _DEBUG = not False
 _DEBUG_DRAW_LOCATION = not False and _DEBUG

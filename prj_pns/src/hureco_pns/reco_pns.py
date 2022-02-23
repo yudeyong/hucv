@@ -1,5 +1,5 @@
-from hureco import config
-from hureco import utils
+from hureco_pns import config
+from hureco_pns import utils
 import cv2
 
 
