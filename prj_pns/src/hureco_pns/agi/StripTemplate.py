@@ -328,9 +328,9 @@ class StripTemplate:
         src = self.src
         x = int(self.config.BOARD_AREA[0] + PRE_X_TIMES * min(self.origin[0], self.origin[2]))
         y = int(src.shape[0] - self.config.BOARD_AREA[1] - self.config.BOARD_AREA[3] + self.origin[1])
-        self.right = self.src.shape[1]-(x + self.config.STRIPS_WIDTH)
-        self.left = self.src.shape[1]-x
-        self.top = self.src.shape[0]-(y - PRE_Y_TIMES * round(self.config.STRIP_INTERVAL + 0.5) * self.config.TOTAL)
+        self.right = (x + self.config.STRIPS_WIDTH)#self.src.shape[1]-
+        self.left = x#self.src.shape[1]-
+        self.top = (y - PRE_Y_TIMES * round(self.config.STRIP_INTERVAL + 0.5) * self.config.TOTAL)#self.src.shape[0]-
         # self.bottom = y
         src = self.src[y - PRE_Y_TIMES * round(self.config.STRIP_INTERVAL + 0.5) * self.config.TOTAL:y,
               x:x + self.config.STRIPS_WIDTH]
@@ -410,6 +410,7 @@ class StripTemplate:
                     x = x1
                     j += 1
                 imshow('1-strip', src[round(2 * y):round(2 * bottom), :])  # gray[round(y):round(bottom), :])
+                waitKey()
             if False: # count strip region
                 StripTemplate.counter += 1
                 print(StripTemplate.counter, self.hSlope)

@@ -1,6 +1,6 @@
 from hureco_pns import config
 from hureco_pns import utils
-import cv2
+from hureco_pns import result
 
 
 #############
@@ -23,6 +23,7 @@ def recognization(file, dict):
     if dict is None:
         return "Miss config file.", None
     template = config.getConfigFromDict(dict)
+    result.Result.STAND = template.config.STANDARD_VALUE
     err, src = template.getImg(file)
     # imshow('origin', src)
     # waitKey()
@@ -38,7 +39,9 @@ def recognization(file, dict):
     # cv2.imshow('src', src)
     # imshow('result', gray)
     # cv2.waitKey()
-    debugImg(file, list, template)
+    if not False:
+        # debugImg(file, list, template)
+        debugFlipImg(src, list, template)
     if list is None or len(list) == 0:
         return "None result." + file, None
     results = config.Dict()
@@ -50,10 +53,30 @@ def recognization(file, dict):
 
 
 import cv2
-import numpy
+# import numpy
+def debugFlipImg(src, list, tmpl):
+    for result in list:
+        # todo 膜条换算完成, 样本换算to be continue
+        img = src[result.stripRegion[0]:result.stripRegion[1],:]
+        cv2.imshow('ori-debugFlipImg', src)
+        cv2.waitKey()
 
+        region = [None] * 4
+        for r in result.detectiveRegion:
+            region[0] = r[1]
+            region[2] = r[3]
+            region[1] = r[0]
+            region[3] = r[2]
+            # print(region)
+            utils.drawPolygonBy4P(src, region)
+            # break
+        # cv2.imshow( 'debugImg',img)
+        # cv2.waitKey()
+    cv2.imshow('debugImg ori', src)
+    cv2.waitKey()
 
 def debugImg(file, list, tmpl):
+    if True : return
     src = cv2.imdecode(numpy.fromfile(file, dtype=numpy.uint8), -1)
     if src is None: return "file not found " + file, None
     # imshow('ori',src)
@@ -106,7 +129,7 @@ def main():
     lots = ('14/14-2105', '14/14-2102', '11/11-2103')
     lot = 0
     i = 1
-    count = 9
+    count = 1
     end = i = i + 0x30
     end += count
     config = lots[lot][:2]

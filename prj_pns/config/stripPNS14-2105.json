@@ -1,5 +1,5 @@
 {
-  "name": "PNS14",
+  "name": "PNS14-2105",
   "lines": [
     [
       "header",
@@ -143,6 +143,7 @@
   "STRIP_WIDTH": 14,
   "STRIP_HEIGHT": 46,
   "TOTAL": 24,
+  "STANDARD_VALUE": 38,
 
   "STRIPS_WIDTH": 620,
   "ORIGIN_Y_X": [606,649, 4, 23],

@@ -12,7 +12,7 @@ class Result:
         self.stripRegion = stripRegion # 膜条区域
         self.detectiveRegion = [] # 监测区域
 
-    STAND = 38
+
     def appendValue(self, value, detectiveRegion):
         v = value / Result.STAND
         self.values.append(v)
