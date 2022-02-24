@@ -39,12 +39,14 @@ def recognization(file, dict):
     # cv2.imshow('src', src)
     # imshow('result', gray)
     # cv2.waitKey()
-    if not False:
-        # debugImg(file, list, template)
-        debugFlipImg(src, list, template)
     if list is None or len(list) == 0:
         return "None result." + file, None
     results = config.Dict()
+    src = utils.toGray(src, template.config.RGB_GRAY)
+    if  False:
+        # debugImg(file, list, template)
+        debugFlipImg(src, list)
+    results.stripImg = src
     setattr(results, 'resultList', list)
     setattr(results, 'stripOffset', template.origin)
     # setattr(results, 'stripImg', img)
@@ -54,24 +56,26 @@ def recognization(file, dict):
 
 import cv2
 # import numpy
-def debugFlipImg(src, list, tmpl):
+def debugFlipImg(src, list):
     for result in list:
         # todo 膜条换算完成, 样本换算to be continue
-        img = src[result.stripRegion[0]:result.stripRegion[1],:]
-        cv2.imshow('ori-debugFlipImg', src)
-        cv2.waitKey()
-
+        # img = src[result.stripRegion[0]:result.stripRegion[1],:]
+        # cv2.imshow('ori-debugFlipImg', src)
+        # cv2.waitKey()
+        print(src.shape)
         region = [None] * 4
         for r in result.detectiveRegion:
-            region[0] = r[1]
-            region[2] = r[3]
-            region[1] = r[0]
-            region[3] = r[2]
-            # print(region)
+            region[0] = round(r[0])
+            region[2] = round(r[2])
+            region[1] = round(r[1])
+            region[3] = round(r[3])
+            print(region)
             utils.drawPolygonBy4P(src, region)
+            # utils.drawRectBy2P(src, (region[1],region[0]),(region[3],region[2]))
             # break
-        # cv2.imshow( 'debugImg',img)
-        # cv2.waitKey()
+        img = src[result.stripRegion[0]:result.stripRegion[1],:]
+        cv2.imshow( 'debugImg strip',img)
+        cv2.waitKey()
     cv2.imshow('debugImg ori', src)
     cv2.waitKey()
 

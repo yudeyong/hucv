@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="hureco_pns",
-    version='0.7.0',
+    version='0.7.2',
     packages=['hureco_pns', 'hureco_pns.agi'],
     url='',
     license='',

@@ -7,7 +7,7 @@ from numpy import fromfile, uint8 as npuint8, pi as np_pi
 from hureco_pns import utils
 from hureco_pns.agi import StripRegion as sr
 
-_DEBUG = not False
+_DEBUG = False
 _DEBUG_DRAW_LOCATION = not False and _DEBUG
 # tail line
 # rgb to gray value: None or R,G,B to gray value: 0x1 r, 0x100 g, 0x10000 b
