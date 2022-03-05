@@ -116,8 +116,7 @@ def debugImg(file, list, tmpl):
 
 def debugreco(jpgfile, config):
     print(jpgfile)
-    msg, results = recognization(jpgfile,
-                                 config)
+    msg, results = recognization(jpgfile, config)
     if msg:
         print(msg)
     else:
@@ -131,9 +130,9 @@ def main():
     # return
     lotLenth = (4 + 0x30, 5 + 0x30, 3 + 0x30)
     lots = ('14/14-2105', '14/14-2102', '11/11-2103')
-    lot = 0
+    lot = 2
     i = 1
-    count = 1
+    count = 3
     end = i = i + 0x30
     end += count
     config = lots[lot][:2]

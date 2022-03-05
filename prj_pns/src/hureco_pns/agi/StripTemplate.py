@@ -7,7 +7,7 @@ from numpy import fromfile, uint8 as npuint8, pi as np_pi
 from hureco_pns import utils
 from hureco_pns.agi import StripRegion as sr
 
-_DEBUG = False
+_DEBUG =  False
 _DEBUG_DRAW_LOCATION = not False and _DEBUG
 # tail line
 # rgb to gray value: None or R,G,B to gray value: 0x1 r, 0x100 g, 0x10000 b
@@ -445,7 +445,7 @@ class StripTemplate:
                 if not strip is None:
                     utils.drawRectBy2P(gray, (strip.fcX, strip.fcY0), (strip.fcX + self.config.STRIP_WIDTH, strip.fcY1))
                 y += self.config.STRIP_INTERVAL
-        if _DEBUG_HEADER and False:
+        if _DEBUG_HEADER :
             imshow("bg", gray)
             waitKey()
         # waitKey()
@@ -460,10 +460,10 @@ class StripTemplate:
         # imshow("src", src)
         for strip in strips:
             if not strip is None:
-                if _DEBUG_HEADER and False:
+                if _DEBUG_HEADER :
                     for points in strip.result.detectiveRegion:
                         utils.drawRectBy2P(src, (points[0], points[1]), (points[2], points[3]))
                     imshow('recognise', src[strip.result.stripRegion[0]:strip.result.stripRegion[1], :])
-                    # waitKey()
+                    waitKey()
                 list.append(strip.result)
         return list, None
